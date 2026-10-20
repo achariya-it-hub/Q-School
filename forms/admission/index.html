@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admission Details Form | Q-School</title>
+<meta name="description" content="Q-School admission and onboarding form. Fill in student and parent details to complete admission.">
+<link rel="icon" href="logo-mark.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--deep:#054038;--teal:#0e937e;--teal500:#2bb39c;--soft:#f4faf8}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:Poppins,sans-serif;color:#12312c;padding:32px 16px;background:radial-gradient(circle at 12% 0,rgba(43,179,156,.28),transparent 45%),radial-gradient(circle at 92% 100%,rgba(14,147,126,.22),transparent 45%),var(--soft)}
+#q{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.box{position:relative;z-index:1;max-width:580px;margin:0 auto;background:rgba(255,255,255,.95);border:1px solid #e3eeeb;border-radius:20px;padding:32px;box-shadow:0 12px 32px -16px rgba(5,64,56,.3),0 0 0 6px rgba(43,179,156,.08)}
+.logo{height:46px;display:block;margin:0 auto 6px}
+.tag{text-align:center;color:var(--teal);font-size:13px;margin:0 0 20px}
+h1{font-size:22px;text-align:center;margin:0 0 4px;color:var(--deep)}
+.sub{text-align:center;color:#5b7a74;font-size:13px;margin:0 0 6px}
+h2{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);border-bottom:2px solid #d7f0eb;padding-bottom:6px;margin:26px 0 14px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+label{display:block;font-size:13px;font-weight:500}
+label.w{grid-column:1/-1}
+label i{color:#d64545;font-style:normal}
+input[type=text],input[type=tel],input[type=email],input[type=date],select,textarea{width:100%;margin-top:5px;padding:11px 12px;border:1px solid #cfe1dc;border-radius:10px;font:inherit;font-size:14px;outline:0;transition:.2s;background:#fff}
+textarea{resize:vertical;min-height:84px}
+input:focus,textarea:focus,select:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,147,126,.15)}
+.bad{border-color:#d64545!important}
+.photo{display:flex;align-items:center;gap:16px;margin-top:5px;padding:14px;border:2px dashed #b9d9d2;border-radius:14px;background:#f8fcfb;cursor:pointer;transition:.2s}
+.photo:hover,.photo.drag{border-color:var(--teal);background:#eef8f5}
+.photo .pv{flex:none;width:76px;height:76px;border-radius:50%;background:#d7f0eb center/cover no-repeat;display:grid;place-items:center;font-size:30px;border:3px solid #fff;box-shadow:0 4px 12px -4px rgba(5,64,56,.4)}
+.photo b{display:block;font-size:14px;color:var(--deep)}.photo small{color:#5b7a74;font-size:12px}
+.photo input{display:none}
+button{width:100%;margin-top:24px;padding:14px;border:0;border-radius:12px;background:linear-gradient(180deg,#14a68f,var(--teal));color:#fff;font:600 16px Poppins;cursor:pointer;transition:.2s;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 0 #075e51,0 10px 22px -8px rgba(14,147,126,.45)}
+button:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 6px 0 #075e51,0 16px 28px -8px rgba(14,147,126,.45)}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 #075e51}
+button:disabled{opacity:.6;pointer-events:none}
+#msg{margin-top:14px;text-align:center;font-size:14px;color:#c0392b}
+.ok{text-align:center;padding:30px 0}.ok h1{margin-top:8px}.ok p{color:#3c5a55;font-size:14px}
+@media(max-width:520px){.g{grid-template-columns:1fr}.box{padding:22px}}
+</style>
+</head>
+<body>
+<canvas id="q" aria-hidden="true"></canvas>
+<main class="box">
+<img class="logo" src="logo.png" alt="Q-School">
+<p class="tag">Engineering the Neo Sapien</p>
+<form id="f" novalidate>
+<h1>Admission Details Form</h1>
+<p class="sub">Please fill in the details to complete your child's onboarding.</p>
+
+<h2>Student Details</h2>
+<div class="g">
+<label class="w">Student Name <i>*</i><input type="text" name="studentName" autocomplete="off" required></label>
+<label>Date of Birth <i>*</i><input type="date" name="dob" id="dob" required></label>
+<label>Grade <i>*</i><input type="text" name="grade" list="grades" required><datalist id="grades"><option value="Nursery"><option value="LKG"><option value="UKG"><option value="Grade 1"><option value="Grade 2"><option value="Grade 3"><option value="Grade 4"><option value="Grade 5"><option value="Grade 6"><option value="Grade 7"><option value="Grade 8"><option value="Grade 9"><option value="Grade 10"><option value="Grade 11"><option value="Grade 12"></datalist></label>
+<label class="w">School <i>*</i><input type="text" name="school" required></label>
+<label class="w">Branch <i>*</i><select name="centre" id="centre" required><option value="">Select your branch</option><option value="mk">Moolakulam, Puducherry</option><option value="vl">Valasaravakkam, Chennai</option><option value="ad">Adyar, Chennai</option><option value="tn">Thillai Nagar, Trichy</option><option value="sc">Saibaba Colony, Coimbatore</option><option value="wf">Whitefield, Bengaluru</option><option value="kn">Kasturi Nagar, Bengaluru</option><option value="bh">Banjara Hills, Hyderabad</option><option value="au">Aundh, Pune</option></select></label>
+<label class="w">Student Image <i>*</i>
+<span class="photo" id="drop"><span class="pv" id="pv">📷</span><span><b id="pt">Tap to take or attach a photo</b><small>JPG or PNG, a clear face photo works best</small></span><input type="file" id="file" accept="image/*"></span></label>
+</div>
+
+<h2>Parent Details</h2>
+<div class="g">
+<label class="w">Parent Name <i>*</i><input type="text" name="parentName" autocomplete="name" required></label>
+<label>Phone No <i>*</i><input type="tel" name="phone" inputmode="numeric" autocomplete="tel" placeholder="98765 43210" required pattern="[0-9+\s-]{10,15}"></label>
+<label>Mail ID <i>*</i><input type="email" name="email" autocomplete="email" required></label>
+<label class="w">Aadhaar No <small style="font-weight:400;color:#6b807b">(optional)</small><input type="text" name="aadhaar" inputmode="numeric" autocomplete="off" placeholder="1234 5678 9012" maxlength="14"></label>
+<label class="w">Address <i>*</i><textarea name="address" autocomplete="street-address" required></textarea></label>
+</div>
+
+<input type="hidden" name="ref" id="ref">
+<input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+<button type="submit" id="b">Submit Admission Details</button>
+<div id="msg"></div>
+</form>
+<div class="ok" id="ok" hidden><div style="font-size:54px">🎉</div><h1 id="thx">Thank you!</h1><p>Your admission details have been received. The Q-School team will contact you shortly.</p></div>
+</main>
+
+<script>
+/* ---- Quantum particles ---- */
+(()=>{
+const c=document.getElementById("q"),x=c.getContext("2d"),still=matchMedia("(prefers-reduced-motion:reduce)").matches;
+let W,H,D,P=[],A=[],m={x:-999,y:-999};
+const COL=["14,147,126","43,179,156","79,227,197","5,64,56"];
+function size(){D=Math.min(devicePixelRatio||1,2);W=innerWidth;H=innerHeight;c.width=W*D;c.height=H*D;x.setTransform(D,0,0,D,0,0);
+ const n=Math.round(Math.min(110,W*H/12000));
+ P=Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.5,vy:(Math.random()-.5)*.5,r:Math.random()*2.2+.8,c:COL[Math.random()*COL.length|0],t:Math.random()*6}));
+ const na=W<700?3:7;
+ A=Array.from({length:na},(_,i)=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.25,vy:(Math.random()-.5)*.25,R:34+Math.random()*34,tilt:Math.random()*Math.PI,s:(Math.random()<.5?-1:1)*(.008+Math.random()*.012),a:Math.random()*6.28,n:2+(i%3)}))}
+function atom(a){x.save();x.translate(a.x,a.y);x.rotate(a.tilt);
+ for(let k=0;k<a.n;k++){x.save();x.rotate(k*Math.PI/a.n);x.beginPath();x.ellipse(0,0,a.R,a.R*.38,0,0,6.283);x.strokeStyle="rgba(14,147,126,.22)";x.lineWidth=1;x.stroke();
+  const t=a.a*(1+k*.35)+k*2,ex=Math.cos(t)*a.R,ey=Math.sin(t)*a.R*.38;
+  const g=x.createRadialGradient(ex,ey,0,ex,ey,7);g.addColorStop(0,"rgba(79,227,197,1)");g.addColorStop(1,"rgba(79,227,197,0)");x.fillStyle=g;x.beginPath();x.arc(ex,ey,7,0,6.283);x.fill();x.restore()}
+ const g=x.createRadialGradient(0,0,0,0,0,11);g.addColorStop(0,"rgba(14,147,126,.95)");g.addColorStop(1,"rgba(14,147,126,0)");x.fillStyle=g;x.beginPath();x.arc(0,0,11,0,6.283);x.fill();x.restore()}
+function frame(){
+ x.clearRect(0,0,W,H);
+ for(const a of A){a.x+=a.vx;a.y+=a.vy;a.a+=a.s*3;if(a.x<-a.R)a.x=W+a.R;if(a.x>W+a.R)a.x=-a.R;if(a.y<-a.R)a.y=H+a.R;if(a.y>H+a.R)a.y=-a.R;atom(a)}
+ for(let i=0;i<P.length;i++){const p=P[i];
+  const dx=p.x-m.x,dy=p.y-m.y,d=Math.hypot(dx,dy);if(d<120){p.vx+=dx/d*.04;p.vy+=dy/d*.04}
+  p.vx*=.995;p.vy*=.995;const sp=Math.hypot(p.vx,p.vy);if(sp<.15){p.vx+=(Math.random()-.5)*.03;p.vy+=(Math.random()-.5)*.03}
+  p.x+=p.vx;p.y+=p.vy;p.t+=.04;
+  if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+  const gl=.45+.35*Math.sin(p.t);
+  x.beginPath();x.arc(p.x,p.y,p.r,0,6.283);x.fillStyle=`rgba(${p.c},${gl+.2})`;x.shadowColor=`rgba(${p.c},.8)`;x.shadowBlur=8;x.fill();x.shadowBlur=0;
+  for(let j=i+1;j<P.length;j++){const q=P[j],l=Math.hypot(p.x-q.x,p.y-q.y);if(l<110){x.beginPath();x.moveTo(p.x,p.y);x.lineTo(q.x,q.y);x.strokeStyle=`rgba(14,147,126,${(1-l/110)*.22})`;x.lineWidth=1;x.stroke()}}}
+ if(!still)requestAnimationFrame(frame)}
+addEventListener("resize",()=>{size();if(still)frame()});
+addEventListener("pointermove",e=>{m.x=e.clientX;m.y=e.clientY});
+addEventListener("pointerleave",()=>{m.x=m.y=-999});
+size();frame();
+})();
+
+/* ---- Config ---- */
+// 1) Your Q-School ERP endpoint (creates the student as "Pending"). Use your live site address.
+const ERP_URL="https://YOUR-ERP-DOMAIN/api/admissions";
+// 2) Optional Google Sheet backup: Web App URL of the Admission Apps Script (see README.md). Leave as is to skip.
+const SCRIPT_URL="PASTE_ADMISSION_WEB_APP_URL_HERE";
+const cfg=u=>u&&!/PASTE|YOUR-ERP/.test(u);
+
+const f=document.getElementById("f"),b=document.getElementById("b"),msg=document.getElementById("msg");
+// Sales-person tracking: share links like  .../admission/?sp=Ravi
+const ref=new URLSearchParams(location.search).get("sp")||new URLSearchParams(location.search).get("ref")||"";
+document.getElementById("ref").value=ref.slice(0,60);
+document.getElementById("dob").max=new Date().toISOString().split("T")[0];
+// Share links can pre-select the centre: .../admission/?centre=ch
+const pre=new URLSearchParams(location.search).get("centre");if(pre)document.getElementById("centre").value=pre;
+
+/* ---- Photo: preview + compress (keeps upload small on event mobile data) ---- */
+let photo="";
+const file=document.getElementById("file"),pv=document.getElementById("pv"),pt=document.getElementById("pt"),drop=document.getElementById("drop");
+function loadPhoto(fl){
+ if(!fl)return;msg.textContent="";
+ if(!fl.type.startsWith("image/")){msg.textContent="Please choose an image file.";return}
+ const img=new Image(),url=URL.createObjectURL(fl);
+ img.onload=()=>{const M=800,s=Math.min(1,M/Math.max(img.width,img.height)),cv=document.createElement("canvas");
+  cv.width=Math.round(img.width*s);cv.height=Math.round(img.height*s);cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
+  photo=cv.toDataURL("image/jpeg",.82);URL.revokeObjectURL(url);
+  pv.style.backgroundImage=`url(${photo})`;pv.textContent="";pt.textContent="Photo attached ✓ (tap to change)";drop.classList.remove("bad")};
+ img.onerror=()=>{msg.textContent="Could not read that image. Try another one."};img.src=url}
+file.onchange=()=>loadPhoto(file.files[0]);
+["dragenter","dragover"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add("drag")}));
+["dragleave","drop"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove("drag")}));
+drop.addEventListener("drop",ev=>loadPhoto(ev.dataTransfer.files[0]));
+
+/* ---- Aadhaar: group digits as 1234 5678 9012 ---- */
+f.aadhaar.addEventListener("input",()=>{f.aadhaar.value=f.aadhaar.value.replace(/\D/g,"").slice(0,12).replace(/(\d{4})(?=\d)/g,"$1 ")});
+/* ---- Phone formatting ---- */
+f.phone.addEventListener("input",()=>{const d=f.phone.value.replace(/[^\d+]/g,"");f.phone.value=/^\d{10}$/.test(d)?d.replace(/(\d{5})(\d{5})/,"$1 $2"):d});
+f.addEventListener("input",e=>e.target.classList.remove("bad"));
+
+/* ---- Submit ---- */
+f.onsubmit=async e=>{e.preventDefault();msg.textContent="";
+ let first=null;
+ if(f.aadhaar.value&&f.aadhaar.value.replace(/\D/g,"").length!==12){f.aadhaar.classList.add("bad");first=f.aadhaar}
+ for(const i of f.querySelectorAll("[required]")){if(!i.value.trim()||!i.checkValidity()){i.classList.add("bad");first=first||i}}
+ if(!photo){drop.classList.add("bad");first=first||drop}
+ if(first){first.scrollIntoView({behavior:"smooth",block:"center"});msg.textContent=!photo&&first===drop?"Please attach the student's photo.":"Please fill in all required fields correctly.";return}
+ if(!cfg(ERP_URL)&&!cfg(SCRIPT_URL)){msg.textContent="Form is not connected yet. Set ERP_URL / SCRIPT_URL.";return}
+ const d=Object.fromEntries(new FormData(f));d.photo=photo;d.photoName=(d.studentName||"student").replace(/[^\w]+/g,"_");
+ d.centreName=f.centre.options[f.centre.selectedIndex].text.split(" - ")[0];
+ b.disabled=true;b.textContent="Submitting... please wait";
+ const send=async url=>{try{const r=await fetch(url,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(d)});const j=await r.json();if(j.status!=="ok"&&!j.ok)console.error(url,j.message||j.error);return j.status==="ok"||j.ok===true}
+  catch(n){console.error(url,n);return false}};
+ // ERP is the main record; the Google Sheet is a backup copy. Success if either one saved.
+ const [erp,sheet]=await Promise.all([cfg(ERP_URL)?send(ERP_URL):false,cfg(SCRIPT_URL)?send(SCRIPT_URL):false]);
+ if(erp||sheet){
+  document.getElementById("thx").textContent="Thank you, "+d.parentName.split(" ")[0]+"!";
+  f.hidden=true;document.getElementById("ok").hidden=false;scrollTo({top:0,behavior:"smooth"})}
+ else{msg.textContent="Submission failed. Please check your internet and try again.";b.disabled=false;b.textContent="Submit Admission Details"}};
+</script>
+</body>
+</html>

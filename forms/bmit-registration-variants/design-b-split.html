@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BMIT Registration | Q-School (Split Screen)</title>
+<meta name="description" content="Register for the free BMIT assessment and the 2 hour online Q-Parenting Workshop at Q-School.">
+<link rel="icon" href="logo-mark.png">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--deep:#054038;--teal:#0e937e;--mint:#4fe3c5}
+*{box-sizing:border-box}
+body{margin:0;font-family:Poppins,sans-serif;color:#12312c;display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+.art{position:sticky;top:0;height:100vh;background:url(side-brain.png) center/cover;display:flex;flex-direction:column;justify-content:space-between;padding:36px;color:#fff}
+.art::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,64,56,.75),rgba(5,64,56,.1) 40%,rgba(5,64,56,.9))}
+.art>*{position:relative}
+.art img{height:52px;align-self:flex-start}
+.art .hand{font-family:Caveat,cursive;font-size:34px;color:var(--mint);margin:0}
+.art h2{font-size:30px;line-height:1.2;margin:4px 0 14px}
+.art ul{list-style:none;padding:0;margin:0}.art li{padding:6px 0;font-size:15px}.art li::before{content:"✓ ";color:var(--mint);font-weight:700}
+.form{padding:48px 8vw;display:flex;flex-direction:column;justify-content:center;background:#fff}
+h1{font-size:26px;margin:0 0 4px;color:var(--deep)}
+.sub{color:#5b7a74;font-size:14px;margin:0 0 24px}
+h3{font-size:12px;letter-spacing:.12em;color:var(--teal);margin:22px 0 4px}
+.fld{position:relative;margin-top:16px}
+.fld input{width:100%;padding:18px 0 8px;border:0;border-bottom:2px solid #d7e6e2;font:inherit;font-size:15px;outline:0;background:transparent;transition:.2s}
+.fld label{position:absolute;left:0;top:18px;font-size:14px;color:#7a948f;pointer-events:none;transition:.2s}
+.fld input:focus,.fld input:not(:placeholder-shown){border-color:var(--teal)}
+.fld input:focus+label,.fld input:not(:placeholder-shown)+label{top:0;font-size:11px;color:var(--teal);font-weight:600}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.chk{display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-size:14px;cursor:pointer}
+.chk input{accent-color:var(--teal);width:18px;height:18px;margin-top:2px}
+button{margin-top:22px;padding:15px;border:0;border-radius:999px;background:linear-gradient(90deg,var(--teal),var(--mint));color:#fff;font:600 16px Poppins;cursor:pointer;transition:.2s}
+button:hover{transform:translateY(-2px);box-shadow:0 12px 24px -10px rgba(14,147,126,.6)}button:disabled{opacity:.6}
+#msg{margin-top:10px;color:#c0392b;font-size:14px;text-align:center}
+.ok{text-align:center}.ok .big{font-size:60px}
+@media(max-width:860px){body{grid-template-columns:1fr}.art{position:relative;height:260px;padding:20px}.art ul,.art h2{display:none}.form{padding:28px 20px}}
+</style>
+</head>
+<body>
+<section class="art" aria-label="About Q-School">
+<img src="logo-light.png" alt="Q-School">
+<div><p class="hand">Engineering the Neo Sapien</p><h2>Discover how your child's mind works</h2>
+<ul><li>Free Brain Mapping Intelligence Test</li><li>2 Hr Online Q-Parenting Workshop</li><li>Personalised brain-map insights</li></ul></div>
+</section>
+<main class="form">
+<form id="f" novalidate>
+<h1>BMIT Registration Form</h1>
+<p class="sub">Takes less than 2 minutes.</p>
+<h3>PARENT DETAILS</h3>
+<div class="fld"><input type="text" name="parentName" placeholder=" " required><label>Name</label></div>
+<div class="row"><div class="fld"><input type="tel" name="parentPhone" placeholder=" " required pattern="[0-9+\s-]{10,15}"><label>Phone</label></div>
+<div class="fld"><input type="email" name="parentEmail" placeholder=" " required><label>Email</label></div></div>
+<div class="row"><div class="fld"><input type="text" name="city" placeholder=" " required><label>City</label></div>
+<div class="fld"><input type="text" name="profession" placeholder=" " required><label>Profession</label></div></div>
+<h3>CHILD DETAILS</h3>
+<div class="row"><div class="fld"><input type="text" name="childName" placeholder=" " required><label>Name</label></div>
+<div class="fld"><input type="number" name="childAge" min="1" max="25" placeholder=" " required><label>Age</label></div></div>
+<div class="row"><div class="fld"><input type="text" name="grade" placeholder=" " required><label>Grade</label></div>
+<div class="fld"><input type="text" name="school" placeholder=" " required><label>School</label></div></div>
+<label class="chk" style="margin-top:22px"><input type="checkbox" name="bmit" checked> I am interested in taking Free Brain Mapping Intelligence Test (BMIT) Assessment</label>
+<label class="chk"><input type="checkbox" name="workshop" checked> I am interested to attend the 2 Hr Online Q-Parenting Workshop.</label>
+<button type="submit" id="b" style="width:100%">Submit</button>
+<div id="msg"></div>
+</form>
+<div class="ok" id="ok" hidden><div class="big">🎉</div><h1>Thank you!</h1><p>Your registration has been received. The Q-School team will contact you shortly.</p></div>
+</main>
+<script>
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbwnifEARE2z_83yCYp3_XGFpxtikkQcHxKH4VlpWzXY48RNk5ai0WvC0Wa4ZV7KlbQZNQ/exec";
+const f=document.getElementById("f"),b=document.getElementById("b"),msg=document.getElementById("msg");
+f.onsubmit=async e=>{e.preventDefault();msg.textContent="";
+ if(!f.checkValidity()){f.reportValidity();return}
+ const d=Object.fromEntries(new FormData(f));d.bmit=f.bmit.checked?"Yes":"No";d.workshop=f.workshop.checked?"Yes":"No";
+ b.disabled=true;b.textContent="Submitting...";
+ try{let ok=true;try{const r=await fetch(SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(d)});ok=(await r.json()).status==="ok"}catch(n){if(!(n instanceof TypeError))throw n}
+  if(!ok)throw 0;f.hidden=true;document.getElementById("ok").hidden=false}
+ catch(x){msg.textContent="Submission failed. Please try again.";b.disabled=false;b.textContent="Submit"}};
+</script>
+</body>
+</html>

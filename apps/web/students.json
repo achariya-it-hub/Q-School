@@ -1,0 +1,19 @@
+[
+  {
+    "id": "STU-0001",
+    "studentName": "Aaliya",
+    "dob": "2022-12-30",
+    "grade": "Grade 1",
+    "school": "Achariya SV Patel Salai",
+    "parentName": "Balamurugan K",
+    "phone": "7904761795",
+    "email": "it.achariyagroups@gmail.com",
+    "address": "Achariya Educational Public Trust",
+    "aadhaar": "",
+    "centreId": "ch",
+    "ref": "Manual",
+    "photo": "",
+    "status": "Pending",
+    "createdAt": "2026-10-18T12:51:19.637Z"
+  }
+]

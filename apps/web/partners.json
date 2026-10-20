@@ -1,0 +1,89 @@
+[
+  {
+    "id": "PRT-001",
+    "code": "MKT-BALA",
+    "name": "Bala Murugan",
+    "email": "bala.marketing@qschool.com",
+    "phone": "9876500111",
+    "organization": "Q-School Internal Growth Team",
+    "category": "Marketing Team",
+    "commissionType": "percentage",
+    "commissionValue": 10,
+    "centreId": "all",
+    "status": "active",
+    "bankDetails": {
+      "upiId": "bala@okaxis",
+      "accountName": "Bala Murugan"
+    },
+    "stats": {
+      "totalClicks": 142,
+      "totalLeads": 28,
+      "totalAdmissions": 5,
+      "totalRevenue": 125000,
+      "totalCommission": 12500,
+      "paidCommission": 8000,
+      "pendingCommission": 4500
+    },
+    "notes": "Lead marketing executive for Tamil Nadu and Puducherry school events.",
+    "createdAt": "2026-09-19T15:44:00.765Z",
+    "updatedAt": "2026-10-19T15:44:00.765Z"
+  },
+  {
+    "id": "PRT-002",
+    "code": "ACH-PUDU",
+    "name": "Achariya Campus Promoters",
+    "email": "outreach@achariya.org",
+    "phone": "9443211223",
+    "organization": "Achariya Educational Trust",
+    "category": "School Partner",
+    "commissionType": "flat",
+    "commissionValue": 2000,
+    "centreId": "mk",
+    "status": "active",
+    "bankDetails": {
+      "upiId": "achariya.trust@sbi",
+      "accountName": "Achariya Educational Trust"
+    },
+    "stats": {
+      "totalClicks": 210,
+      "totalLeads": 45,
+      "totalAdmissions": 8,
+      "totalRevenue": 240000,
+      "totalCommission": 16000,
+      "paidCommission": 10000,
+      "pendingCommission": 6000
+    },
+    "notes": "Campus referral partnership for school students.",
+    "createdAt": "2026-09-04T15:44:00.765Z",
+    "updatedAt": "2026-10-19T15:44:00.765Z"
+  },
+  {
+    "id": "PRT-003",
+    "code": "EDT-KAVI",
+    "name": "Kavitha Rajan",
+    "email": "kavitha.edtech@gmail.com",
+    "phone": "9840198765",
+    "organization": "Kids STEM Network",
+    "category": "Affiliate",
+    "commissionType": "percentage",
+    "commissionValue": 8,
+    "centreId": "ad",
+    "status": "active",
+    "bankDetails": {
+      "upiId": "kavitha98@icici",
+      "accountName": "Kavitha Rajan"
+    },
+    "stats": {
+      "totalClicks": 88,
+      "totalLeads": 16,
+      "totalAdmissions": 3,
+      "totalRevenue": 75000,
+      "totalCommission": 6000,
+      "paidCommission": 6000,
+      "pendingCommission": 0
+    },
+    "notes": "Adyar branch parenting workshops promoter.",
+    "createdAt": "2026-09-29T15:44:00.765Z",
+    "updatedAt": "2026-10-19T15:44:00.765Z"
+  }
+]

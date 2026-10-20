@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "Q-School",
+    "slug": "qschool",
+    "scheme": "qschool",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#054038"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.qschool.app"
+    },
+    "android": {
+      "package": "com.qschool.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#054038"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/icon.png"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

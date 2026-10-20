@@ -1,0 +1,45 @@
+node_modules
+.next
+expo
+.expo
+dist
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build
+.DS_Store
+leads.json
+crm-*.json
+.env.local
+logs/
+
+# website editor content and uploads (Admin Console > Website)
+site-content.json
+site-content.json.tmp
+site-media/
+
+# course builder uploads (Admin Console > Courses)
+course-media/
+courses.json.tmp
+
+# Console settings (holds the BigBlueButton secret) and live session data
+settings.json
+settings.json.tmp
+live-sessions.json
+live-sessions.json.tmp
+
+# Hostinger upload package (node scripts/build-hostinger.mjs)
+deploy/
+
+# WhatsApp message log, conversation state, shared invoice/receipt links
+whatsapp-messages.json
+whatsapp-state.json
+shared-docs.json
+*.json.tmp
+
+.freebuff/
+_backup-ui-v1/

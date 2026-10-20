@@ -1,0 +1,47 @@
+[
+  {
+    "id": "usr_admin1",
+    "name": "Bala K",
+    "email": "admin@qschool.com",
+    "role": "Admin",
+    "status": "Active",
+    "joined": "2025-01-15",
+    "phone": "+91 98765 43210"
+  },
+  {
+    "id": "usr_inst1",
+    "name": "Dr. A. Sharma",
+    "email": "sharma@qschool.com",
+    "role": "Faculty",
+    "status": "Active",
+    "joined": "2025-02-01",
+    "phone": "+91 98123 45678"
+  },
+  {
+    "id": "usr_inst2",
+    "name": "Prof. R. Iyer",
+    "email": "iyer@qschool.com",
+    "role": "Faculty",
+    "status": "Active",
+    "joined": "2025-02-10",
+    "phone": "+91 97654 32109"
+  },
+  {
+    "id": "usr_stud1",
+    "name": "Aarav Patel",
+    "email": "aarav@gmail.com",
+    "role": "Student",
+    "status": "Active",
+    "joined": "2025-03-05",
+    "phone": "+91 91234 56789"
+  },
+  {
+    "id": "usr_stud2",
+    "name": "Ananya Roy",
+    "email": "ananya@gmail.com",
+    "role": "Student",
+    "status": "Active",
+    "joined": "2025-03-12",
+    "phone": "+91 98989 89898"
+  }
+]

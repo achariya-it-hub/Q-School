@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BMIT Registration | Q-School (Dark Quantum)</title>
+<meta name="description" content="Register for the free BMIT assessment and the 2 hour online Q-Parenting Workshop at Q-School.">
+<link rel="icon" href="logo-mark.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#04201c;--teal:#0e937e;--mint:#4fe3c5}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:Poppins,sans-serif;color:#e6fbf6;background:radial-gradient(circle at 80% 0,rgba(79,227,197,.22),transparent 40%),radial-gradient(circle at 0 100%,rgba(14,147,126,.3),transparent 45%),var(--bg);padding:28px 16px}
+.wrap{max-width:640px;margin:0 auto}
+.hero{position:relative;height:200px;border-radius:24px 24px 0 0;background:url(bmit-hero.png) center/cover;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,32,28,.3),var(--bg))}
+.hero img{position:absolute;z-index:2;left:24px;top:20px;height:44px}
+.card{background:rgba(255,255,255,.05);border:1px solid rgba(79,227,197,.25);border-top:0;border-radius:0 0 24px 24px;padding:8px 28px 30px;box-shadow:0 0 60px -20px rgba(79,227,197,.35)}
+h1{font-size:24px;margin:0 0 4px;background:linear-gradient(90deg,#fff,var(--mint));-webkit-background-clip:text;color:transparent}
+.sub{color:#9fd8cc;font-size:13px;margin:0 0 6px}
+h2{font-size:12px;letter-spacing:.14em;color:var(--mint);margin:24px 0 12px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+label{display:block;font-size:12px;color:#9fd8cc}label.w{grid-column:1/-1}
+input[type=text],input[type=tel],input[type=email],input[type=number]{width:100%;margin-top:5px;padding:12px 14px;border-radius:12px;border:1px solid rgba(79,227,197,.25);background:rgba(0,0,0,.3);color:#fff;font:inherit;font-size:14px;outline:0;transition:.2s}
+input:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(79,227,197,.2),0 0 18px rgba(79,227,197,.25)}
+.chk{display:flex;gap:12px;align-items:flex-start;padding:14px;margin-top:12px;border:1px solid rgba(79,227,197,.25);border-radius:14px;font-size:14px;color:#e6fbf6;cursor:pointer;transition:.2s}
+.chk:hover{border-color:var(--mint)}.chk:has(input:checked){background:rgba(79,227,197,.1);border-color:var(--mint)}
+.chk input{accent-color:var(--mint);width:18px;height:18px;margin-top:2px}
+button{width:100%;margin-top:24px;padding:15px;border:0;border-radius:14px;background:linear-gradient(90deg,var(--teal),var(--mint));color:#04201c;font:700 16px Poppins;cursor:pointer;box-shadow:0 0 28px -6px rgba(79,227,197,.7);transition:.2s}
+button:hover{transform:translateY(-2px)}button:disabled{opacity:.6}
+#msg{margin-top:12px;text-align:center;color:#ff9f9f;font-size:14px}
+.ok{text-align:center;padding:30px 0}.ok .big{font-size:56px}
+@media(max-width:560px){.g{grid-template-columns:1fr}.card{padding:8px 18px 24px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="hero"><img src="logo-light.png" alt="Q-School"></header>
+<main class="card">
+<form id="f" novalidate>
+<h1>BMIT Registration Form</h1>
+<p class="sub">Engineering the Neo Sapien</p>
+<h2>// PARENT DETAILS</h2>
+<div class="g">
+<label>Name<input type="text" name="parentName" required></label>
+<label>Phone<input type="tel" name="parentPhone" required pattern="[0-9+\s-]{10,15}"></label>
+<label class="w">Email<input type="email" name="parentEmail" required></label>
+<label>City<input type="text" name="city" required></label>
+<label>Profession<input type="text" name="profession" required></label>
+</div>
+<h2>// CHILD DETAILS</h2>
+<div class="g">
+<label>Name<input type="text" name="childName" required></label>
+<label>Age<input type="number" name="childAge" min="1" max="25" required></label>
+<label>Grade<input type="text" name="grade" required></label>
+<label>School<input type="text" name="school" required></label>
+</div>
+<label class="chk" style="margin-top:22px"><input type="checkbox" name="bmit" checked> I am interested in taking Free Brain Mapping Intelligence Test (BMIT) Assessment</label>
+<label class="chk"><input type="checkbox" name="workshop" checked> I am interested to attend the 2 Hr Online Q-Parenting Workshop.</label>
+<button type="submit" id="b">Submit</button>
+<div id="msg"></div>
+</form>
+<div class="ok" id="ok" hidden><div class="big">🚀</div><h1>Thank you!</h1><p>Your registration has been received. The Q-School team will contact you shortly.</p></div>
+</main>
+</div>
+<script>
+const SCRIPT_URL="https://script.google.com/macros/s/AKfycbwnifEARE2z_83yCYp3_XGFpxtikkQcHxKH4VlpWzXY48RNk5ai0WvC0Wa4ZV7KlbQZNQ/exec";
+const f=document.getElementById("f"),b=document.getElementById("b"),msg=document.getElementById("msg");
+f.onsubmit=async e=>{e.preventDefault();msg.textContent="";
+ if(!f.checkValidity()){f.reportValidity();return}
+ const d=Object.fromEntries(new FormData(f));d.bmit=f.bmit.checked?"Yes":"No";d.workshop=f.workshop.checked?"Yes":"No";
+ b.disabled=true;b.textContent="Submitting...";
+ try{let ok=true;try{const r=await fetch(SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(d)});ok=(await r.json()).status==="ok"}catch(n){if(!(n instanceof TypeError))throw n}
+  if(!ok)throw 0;f.hidden=true;document.getElementById("ok").hidden=false}
+ catch(x){msg.textContent="Submission failed. Please try again.";b.disabled=false;b.textContent="Submit"}};
+</script>
+</body>
+</html>

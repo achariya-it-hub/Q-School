@@ -1,0 +1,353 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --deep: #054038;
+  --teal: #0e937e;
+  --teal500: #2bb39c;
+  --teal100: #d7f0eb;
+  --ink: #010d0b;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-[#f4faf8] text-brand-ink antialiased;
+  /* slide-in reveals start off-screen; clip (not hidden) keeps the sticky header working */
+  overflow-x: clip;
+  font-family: Poppins, system-ui, sans-serif;
+}
+
+.container-qs {
+  @apply mx-auto max-w-6xl px-4 sm:px-6;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-teal px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-deep;
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-brand-teal px-6 py-3 text-sm font-semibold text-brand-teal transition hover:bg-brand-teal hover:text-white;
+}
+
+.card {
+  @apply rounded-2xl border border-[#e2ece9] bg-white shadow-sm;
+}
+
+.chip {
+  @apply inline-flex items-center rounded-full border border-[#d7f0eb] bg-brand-teal100/60 px-3 py-1 text-xs font-medium text-brand-deep;
+}
+
+/* ------------------------------------------------------------ 3D / emboss */
+
+/* Raised button with a solid bottom edge. Lifts on hover, presses on click.
+   Colour comes from the variant class; --edge is the darker "side" colour. */
+.btn-3d {
+  --edge: #075e51;
+  --glow: rgba(14, 147, 126, 0.45);
+  isolation: isolate;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.12),
+    0 4px 0 var(--edge),
+    0 10px 22px -8px var(--glow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.2s, color 0.2s;
+}
+.btn-3d:not(.absolute):not(.fixed) {
+  position: relative;
+}
+.btn-3d:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.12),
+    0 6px 0 var(--edge),
+    0 16px 28px -8px var(--glow);
+}
+.btn-3d:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.18),
+    0 1px 0 var(--edge),
+    0 4px 10px -6px var(--glow);
+}
+/* glossy sweep on hover */
+.btn-3d::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.45) 48%, transparent 66%);
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+}
+.btn-3d:hover::after {
+  transform: translateX(120%);
+}
+.btn-3d-teal {
+  background: linear-gradient(180deg, #14a68f, #0e937e);
+  color: #fff;
+}
+.btn-3d-teal:hover { background: linear-gradient(180deg, #13b39a, #0e937e); }
+.btn-3d-mint {
+  --edge: #129a80;
+  --glow: rgba(43, 214, 180, 0.55);
+  background: linear-gradient(180deg, #4fe3c5, #2bd6b4);
+  color: #054038;
+}
+.btn-3d-white {
+  --edge: #b9d3cd;
+  --glow: rgba(0, 0, 0, 0.35);
+  background: linear-gradient(180deg, #ffffff, #e9f3f0);
+  color: #054038;
+}
+.btn-3d-outline {
+  --edge: #b9d9d2;
+  --glow: rgba(5, 64, 56, 0.15);
+  background: linear-gradient(180deg, #ffffff, #f1f8f6);
+  color: #0e937e;
+  border: 1px solid #a9d8ce;
+}
+.btn-3d-glass {
+  --edge: rgba(0, 0, 0, 0.35);
+  --glow: rgba(0, 0, 0, 0.3);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06));
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+/* Raised card on light backgrounds */
+.emboss {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fcfb 100%);
+  border: 1px solid #e3eeeb;
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 -2px 0 rgba(5, 64, 56, 0.04),
+    0 1px 2px rgba(5, 64, 56, 0.06),
+    0 10px 24px -12px rgba(5, 64, 56, 0.22);
+  transition: box-shadow 0.3s ease, transform 0.3s ease, border-color 0.3s;
+}
+.emboss-hover:hover {
+  border-color: rgba(43, 179, 156, 0.45);
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 -2px 0 rgba(5, 64, 56, 0.04),
+    0 2px 4px rgba(5, 64, 56, 0.06),
+    0 26px 44px -16px rgba(5, 64, 56, 0.35);
+}
+
+/* Raised card on the deep-green sections */
+.emboss-dark {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.035));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.18),
+    0 14px 30px -14px rgba(0, 0, 0, 0.6);
+  transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+}
+.emboss-dark-hover:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  transform: translateY(-2px);
+}
+
+/* Sunken well (inputs, number tiles) */
+.deboss {
+  background: #eef6f4;
+  box-shadow: inset 0 2px 4px rgba(5, 64, 56, 0.12), inset 0 -1px 0 #fff;
+}
+
+/* Glossy 3D icon tile. Set --c to the base colour. */
+.icon-3d {
+  --c: #0e937e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: linear-gradient(150deg, color-mix(in srgb, var(--c) 62%, #fff) 0%, var(--c) 55%, color-mix(in srgb, var(--c) 72%, #000) 100%);
+  box-shadow:
+    inset 0 2px 1px rgba(255, 255, 255, 0.5),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.2),
+    0 3px 0 color-mix(in srgb, var(--c) 60%, #000),
+    0 10px 18px -6px color-mix(in srgb, var(--c) 70%, transparent);
+  transition: translate 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), rotate 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+    scale 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.35s ease;
+}
+.icon-3d:not(.absolute):not(.fixed) {
+  position: relative;
+}
+.icon-3d::before {
+  /* top gloss */
+  content: "";
+  position: absolute;
+  inset: 2px 3px 50% 3px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+.icon-3d > svg {
+  position: relative;
+  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.25));
+}
+.group:hover .icon-3d:not(.no-lift) {
+  /* individual properties so this composes with any transform utility */
+  translate: 0 -3px;
+  rotate: -6deg;
+  scale: 1.06;
+}
+
+/* Letterpress text for numbers on light surfaces */
+.text-emboss {
+  text-shadow: 0 1px 0 #fff, 0 -1px 0 rgba(5, 64, 56, 0.12);
+}
+
+/* Cursor-tracking tilt (see components/landing/tilt.tsx) */
+.tilt {
+  will-change: transform;
+}
+.tilt-glare {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.35), transparent 50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  mix-blend-mode: soft-light;
+}
+.tilt[data-tilt="on"] .tilt-glare {
+  opacity: 1;
+}
+
+/* Header menu: embossed mint tile behind an item on hover / when its section is in view */
+.nav-tile {
+  position: relative;
+  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.nav-tile:hover,
+.nav-tile:focus-visible,
+.nav-tile-on {
+  color: #054038;
+  background: linear-gradient(180deg, #e3f6f1 0%, #cdeee6 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(14, 147, 126, 0.18),
+    0 4px 10px -6px rgba(14, 147, 126, 0.55);
+}
+.nav-tile:hover {
+  transform: translateY(-1px);
+}
+.nav-tile:active {
+  transform: translateY(0);
+  box-shadow: inset 0 2px 4px rgba(14, 147, 126, 0.2);
+}
+.nav-tile-on {
+  color: #0e937e;
+  font-weight: 600;
+}
+
+/* Scroll reveal variants (components/landing/reveal.tsx) */
+.reveal {
+  transition-property: opacity, transform, filter, clip-path;
+  transition-duration: 0.8s;
+  transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.reveal-hidden.reveal-up { opacity: 0; transform: translateY(32px); }
+.reveal-hidden.reveal-left { opacity: 0; transform: translateX(-48px); }
+.reveal-hidden.reveal-right { opacity: 0; transform: translateX(48px); }
+.reveal-hidden.reveal-zoom { opacity: 0; transform: translateY(24px) scale(0.92); }
+.reveal-hidden.reveal-blur { opacity: 0; filter: blur(10px); transform: translateY(16px); }
+.reveal-hidden.reveal-flip { opacity: 0; transform: perspective(900px) rotateX(18deg) translateY(30px); transform-origin: 50% 100%; }
+.reveal-hidden.reveal-line { transform: scaleX(0); transform-origin: left; }
+.reveal-hidden.reveal-wipe { clip-path: inset(0 0 100% 0 round 24px); transform: translateY(20px); }
+.reveal-shown.reveal-wipe { clip-path: inset(0 0 0 0 round 24px); }
+
+@keyframes slider-progress {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+/* Full-screen hero carousel (components/landing/hero-carousel.tsx) */
+@keyframes hs-in {
+  from { opacity: 0; transform: translateY(26px); }
+  to { opacity: 1; transform: none; }
+}
+.hero-slide[data-active="true"] .hs-in {
+  animation: hs-in 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+.hero-kenburns {
+  transform: scale(1.02);
+  transition: transform 9s ease-out, opacity 0.6s ease !important;
+}
+.hero-slide[data-active="true"] .hero-kenburns {
+  transform: scale(1.12);
+}
+
+/* Photo tiles */
+.photo-tile {
+  overflow: hidden;
+  background: #0b4f45;
+  box-shadow:
+    0 0 0 4px #fff,
+    0 24px 50px -18px rgba(0, 0, 0, 0.6);
+}
+.photo-tile img {
+  transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.photo-tile:hover img {
+  transform: scale(1.07);
+}
+
+/* Touch press feedback on cards */
+.press:active {
+  transform: scale(0.985);
+}
+
+/* Console: print only the invoice / receipt */
+@media print {
+  body * { visibility: hidden; }
+  .print-area, .print-area * { visibility: visible; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; border: 0 !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-marquee,
+  .animate-fade-up {
+    animation: none !important;
+  }
+  .btn-3d,
+  .btn-3d:hover,
+  .btn-3d:active {
+    transform: none !important;
+  }
+  .group:hover .icon-3d {
+    translate: none !important;
+    rotate: none !important;
+    scale: none !important;
+  }
+  .btn-3d::after {
+    display: none;
+  }
+  .reveal-hidden {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    clip-path: none !important;
+  }
+  [data-parallax] {
+    transform: none !important;
+    translate: none !important;
+  }
+  .hero-slide .hs-in {
+    animation: none !important;
+  }
+  .hero-kenburns {
+    transform: none !important;
+  }
+}
