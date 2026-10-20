@@ -10,7 +10,7 @@ export async function readTasks(): Promise<StaffTask[]> {
   try {
     return JSON.parse(await fs.readFile(FILE, "utf8"));
   } catch {
-    return structuredClone(STAFF_TASKS);
+    return [];
   }
 }
 

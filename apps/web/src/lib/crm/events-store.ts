@@ -167,9 +167,9 @@ const DEFAULT_EVENTS: CrmEvent[] = [
 
 async function readEvents(): Promise<CrmEvent[]> {
   const events = await readJson<CrmEvent[] | null>(EVENTS_FILE, null);
-  if (events && events.length) return events;
-  await writeJson(EVENTS_FILE, DEFAULT_EVENTS);
-  return DEFAULT_EVENTS;
+  if (events && Array.isArray(events)) return events;
+  await writeJson(EVENTS_FILE, []);
+  return [];
 }
 
 async function readAttendees(): Promise<EventAttendee[]> {

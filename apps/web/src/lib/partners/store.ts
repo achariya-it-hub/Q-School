@@ -49,12 +49,11 @@ async function writeJson(file: string, data: unknown) {
 
 export async function listPartners(): Promise<Partner[]> {
   const partners = await readJson<Partner[] | null>(PARTNERS_FILE, null);
-  if (partners && Array.isArray(partners) && partners.length > 0) {
+  if (partners && Array.isArray(partners)) {
     return partners;
   }
-  // Initialize with initial partners
-  await writeJson(PARTNERS_FILE, INITIAL_PARTNERS);
-  return INITIAL_PARTNERS;
+  await writeJson(PARTNERS_FILE, []);
+  return [];
 }
 
 export async function getPartnerById(id: string): Promise<Partner | null> {

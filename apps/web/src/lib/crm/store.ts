@@ -95,11 +95,9 @@ async function writeJson(file: string, data: unknown) {
 
 async function readLeads(): Promise<CrmLead[]> {
   const leads = await readJson<CrmLead[] | null>(LEADS_FILE, null);
-  if (leads) return leads;
-  // First run: seed with the demo pipeline so the board isn't empty.
-  const seed: CrmLead[] = PIPELINE.map((l) => ({ ...l, sourceKey: sourceKeyFor(l.source) }));
-  await writeJson(LEADS_FILE, seed);
-  return seed;
+  if (leads && Array.isArray(leads)) return leads;
+  await writeJson(LEADS_FILE, []);
+  return [];
 }
 
 function sourceKeyFor(label: string): SourceKey {
