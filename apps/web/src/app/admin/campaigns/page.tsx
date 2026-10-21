@@ -36,7 +36,7 @@ import {
 function CampaignsContent() {
   const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"sheet" | "calendar" | "kanban" | "sales_ads">("sheet");
+  const [view, setView] = useState<"table" | "calendar" | "kanban" | "sales_ads">("table");
   const [platformFilter, setPlatformFilter] = useState<string>("all");
   const [pillarFilter, setPillarFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -444,7 +444,7 @@ function CampaignsContent() {
               value={view}
               onChange={(v) => setView(v as any)}
               options={[
-                { value: "sheet", label: "Spreadsheet Matrix" },
+                { value: "table", label: "Campaigns Table" },
                 { value: "calendar", label: "Monthly Calendar" },
                 { value: "kanban", label: "Workflow Pipeline" },
                 { value: "sales_ads", label: "Sales & Paid Ads" },
@@ -522,288 +522,266 @@ function CampaignsContent() {
           />
         </div>
 
-        {/* ───────── VIEW 1: SPREADSHEET MATRIX (Matches User's Sheet) ───────── */}
-        {view === "sheet" && (
-          <div className="overflow-x-auto rounded-xl border-2 border-black bg-white shadow-sm">
-            <table className="w-full text-left text-xs whitespace-nowrap">
-              {/* Yellow Spreadsheet Header Matching User's Screenshot */}
-              <thead className="bg-[#FFFF00] border-b-2 border-black text-black font-black uppercase text-[11px] tracking-wider select-none">
-                <tr>
-                  <th className="p-3 border-r border-black/30">Post Date</th>
-                  <th className="p-3 border-r border-black/30">Writer</th>
-                  <th className="p-3 border-r border-black/30">Content Pillar</th>
-                  <th className="p-3 border-r border-black/30">Format</th>
-                  <th className="p-3 border-r border-black/30">Platforms</th>
-                  <th className="p-3 border-r border-black/30">Audience</th>
-                  <th className="p-3 border-r border-black/30">Post Concept</th>
-                  <th className="p-3 border-r border-black/30">Post Content</th>
-                  <th className="p-3 border-r border-black/30 text-center">Sheet Link</th>
-                  <th className="p-3 border-r border-black/30 text-center">Copy Status</th>
-                  <th className="p-3 border-r border-black/30 text-center">Copy Approval</th>
-                  <th className="p-3 border-r border-black/30">Designer</th>
-                  <th className="p-3 border-r border-black/30 text-center">Drive Link</th>
-                  <th className="p-3 border-r border-black/30 text-center">Design Approval</th>
-                  <th className="p-3 border-r border-black/30 text-center">Post Status</th>
-                  <th className="p-3 border-r border-black/30 text-center">Live URL</th>
-                  <th className="p-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 font-medium text-gray-900">
-                {filteredCampaigns.length === 0 ? (
-                  <tr>
-                    <td colSpan={17} className="p-8 text-center text-[#7B8E89]">
-                      No campaigns matching the selected criteria.
-                    </td>
+        {/* ───────── VIEW 1: CAMPAIGNS TABLE (Standard Q-School Clean Design) ───────── */}
+        {view === "table" && (
+          <div className="rounded-2xl border border-[#E2ECE9] bg-white overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-[12.5px] whitespace-nowrap">
+                <thead>
+                  <tr className="border-b border-[#EEF3F1] bg-[#F7FAF9] text-[11px] font-bold text-[#41564F] uppercase tracking-wider select-none">
+                    <th className="py-3 px-3.5">Post Date</th>
+                    <th className="py-3 px-3.5">Campaign &amp; Concept</th>
+                    <th className="py-3 px-3.5">Platform</th>
+                    <th className="py-3 px-3.5">Pillar &amp; Format</th>
+                    <th className="py-3 px-3.5">Audience</th>
+                    <th className="py-3 px-3.5">Copywriter</th>
+                    <th className="py-3 px-3.5 text-center">Copy Review</th>
+                    <th className="py-3 px-3.5">Designer</th>
+                    <th className="py-3 px-3.5 text-center">Creative Review</th>
+                    <th className="py-3 px-3.5 text-center">Publishing</th>
+                    <th className="py-3 px-3.5 text-center">Assets &amp; Links</th>
+                    <th className="py-3 px-3.5 text-right">Actions</th>
                   </tr>
-                ) : (
-                  filteredCampaigns.map((c) => (
-                    <tr key={c.id} className="hover:bg-amber-50/40 transition">
-                      {/* Post Date */}
-                      <td className="p-3 border-r border-gray-200 font-bold font-mono text-brand-ink">
-                        {c.postDate}
+                </thead>
+                <tbody className="divide-y divide-[#F0F4F3] font-medium text-brand-ink">
+                  {filteredCampaigns.length === 0 ? (
+                    <tr>
+                      <td colSpan={12} className="py-10 text-center text-[#7B8E89]">
+                        No campaigns matching the selected criteria.
                       </td>
+                    </tr>
+                  ) : (
+                    filteredCampaigns.map((c) => (
+                      <tr key={c.id} className="hover:bg-[#F9FBFB] transition">
+                        {/* Post Date */}
+                        <td className="py-3 px-3.5 font-bold font-mono text-brand-ink">
+                          {c.postDate}
+                        </td>
 
-                      {/* Writer */}
-                      <td className="p-3 border-r border-gray-200">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-gray-800 text-[11px] font-semibold border border-gray-300">
-                          {c.writer}
-                        </span>
-                      </td>
-
-                      {/* Content Pillar */}
-                      <td className="p-3 border-r border-gray-200">
-                        <span className="inline-block text-[11.5px] font-semibold text-gray-900">
-                          {c.contentPillar}
-                        </span>
-                      </td>
-
-                      {/* Format */}
-                      <td className="p-3 border-r border-gray-200">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10.5px] font-medium border border-slate-200">
-                          {c.format}
-                        </span>
-                      </td>
-
-                      {/* Platforms */}
-                      <td className="p-3 border-r border-gray-200">
-                        {c.platforms.includes("Meta") ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-bold text-[10.5px] border border-blue-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                            {c.platforms}
-                          </span>
-                        ) : c.platforms.includes("Google") ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-50 text-red-700 font-bold text-[10.5px] border border-red-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
-                            {c.platforms}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 font-bold text-[10.5px]">
-                            {c.platforms}
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Audience */}
-                      <td className="p-3 border-r border-gray-200 font-semibold text-center">
-                        <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                            c.audience === "B2B"
-                              ? "bg-purple-100 text-purple-800"
-                              : "bg-emerald-100 text-emerald-800"
-                          }`}
-                        >
-                          {c.audience}
-                        </span>
-                      </td>
-
-                      {/* Post Concept */}
-                      <td className="p-3 border-r border-gray-200 font-bold text-gray-900 max-w-xs truncate" title={c.postConcept}>
-                        {c.postConcept}
-                      </td>
-
-                      {/* Post Content */}
-                      <td className="p-3 border-r border-gray-200 text-[#555] max-w-xs truncate text-[11px]" title={c.postContent || "No copy entered yet"}>
-                        {c.postContent || <span className="text-gray-400 italic">—</span>}
-                      </td>
-
-                      {/* Sheet Link */}
-                      <td className="p-3 border-r border-gray-200 text-center">
-                        {c.sheetLink ? (
-                          <a
-                            href={c.sheetLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-900 font-bold hover:underline"
-                            title="Open Google Sheet / Doc"
-                          >
-                            <Icon name="link" size={13} />
-                            <span>Doc</span>
-                          </a>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-
-                      {/* Copy Status */}
-                      <td className="p-3 border-r border-gray-200 text-center">
-                        <select
-                          value={c.status}
-                          onChange={(e) => handleQuickUpdate(c.id, { status: e.target.value as any })}
-                          className="h-7 px-2 rounded-lg border border-gray-300 text-[10.5px] font-bold bg-white text-gray-800 outline-none"
-                        >
-                          <option value="Draft">Draft</option>
-                          <option value="Work in Progress">Work in Progress</option>
-                          <option value="Ready for Review">Ready for Review</option>
-                          <option value="Completed">Completed</option>
-                        </select>
-                      </td>
-
-                      {/* Copy Approval */}
-                      <td className="p-3 border-r border-gray-200 text-center">
-                        <select
-                          value={c.approvalStatus}
-                          onChange={(e) =>
-                            handleQuickUpdate(c.id, {
-                              approvalStatus: e.target.value as any,
-                              approvedOn: e.target.value === "Approved" ? new Date().toISOString().split("T")[0] : undefined,
-                            })
-                          }
-                          className={`h-7 px-2 rounded-lg border text-[10.5px] font-bold outline-none ${
-                            c.approvalStatus === "Approved"
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-300"
-                              : c.approvalStatus === "Changes Requested"
-                              ? "bg-red-50 text-red-800 border-red-300"
-                              : "bg-amber-50 text-amber-800 border-amber-300"
-                          }`}
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="Approved">Approved</option>
-                          <option value="Changes Requested">Changes</option>
-                          <option value="Not Required">N/A</option>
-                        </select>
-                      </td>
-
-                      {/* Designer */}
-                      <td className="p-3 border-r border-gray-200">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-gray-800 text-[11px] font-semibold border border-gray-300">
-                          {c.designer || "Unassigned"}
-                        </span>
-                      </td>
-
-                      {/* Drive Link */}
-                      <td className="p-3 border-r border-gray-200 text-center">
-                        {c.driveLink ? (
-                          <a
-                            href={c.driveLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-blue-700 hover:text-blue-900 font-bold hover:underline"
-                            title="Open Creative Drive Link"
-                          >
-                            <Icon name="external" size={13} />
-                            <span>Drive</span>
-                          </a>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-
-                      {/* Design Approval */}
-                      <td className="p-3 border-r border-gray-200 text-center">
-                        <select
-                          value={c.creativeApprovalStatus}
-                          onChange={(e) =>
-                            handleQuickUpdate(c.id, {
-                              creativeApprovalStatus: e.target.value as any,
-                              creativeApprovedOn: e.target.value === "Approved" ? new Date().toISOString().split("T")[0] : undefined,
-                            })
-                          }
-                          className={`h-7 px-2 rounded-lg border text-[10.5px] font-bold outline-none ${
-                            c.creativeApprovalStatus === "Approved"
-                              ? "bg-emerald-50 text-emerald-800 border-emerald-300"
-                              : c.creativeApprovalStatus === "Revision Needed"
-                              ? "bg-red-50 text-red-800 border-red-300"
-                              : "bg-amber-50 text-amber-800 border-amber-300"
-                          }`}
-                        >
-                          <option value="Pending">Pending</option>
-                          <option value="Approved">Approved</option>
-                          <option value="Revision Needed">Revision</option>
-                          <option value="Not Required">N/A</option>
-                        </select>
-                      </td>
-
-                      {/* Post Status */}
-                      <td className="p-3 border-r border-gray-200 text-center">
-                        <select
-                          value={c.postStatus}
-                          onChange={(e) =>
-                            handleQuickUpdate(c.id, {
-                              postStatus: e.target.value as any,
-                              publishedOn: e.target.value === "Live" || e.target.value === "Published" ? new Date().toISOString().split("T")[0] : undefined,
-                            })
-                          }
-                          className={`h-7 px-2 rounded-lg border text-[10.5px] font-bold outline-none ${
-                            c.postStatus === "Live" || c.postStatus === "Published"
-                              ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                              : c.postStatus === "Scheduled"
-                              ? "bg-blue-100 text-blue-800 border-blue-300"
-                              : "bg-gray-100 text-gray-800 border-gray-300"
-                          }`}
-                        >
-                          <option value="Draft">Draft</option>
-                          <option value="Scheduled">Scheduled</option>
-                          <option value="Published">Published</option>
-                          <option value="Live">Live</option>
-                          <option value="Paused">Paused</option>
-                          <option value="Completed">Completed</option>
-                        </select>
-                      </td>
-
-                      {/* Live URL */}
-                      <td className="p-3 border-r border-gray-200 text-center">
-                        {c.postUrl ? (
-                          <a
-                            href={c.postUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-900 font-bold hover:underline"
-                            title="Open Live Post"
-                          >
-                            <Icon name="external" size={13} />
-                            <span>Live</span>
-                          </a>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="p-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                        {/* Campaign & Concept */}
+                        <td className="py-3 px-3.5 max-w-xs">
                           <button
                             type="button"
                             onClick={() => openEditModal(c)}
-                            className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 text-gray-700 transition"
-                            title="Edit Campaign Details"
+                            className="font-bold text-brand-ink hover:text-brand-teal text-left truncate block max-w-xs"
+                            title={c.postConcept}
                           >
-                            <Icon name="edit" size={13} />
+                            {c.postConcept}
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(c.id)}
-                            className="p-1.5 rounded-lg border border-red-200 hover:bg-red-50 text-red-600 transition"
-                            title="Delete Campaign"
+                          {c.postContent && (
+                            <div className="text-[11px] text-[#7B8E89] truncate max-w-xs" title={c.postContent}>
+                              {c.postContent}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Platform */}
+                        <td className="py-3 px-3.5">
+                          {c.platforms.includes("Meta") ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold text-[11px] border border-blue-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                              {c.platforms}
+                            </span>
+                          ) : c.platforms.includes("Google") ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 font-semibold text-[11px] border border-red-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
+                              {c.platforms}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-[11px] border border-slate-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                              {c.platforms}
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Pillar & Format */}
+                        <td className="py-3 px-3.5">
+                          <div className="font-semibold text-gray-800 text-[11.5px]">{c.contentPillar}</div>
+                          <div className="text-[10.5px] text-[#7B8E89]">{c.format}</div>
+                        </td>
+
+                        {/* Audience */}
+                        <td className="py-3 px-3.5">
+                          <span
+                            className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
+                              c.audience === "B2B"
+                                ? "bg-purple-50 text-purple-700 border border-purple-200"
+                                : "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            }`}
                           >
-                            <Icon name="trash" size={13} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                            {c.audience}
+                          </span>
+                        </td>
+
+                        {/* Writer */}
+                        <td className="py-3 px-3.5">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F2F6F5] text-[#2C4A43] text-[11px] font-semibold">
+                            {c.writer}
+                          </span>
+                        </td>
+
+                        {/* Copy Review */}
+                        <td className="py-3 px-3.5 text-center">
+                          <select
+                            aria-label="Copy Approval Status"
+                            value={c.approvalStatus}
+                            onChange={(e) =>
+                              handleQuickUpdate(c.id, {
+                                approvalStatus: e.target.value as any,
+                                approvedOn: e.target.value === "Approved" ? new Date().toISOString().split("T")[0] : undefined,
+                              })
+                            }
+                            className={`h-7 px-2 rounded-lg border text-[10.5px] font-bold outline-none cursor-pointer ${
+                              c.approvalStatus === "Approved"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                                : c.approvalStatus === "Changes Requested"
+                                ? "bg-red-50 text-red-800 border-red-300"
+                                : "bg-amber-50 text-amber-800 border-amber-300"
+                            }`}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Changes Requested">Changes</option>
+                            <option value="Not Required">N/A</option>
+                          </select>
+                        </td>
+
+                        {/* Designer */}
+                        <td className="py-3 px-3.5">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F2F6F5] text-[#2C4A43] text-[11px] font-semibold">
+                            {c.designer || "Unassigned"}
+                          </span>
+                        </td>
+
+                        {/* Creative Review */}
+                        <td className="py-3 px-3.5 text-center">
+                          <select
+                            aria-label="Creative Approval Status"
+                            value={c.creativeApprovalStatus}
+                            onChange={(e) =>
+                              handleQuickUpdate(c.id, {
+                                creativeApprovalStatus: e.target.value as any,
+                                creativeApprovedOn: e.target.value === "Approved" ? new Date().toISOString().split("T")[0] : undefined,
+                              })
+                            }
+                            className={`h-7 px-2 rounded-lg border text-[10.5px] font-bold outline-none cursor-pointer ${
+                              c.creativeApprovalStatus === "Approved"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                                : c.creativeApprovalStatus === "Revision Needed"
+                                ? "bg-red-50 text-red-800 border-red-300"
+                                : "bg-amber-50 text-amber-800 border-amber-300"
+                            }`}
+                          >
+                            <option value="Pending">Pending</option>
+                            <option value="Approved">Approved</option>
+                            <option value="Revision Needed">Revision</option>
+                            <option value="Not Required">N/A</option>
+                          </select>
+                        </td>
+
+                        {/* Post Status */}
+                        <td className="py-3 px-3.5 text-center">
+                          <select
+                            aria-label="Publishing Status"
+                            value={c.postStatus}
+                            onChange={(e) =>
+                              handleQuickUpdate(c.id, {
+                                postStatus: e.target.value as any,
+                                publishedOn: e.target.value === "Live" || e.target.value === "Published" ? new Date().toISOString().split("T")[0] : undefined,
+                              })
+                            }
+                            className={`h-7 px-2 rounded-lg border text-[10.5px] font-bold outline-none cursor-pointer ${
+                              c.postStatus === "Live" || c.postStatus === "Published"
+                                ? "bg-emerald-50 text-emerald-800 border-emerald-300"
+                                : c.postStatus === "Scheduled"
+                                ? "bg-blue-50 text-blue-800 border-blue-300"
+                                : "bg-slate-50 text-slate-800 border-slate-300"
+                            }`}
+                          >
+                            <option value="Draft">Draft</option>
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Published">Published</option>
+                            <option value="Live">Live</option>
+                            <option value="Paused">Paused</option>
+                            <option value="Completed">Completed</option>
+                          </select>
+                        </td>
+
+                        {/* Assets & Links */}
+                        <td className="py-3 px-3.5 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {c.sheetLink ? (
+                              <a
+                                href={c.sheetLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition"
+                                title="Open Copy Sheet / Doc"
+                              >
+                                <Icon name="link" size={13} />
+                              </a>
+                            ) : (
+                              <span className="p-1.5 text-gray-300" title="No copy doc link">
+                                <Icon name="link" size={13} />
+                              </span>
+                            )}
+                            {c.driveLink ? (
+                              <a
+                                href={c.driveLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+                                title="Open Creative Drive Asset"
+                              >
+                                <Icon name="external" size={13} />
+                              </a>
+                            ) : (
+                              <span className="p-1.5 text-gray-300" title="No drive link">
+                                <Icon name="external" size={13} />
+                              </span>
+                            )}
+                            {c.postUrl && (
+                              <a
+                                href={c.postUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition"
+                                title="Open Live Post"
+                              >
+                                <Icon name="share" size={13} />
+                              </a>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3 px-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(c)}
+                              className="p-1.5 rounded-lg border border-[#E2ECE9] hover:bg-[#F2F6F5] text-[#41564F] transition"
+                              title="Edit Campaign Details"
+                            >
+                              <Icon name="edit" size={13} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(c.id)}
+                              className="p-1.5 rounded-lg border border-red-200 hover:bg-red-50 text-red-600 transition"
+                              title="Delete Campaign"
+                            >
+                              <Icon name="trash" size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -1007,102 +985,126 @@ function CampaignsContent() {
               </span>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-black/80 bg-white shadow-sm">
-              <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-[#FFFF00] border-b-2 border-black text-black font-black uppercase text-[11px] tracking-wider select-none">
-                  <tr>
-                    <th className="p-3 border-r border-black/30">Writer</th>
-                    <th className="p-3 border-r border-black/30">Sales Ad Content / Concept</th>
-                    <th className="p-3 border-r border-black/30 text-center">Sheet Link</th>
-                    <th className="p-3 border-r border-black/30">Assigned On</th>
-                    <th className="p-3 border-r border-black/30">Completed On</th>
-                    <th className="p-3 border-r border-black/30 text-center">Status</th>
-                    <th className="p-3 border-r border-black/30 text-center">Approval Status</th>
-                    <th className="p-3 border-r border-black/30">Approved On</th>
-                    <th className="p-3 border-r border-black/30">Platform</th>
-                    <th className="p-3 border-r border-black/30">Budget (₹)</th>
-                    <th className="p-3 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 font-medium">
-                  {filteredCampaigns.map((c) => (
-                    <tr key={c.id} className="hover:bg-amber-50/40 transition">
-                      <td className="p-3 border-r border-gray-200 font-semibold text-gray-800">
-                        {c.writer}
-                      </td>
-
-                      <td className="p-3 border-r border-gray-200">
-                        <div className="font-bold text-brand-ink">{c.postConcept}</div>
-                        <div className="text-[11px] text-[#7B8E89] max-w-sm truncate">{c.postContent || "—"}</div>
-                      </td>
-
-                      <td className="p-3 border-r border-gray-200 text-center">
-                        {c.sheetLink ? (
-                          <a
-                            href={c.sheetLink}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-emerald-700 font-bold hover:underline"
-                          >
-                            <Icon name="link" size={13} />
-                            <span>Link</span>
-                          </a>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-
-                      <td className="p-3 border-r border-gray-200 font-mono text-[11px]">
-                        {c.assignedOn || c.postDate}
-                      </td>
-
-                      <td className="p-3 border-r border-gray-200 font-mono text-[11px]">
-                        {c.completedOn || <span className="text-gray-400 italic">In progress</span>}
-                      </td>
-
-                      <td className="p-3 border-r border-gray-200 text-center">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
-                          {c.status}
-                        </span>
-                      </td>
-
-                      <td className="p-3 border-r border-gray-200 text-center">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold ${
-                            c.approvalStatus === "Approved"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-amber-100 text-amber-800"
-                          }`}
-                        >
-                          {c.approvalStatus}
-                        </span>
-                      </td>
-
-                      <td className="p-3 border-r border-gray-200 font-mono text-[11px]">
-                        {c.approvedOn || "—"}
-                      </td>
-
-                      <td className="p-3 border-r border-gray-200 font-bold">
-                        {c.platforms}
-                      </td>
-
-                      <td className="p-3 border-r border-gray-200 font-bold text-emerald-700">
-                        ₹{(c.budget || 0).toLocaleString("en-IN")}
-                      </td>
-
-                      <td className="p-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(c)}
-                          className="px-2.5 py-1 rounded-lg border border-gray-300 text-xs font-semibold hover:bg-gray-100 text-brand-ink"
-                        >
-                          Edit Ad
-                        </button>
-                      </td>
+            <div className="rounded-2xl border border-[#E2ECE9] bg-white overflow-hidden shadow-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[12.5px] whitespace-nowrap">
+                  <thead>
+                    <tr className="border-b border-[#EEF3F1] bg-[#F7FAF9] text-[11px] font-bold text-[#41564F] uppercase tracking-wider select-none">
+                      <th className="py-3 px-3.5">Writer</th>
+                      <th className="py-3 px-3.5">Sales Ad Content / Concept</th>
+                      <th className="py-3 px-3.5 text-center">Sheet Link</th>
+                      <th className="py-3 px-3.5">Assigned On</th>
+                      <th className="py-3 px-3.5">Completed On</th>
+                      <th className="py-3 px-3.5 text-center">Workflow</th>
+                      <th className="py-3 px-3.5 text-center">Approval</th>
+                      <th className="py-3 px-3.5">Approved On</th>
+                      <th className="py-3 px-3.5">Platform</th>
+                      <th className="py-3 px-3.5">Budget (₹)</th>
+                      <th className="py-3 px-3.5 text-right">Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-[#F0F4F3] font-medium text-brand-ink">
+                    {filteredCampaigns.map((c) => (
+                      <tr key={c.id} className="hover:bg-[#F9FBFB] transition">
+                        <td className="py-3 px-3.5 font-semibold text-gray-800">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F2F6F5] text-[#2C4A43] text-[11px] font-semibold">
+                            {c.writer}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-3.5 max-w-sm">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(c)}
+                            className="font-bold text-brand-ink hover:text-brand-teal text-left truncate block max-w-sm"
+                          >
+                            {c.postConcept}
+                          </button>
+                          <div className="text-[11px] text-[#7B8E89] max-w-sm truncate">{c.postContent || "—"}</div>
+                        </td>
+
+                        <td className="py-3 px-3.5 text-center">
+                          {c.sheetLink ? (
+                            <a
+                              href={c.sheetLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1.5 rounded-lg inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold transition text-xs"
+                            >
+                              <Icon name="link" size={13} />
+                              <span>Link</span>
+                            </a>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-3.5 font-mono text-[11px]">
+                          {c.assignedOn || c.postDate}
+                        </td>
+
+                        <td className="py-3 px-3.5 font-mono text-[11px]">
+                          {c.completedOn || <span className="text-gray-400 italic">In progress</span>}
+                        </td>
+
+                        <td className="py-3 px-3.5 text-center">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
+                            {c.status}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-3.5 text-center">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10.5px] font-bold ${
+                              c.approvalStatus === "Approved"
+                                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                                : "bg-amber-50 text-amber-800 border border-amber-200"
+                            }`}
+                          >
+                            {c.approvalStatus}
+                          </span>
+                        </td>
+
+                        <td className="py-3 px-3.5 font-mono text-[11px]">
+                          {c.approvedOn || "—"}
+                        </td>
+
+                        <td className="py-3 px-3.5">
+                          {c.platforms.includes("Meta") ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold text-[11px] border border-blue-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+                              {c.platforms}
+                            </span>
+                          ) : c.platforms.includes("Google") ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-50 text-red-700 font-semibold text-[11px] border border-red-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
+                              {c.platforms}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-[11px] border border-slate-200">
+                              {c.platforms}
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-3.5 font-bold text-emerald-700">
+                          ₹{(c.budget || 0).toLocaleString("en-IN")}
+                        </td>
+
+                        <td className="py-3 px-3.5 text-right">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(c)}
+                            className="px-2.5 py-1 rounded-lg border border-[#E2ECE9] hover:bg-[#F2F6F5] text-xs font-semibold text-brand-ink transition"
+                          >
+                            Edit Ad
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
