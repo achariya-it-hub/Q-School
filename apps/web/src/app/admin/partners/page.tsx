@@ -31,7 +31,7 @@ import {
 } from "@/lib/partners/types";
 
 function PartnersContent() {
-  const [tab, setTab] = useState<"partners" | "admissions">("partners");
+  const [tab, setTab] = useState<"partners" | "admissions" | "weekly_payouts">("partners");
   const [partners, setPartners] = useState<Partner[]>([]);
   const [admissions, setAdmissions] = useState<PartnerAdmission[]>([]);
   const [stats, setStats] = useState({
@@ -51,6 +51,25 @@ function PartnersContent() {
   const [concessionFilter, setConcessionFilter] = useState<string>("all");
   const [referralFilter, setReferralFilter] = useState<string>("all");
 
+  // Weekly Payout Report State
+  const [weekOffset, setWeekOffset] = useState<number>(0); // 0 = current week, -1 = last week
+  const [expandedPartners, setExpandedPartners] = useState<Record<string, boolean>>({});
+  const toggleExpand = (id: string) =>
+    setExpandedPartners((prev) => ({ ...prev, [id]: !prev[id] }));
+
+  // Edit Partner Bank / UPI Details Modal State
+  const [bankModalOpen, setBankModalOpen] = useState(false);
+  const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
+  const [editBankForm, setEditBankForm] = useState({
+    payoutMethod: "upi" as "upi" | "bank",
+    upiId: "",
+    accountName: "",
+    accountNumber: "",
+    ifscCode: "",
+    bankName: "",
+    branchName: "",
+  });
+
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [toast, show] = useToast();
@@ -68,8 +87,12 @@ function PartnersContent() {
     centreId: "all",
     notes: "",
     bankDetails: {
+      payoutMethod: "upi",
       upiId: "",
       accountName: "",
+      accountNumber: "",
+      ifscCode: "",
+      bankName: "",
     },
   });
 
@@ -346,6 +369,255 @@ function PartnersContent() {
     });
   }, [admissions, payoutFilter, referralFilter, concessionFilter, search]);
 
+  // Weekly Payout Calculations (Monday to Sunday)
+  const weekInfo = useMemo(() => {
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 = Sun, 1 = Mon...
+    const distanceToMonday = (currentDay + 6) % 7;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - distanceToMonday + weekOffset * 7);
+    monday.setHours(0, 0, 0, 0);
+
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+
+    const startStr = monday.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    const endStr = sunday.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+    return {
+      start: monday,
+      end: sunday,
+      label: `${startStr} – ${endStr}`,
+      isCurrentWeek: weekOffset === 0,
+    };
+  }, [weekOffset]);
+
+  // Aggregate weekly payouts grouped by partner
+  const weeklyPayouts = useMemo(() => {
+    const weekAdmissions = admissions.filter((a) => {
+      if (a.partnerCode === "DIRECT") return false;
+      const d = new Date(a.createdAt);
+      return d >= weekInfo.start && d <= weekInfo.end;
+    });
+
+    const groups: Record<
+      string,
+      {
+        partner: Partner | undefined;
+        admissions: PartnerAdmission[];
+        totalCommission: number;
+        totalFees: number;
+        pendingReferralsCount: number;
+        allPaid: boolean;
+        anyPaid: boolean;
+      }
+    > = {};
+
+    for (const a of weekAdmissions) {
+      const pid = a.partnerId || a.partnerCode;
+      if (!groups[pid]) {
+        const p = partners.find((x) => x.id === a.partnerId || x.code === a.partnerCode);
+        groups[pid] = {
+          partner: p,
+          admissions: [],
+          totalCommission: 0,
+          totalFees: 0,
+          pendingReferralsCount: 0,
+          allPaid: true,
+          anyPaid: false,
+        };
+      }
+      groups[pid].admissions.push(a);
+      groups[pid].totalCommission += a.commissionAmount;
+      groups[pid].totalFees += a.feeAmount;
+      if (a.referralApprovalStatus === "Pending") {
+        groups[pid].pendingReferralsCount += 1;
+      }
+      if (a.payoutStatus !== "Paid") {
+        groups[pid].allPaid = false;
+      } else {
+        groups[pid].anyPaid = true;
+      }
+    }
+
+    return Object.entries(groups).map(([partnerId, g]) => ({
+      partnerId,
+      ...g,
+    }));
+  }, [admissions, partners, weekInfo]);
+
+  const weeklyStats = useMemo(() => {
+    let totalDue = 0;
+    let totalPaid = 0;
+    let totalAdmissions = 0;
+
+    for (const wp of weeklyPayouts) {
+      for (const a of wp.admissions) {
+        totalAdmissions += 1;
+        if (a.payoutStatus === "Paid") {
+          totalPaid += a.commissionAmount;
+        } else {
+          totalDue += a.commissionAmount;
+        }
+      }
+    }
+
+    return {
+      totalDue,
+      totalPaid,
+      totalPending: totalDue,
+      totalAdmissions,
+      partnerCount: weeklyPayouts.length,
+    };
+  }, [weeklyPayouts]);
+
+  // Mark all admissions of a partner for this week as Paid
+  const handleDisbursePartnerWeek = async (item: (typeof weeklyPayouts)[number]) => {
+    const pendingAdmissions = item.admissions.filter((a) => a.payoutStatus !== "Paid");
+    if (!pendingAdmissions.length) {
+      show("All admissions for this partner this week are already marked as Paid.");
+      return;
+    }
+
+    const ref = `WEEK-PAY-${Date.now().toString(36).toUpperCase()}`;
+    setBusy(true);
+    try {
+      for (const adm of pendingAdmissions) {
+        await fetch("/api/admin/partners/payout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            admissionId: adm.id,
+            status: "Paid",
+            reference: ref,
+          }),
+        });
+      }
+      show(`Disbursed ₹${item.totalCommission.toLocaleString("en-IN")} to ${item.partner?.name || "Partner"} (Ref: ${ref})`);
+      loadData();
+    } catch {
+      show("Failed to update weekly payouts");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Export Weekly Payout CSV formatted for Bank Bulk Disbursal
+  const handleExportWeeklyPayoutCsv = () => {
+    if (!weeklyPayouts.length) {
+      show("No partner payouts recorded for this week");
+      return;
+    }
+
+    const headers = [
+      "Week Period",
+      "Partner Code",
+      "Partner Name",
+      "Category",
+      "Mobile Phone",
+      "Email",
+      "Payout Method",
+      "UPI ID",
+      "Account Holder Name",
+      "Bank Account Number",
+      "Bank IFSC Code",
+      "Bank Name",
+      "Branch",
+      "Weekly Admissions Count",
+      "Weekly Tuition Fee Generated (INR)",
+      "Weekly Commission / Bonus Due (INR)",
+      "Referral Approvals",
+      "Payout Status",
+    ];
+
+    const rows = weeklyPayouts.map((wp) => {
+      const p = wp.partner;
+      const b = p?.bankDetails;
+      const method = b?.payoutMethod || (b?.upiId ? "upi" : b?.accountNumber ? "bank" : "not_specified");
+      const approvalState =
+        wp.pendingReferralsCount > 0
+          ? `${wp.pendingReferralsCount} Pending Approval`
+          : "All Referrals Approved";
+      const status = wp.allPaid ? "Paid" : wp.anyPaid ? "Partially Paid" : "Pending Disbursal";
+
+      return [
+        `"${weekInfo.label}"`,
+        `"${p?.code || wp.partnerId}"`,
+        `"${p?.name || "Unknown"}"`,
+        `"${p?.category || "Marketer"}"`,
+        `"'${p?.phone || ""}"`,
+        `"${p?.email || ""}"`,
+        `"${method.toUpperCase()}"`,
+        `"${b?.upiId || ""}"`,
+        `"${b?.accountName || p?.name || ""}"`,
+        `"'${b?.accountNumber || ""}"`,
+        `"${b?.ifscCode || ""}"`,
+        `"${b?.bankName || ""}"`,
+        `"${b?.branchName || ""}"`,
+        wp.admissions.length,
+        wp.totalFees,
+        wp.totalCommission,
+        `"${approvalState}"`,
+        `"${status}"`,
+      ];
+    });
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const weekFileLabel = weekInfo.label.replace(/[^a-zA-Z0-9]/g, "-");
+    link.setAttribute("download", `qschool-weekly-payouts-${weekFileLabel}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    show("Weekly Payout Report CSV exported successfully!");
+  };
+
+  // Open Edit Bank Details Modal
+  const openEditBank = (partner: Partner) => {
+    setEditingPartner(partner);
+    setEditBankForm({
+      payoutMethod:
+        partner.bankDetails?.payoutMethod || (partner.bankDetails?.accountNumber ? "bank" : "upi"),
+      upiId: partner.bankDetails?.upiId || "",
+      accountName: partner.bankDetails?.accountName || partner.name,
+      accountNumber: partner.bankDetails?.accountNumber || "",
+      ifscCode: partner.bankDetails?.ifscCode || "",
+      bankName: partner.bankDetails?.bankName || "",
+      branchName: partner.bankDetails?.branchName || "",
+    });
+    setBankModalOpen(true);
+  };
+
+  // Save Partner Bank Details (Admin)
+  const handleSavePartnerBank = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPartner) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/partners/${editingPartner.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bankDetails: editBankForm,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update bank details");
+
+      show(`Payout details updated for ${editingPartner.name}`);
+      setBankModalOpen(false);
+      loadData();
+    } catch (err) {
+      show((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <AdminShell>
       <PageHeader
@@ -355,9 +627,15 @@ function PartnersContent() {
         <Btn variant="primary" icon="plus" onClick={() => setModalOpen(true)}>
           Create Partner Code
         </Btn>
-        <Btn variant="ghost" icon="download" onClick={handleExportCsv}>
-          Export CSV
-        </Btn>
+        {tab === "weekly_payouts" ? (
+          <Btn variant="ghost" icon="download" onClick={handleExportWeeklyPayoutCsv}>
+            Export Weekly Payout CSV
+          </Btn>
+        ) : (
+          <Btn variant="ghost" icon="download" onClick={handleExportCsv}>
+            Export CSV
+          </Btn>
+        )}
       </PageHeader>
 
       {/* KPI Figures */}
@@ -428,10 +706,48 @@ function PartnersContent() {
               options={[
                 { value: "partners", label: `Partners Directory (${partners.length})` },
                 { value: "admissions", label: `Admissions Ledger (${admissions.length})` },
+                { value: "weekly_payouts", label: `Weekly Payouts (${weeklyPayouts.length})` },
               ]}
             />
 
-            {tab === "partners" ? (
+            {tab === "weekly_payouts" ? (
+              <div className="flex items-center gap-1 bg-[#F7FAF9] border border-[#E2ECE9] p-1 rounded-xl shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => setWeekOffset((o) => o - 1)}
+                  className="px-2.5 py-1 text-xs font-bold text-[#41564F] hover:bg-white hover:text-black rounded-lg transition"
+                  title="Previous Week"
+                >
+                  ← Prev Week
+                </button>
+                <div className="px-2.5 py-0.5 text-xs font-bold text-brand-ink flex items-center gap-1.5 border-x border-[#E2ECE9]">
+                  <Icon name="calendar" size={13} />
+                  <span>{weekInfo.label}</span>
+                  {weekInfo.isCurrentWeek && (
+                    <span className="text-[10px] bg-brand-deep text-white px-1.5 py-0.2 rounded-full font-bold">
+                      Current
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWeekOffset((o) => o + 1)}
+                  className="px-2.5 py-1 text-xs font-bold text-[#41564F] hover:bg-white hover:text-black rounded-lg transition"
+                  title="Next Week"
+                >
+                  Next Week →
+                </button>
+                {weekOffset !== 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setWeekOffset(0)}
+                    className="ml-1 px-2 py-0.5 text-[11px] font-bold text-brand-teal hover:underline"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            ) : tab === "partners" ? (
               <select
                 aria-label="Filter by Category"
                 value={categoryFilter}
@@ -552,6 +868,7 @@ function PartnersContent() {
                   <th className="p-3 text-center">Admissions</th>
                   <th className="p-3 text-right">Revenue (₹)</th>
                   <th className="p-3 text-right">Pending (₹)</th>
+                  <th className="p-3">Payout Details (Bank / UPI)</th>
                   <th className="p-3 text-center">Status</th>
                   <th className="p-3 text-right">Actions</th>
                 </tr>
@@ -559,7 +876,7 @@ function PartnersContent() {
               <tbody className="divide-y divide-[#EEF3F1]">
                 {filteredPartners.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="p-8 text-center text-[#7B8E89]">
+                    <td colSpan={10} className="p-8 text-center text-[#7B8E89]">
                       No partners matching the criteria.
                     </td>
                   </tr>
@@ -613,6 +930,28 @@ function PartnersContent() {
                           ₹{p.stats.pendingCommission.toLocaleString("en-IN")}
                         </td>
 
+                        <td className="p-3">
+                          {p.bankDetails?.payoutMethod === "bank" || p.bankDetails?.accountNumber ? (
+                            <div className="text-xs">
+                              <div className="font-semibold text-brand-ink">{p.bankDetails.bankName || "Bank Account"}</div>
+                              <div className="font-mono text-[11px] text-[#41564F]">A/C: {p.bankDetails.accountNumber}</div>
+                              <div className="font-mono text-[10px] text-[#7B8E89]">IFSC: {p.bankDetails.ifscCode}</div>
+                            </div>
+                          ) : p.bankDetails?.upiId ? (
+                            <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200">
+                              <span className="text-[9.5px] font-extrabold uppercase text-emerald-800 bg-emerald-200 px-1 rounded">UPI</span>
+                              <span className="font-mono text-xs font-bold text-emerald-950">{p.bankDetails.upiId}</span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => openEditBank(p)}
+                              className="inline-flex items-center gap-1 text-[10.5px] text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-md font-semibold transition"
+                            >
+                              + Add Bank / UPI
+                            </button>
+                          )}
+                        </td>
+
                         <td className="p-3 text-center">
                           <StatusBadge tone={statusTone}>
                             {p.status === "active" ? "Active" : "Inactive"}
@@ -621,6 +960,14 @@ function PartnersContent() {
 
                         <td className="p-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => openEditBank(p)}
+                              className="p-1.5 rounded-lg border border-[#E2ECE9] hover:bg-[#E3F4F0] text-[#41564F] transition"
+                              title="Update Payout Bank / UPI Details"
+                            >
+                              <Icon name="card" size={14} />
+                            </button>
+
                             <button
                               onClick={() => copyPartnerPortalLink(p.code)}
                               className="p-1.5 rounded-lg border border-[#E2ECE9] hover:bg-[#E3F4F0] text-brand-teal transition"
@@ -892,6 +1239,331 @@ function PartnersContent() {
             </table>
           </div>
         )}
+
+        {/* TAB 3: WEEKLY PAYOUTS REPORT */}
+        {tab === "weekly_payouts" && (
+          <div className="space-y-4">
+            {/* Weekly KPI Highlights */}
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <div className="rounded-xl border border-[#E2ECE9] bg-[#F7FAF9] p-3.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#7B8E89]">
+                  Total Commission Due
+                </span>
+                <div className="text-xl font-extrabold text-brand-ink mt-1">
+                  ₹{weeklyStats.totalDue.toLocaleString("en-IN")}
+                </div>
+                <div className="text-[11px] text-[#7B8E89] mt-0.5">
+                  {weeklyStats.totalAdmissions} admissions this week
+                </div>
+              </div>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+                  Paid / Disbursed
+                </span>
+                <div className="text-xl font-extrabold text-emerald-700 mt-1">
+                  ₹{weeklyStats.totalPaid.toLocaleString("en-IN")}
+                </div>
+                <div className="text-[11px] text-emerald-800 mt-0.5">Settled to partners</div>
+              </div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
+                  Pending Disbursal
+                </span>
+                <div className="text-xl font-extrabold text-amber-700 mt-1">
+                  ₹{weeklyStats.totalPending.toLocaleString("en-IN")}
+                </div>
+                <div className="text-[11px] text-amber-800 mt-0.5">Awaiting transfer</div>
+              </div>
+              <div className="rounded-xl border border-[#E2ECE9] bg-[#F7FAF9] p-3.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#7B8E89]">
+                  Promoters Due
+                </span>
+                <div className="text-xl font-extrabold text-brand-deep mt-1">
+                  {weeklyStats.partnerCount}
+                </div>
+                <div className="text-[11px] text-[#7B8E89] mt-0.5">Settlement recipients</div>
+              </div>
+            </div>
+
+            {/* Policy & Settlement Notice */}
+            <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-3 flex items-start gap-2.5 text-xs text-blue-950">
+              <span className="text-base">ℹ️</span>
+              <div className="leading-relaxed">
+                <strong className="font-bold">Weekly Settlement Cycle ({weekInfo.label}):</strong> Aggregates
+                all partner admissions and organic referrals recorded this week. Referrals by{" "}
+                <strong>Trainers or Centre Heads (HOC)</strong> receive flat <strong>Rs. 2,000</strong> organic lead bonus upon
+                Admin approval. Use <em>Export Weekly Payout CSV</em> for bulk bank transfer.
+              </div>
+            </div>
+
+            {/* Weekly Payouts Table */}
+            {weeklyPayouts.length === 0 ? (
+              <div className="p-12 text-center text-[#7B8E89] border border-dashed border-[#D5E3DF] rounded-2xl">
+                <div className="text-2xl mb-1">📅</div>
+                <div className="text-sm font-bold text-brand-ink">No Referral Admissions for This Week</div>
+                <div className="text-xs text-[#7B8E89] mt-1 max-w-md mx-auto">
+                  There were no referral admissions recorded between {weekInfo.label}. Use the week navigation
+                  buttons above to view past or upcoming settlement cycles.
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[13px]">
+                  <thead className="bg-[#F7FAF9] border-b border-[#EEF3F1] text-[11px] font-semibold text-[#7B8E89] uppercase tracking-wider">
+                    <tr>
+                      <th className="p-3">Partner / Referrer</th>
+                      <th className="p-3">Category</th>
+                      <th className="p-3 text-center">Week Admissions</th>
+                      <th className="p-3 text-right">Gross Fees (₹)</th>
+                      <th className="p-3 text-right">Payout Due (₹)</th>
+                      <th className="p-3">Payout Destination (Bank / UPI)</th>
+                      <th className="p-3 text-center">Approvals &amp; Status</th>
+                      <th className="p-3 text-right">Disburse Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#EEF3F1]">
+                    {weeklyPayouts.map((wp) => {
+                      const isExpanded = !!expandedPartners[wp.partnerId];
+                      const p = wp.partner;
+                      const isReadyToDisburse = wp.pendingReferralsCount === 0 && !wp.allPaid;
+
+                      return (
+                        <tr key={wp.partnerId} className="hover:bg-[#F9FBFA] transition">
+                          <td className="p-3 align-top">
+                            <div className="font-bold text-brand-ink">{p?.name || "Partner"}</div>
+                            <div className="font-mono text-xs font-semibold text-brand-deep">
+                              {p?.code || wp.partnerId}
+                            </div>
+                            <div className="text-[11px] text-[#7B8E89]">{p?.phone}</div>
+                          </td>
+
+                          <td className="p-3 align-top">
+                            <span className="inline-block text-xs font-semibold text-[#41564F]">
+                              {p?.category || "Promoter"}
+                            </span>
+                            {p?.category?.includes("Trainer") && (
+                              <div className="text-[10px] text-amber-800 font-bold mt-0.5">
+                                ★ Rs. 2,000 / Referral
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="p-3 align-top text-center">
+                            <button
+                              type="button"
+                              onClick={() => toggleExpand(wp.partnerId)}
+                              className="inline-flex items-center gap-1 font-bold text-brand-deep hover:underline text-xs"
+                            >
+                              <span>
+                                {wp.admissions.length} admission{wp.admissions.length > 1 ? "s" : ""}
+                              </span>
+                              <span className="text-[10px]">{isExpanded ? "▲" : "▼"}</span>
+                            </button>
+                            <div className="text-[10px] text-[#7B8E89]">Click to view students</div>
+
+                            {/* Collapsible Admissions Drawer */}
+                            {isExpanded && (
+                              <div className="mt-2 text-left bg-white border border-[#E2ECE9] rounded-xl p-2.5 shadow-sm max-w-sm">
+                                <div className="text-[10px] font-bold text-[#7B8E89] uppercase mb-1.5 pb-1 border-b border-[#EEF3F1]">
+                                  Admissions this week:
+                                </div>
+                                <div className="space-y-1.5">
+                                  {wp.admissions.map((adm) => (
+                                    <div key={adm.id} className="text-xs flex items-center justify-between gap-2">
+                                      <div>
+                                        <div className="font-semibold text-brand-ink">{adm.studentName}</div>
+                                        <div className="font-mono text-[10px] text-[#7B8E89]">{adm.studentId} • {adm.centreName}</div>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="font-bold text-emerald-700">+₹{adm.commissionAmount.toLocaleString("en-IN")}</div>
+                                        <div className="text-[9.5px]">
+                                          {adm.referralApprovalStatus === "Approved" ? (
+                                            <span className="text-emerald-700 font-semibold">✓ Approved</span>
+                                          ) : (
+                                            <span className="text-amber-700 font-semibold">⏳ Pending</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="p-3 align-top text-right font-semibold text-brand-ink">
+                            ₹{wp.totalFees.toLocaleString("en-IN")}
+                          </td>
+
+                          <td className="p-3 align-top text-right">
+                            <div className="text-base font-extrabold text-emerald-700">
+                              ₹{wp.totalCommission.toLocaleString("en-IN")}
+                            </div>
+                            <div className="text-[10px] text-[#7B8E89]">
+                              {p?.commissionType === "flat" ? "Flat bonus" : `${p?.commissionValue || ""}% rate`}
+                            </div>
+                          </td>
+
+                          <td className="p-3 align-top">
+                            {p?.bankDetails?.payoutMethod === "bank" || p?.bankDetails?.accountNumber ? (
+                              <div className="text-xs space-y-0.5">
+                                <div className="font-bold text-brand-ink flex items-center justify-between">
+                                  <span>{p.bankDetails.bankName || "Bank Account"}</span>
+                                  {p && (
+                                    <button
+                                      type="button"
+                                      onClick={() => openEditBank(p)}
+                                      className="text-[10px] text-brand-teal hover:underline ml-1"
+                                      title="Edit Bank Details"
+                                    >
+                                      Edit
+                                    </button>
+                                  )}
+                                </div>
+                                <div className="font-mono text-[11px] text-[#41564F] flex items-center gap-1">
+                                  <span>A/C: {p.bankDetails.accountNumber}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(p.bankDetails?.accountNumber || "");
+                                      show("Copied account number!");
+                                    }}
+                                    className="text-[10px] text-[#7B8E89] hover:text-black"
+                                    title="Copy A/C No"
+                                  >
+                                    📋
+                                  </button>
+                                </div>
+                                <div className="font-mono text-[10px] text-[#7B8E89]">
+                                  IFSC: {p.bankDetails.ifscCode}
+                                  {p.bankDetails.accountName && ` • ${p.bankDetails.accountName}`}
+                                </div>
+                              </div>
+                            ) : p?.bankDetails?.upiId ? (
+                              <div className="space-y-1">
+                                <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200">
+                                  <span className="text-[9px] font-black uppercase text-emerald-800 bg-emerald-200 px-1 rounded">
+                                    UPI
+                                  </span>
+                                  <span className="font-mono text-xs font-bold text-emerald-950">
+                                    {p.bankDetails.upiId}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(p.bankDetails?.upiId || "");
+                                      show("Copied UPI ID!");
+                                    }}
+                                    className="text-[10px] text-emerald-800 hover:text-black ml-0.5"
+                                    title="Copy UPI ID"
+                                  >
+                                    📋
+                                  </button>
+                                </div>
+                                {p && (
+                                  <div>
+                                    <button
+                                      type="button"
+                                      onClick={() => openEditBank(p)}
+                                      className="text-[10px] text-brand-teal hover:underline"
+                                    >
+                                      Edit Details
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="space-y-1">
+                                <span className="inline-flex items-center gap-1 text-[10.5px] text-red-800 bg-red-50 border border-red-200 px-2 py-0.5 rounded font-semibold">
+                                  ⚠️ Missing Bank / UPI
+                                </span>
+                                {p && (
+                                  <div>
+                                    <button
+                                      type="button"
+                                      onClick={() => openEditBank(p)}
+                                      className="text-[10.5px] text-brand-teal font-bold hover:underline"
+                                    >
+                                      + Add Details Now
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="p-3 align-top text-center">
+                            <div className="flex flex-col items-center gap-1">
+                              {wp.pendingReferralsCount > 0 ? (
+                                <span className="text-[10px] font-bold text-amber-900 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">
+                                  ⏳ {wp.pendingReferralsCount} Pending Approval
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                  ✓ All Approved
+                                </span>
+                              )}
+
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  wp.allPaid
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : wp.anyPaid
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-amber-100 text-amber-800"
+                                }`}
+                              >
+                                {wp.allPaid ? "Paid" : wp.anyPaid ? "Partially Paid" : "Pending Disbursal"}
+                              </span>
+                            </div>
+                          </td>
+
+                          <td className="p-3 align-top text-right">
+                            <div className="flex flex-col items-end gap-1.5">
+                              {wp.allPaid ? (
+                                <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 text-xs font-bold">
+                                  ✓ Disbursed
+                                </span>
+                              ) : isReadyToDisburse ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDisbursePartnerWeek(wp)}
+                                  disabled={busy}
+                                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition"
+                                  title="Mark all admissions for this week as Paid and record reference"
+                                >
+                                  {busy ? "Disbursing…" : "Disburse / Mark Paid"}
+                                </button>
+                              ) : (
+                                <span
+                                  className="text-[10.5px] text-amber-900 bg-amber-50 border border-amber-200 px-2 py-1 rounded text-right font-medium"
+                                  title="Admin approval required on all referrals before disbursal"
+                                >
+                                  Requires Referral Sign-off
+                                </span>
+                              )}
+
+                              {p && (
+                                <button
+                                  type="button"
+                                  onClick={() => openEditBank(p)}
+                                  className="text-[11px] text-[#41564F] hover:text-black hover:underline flex items-center gap-1"
+                                >
+                                  <Icon name="card" size={12} />
+                                  <span>Edit Bank</span>
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
 
       {/* CREATE PARTNER MODAL */}
@@ -1059,6 +1731,121 @@ function PartnersContent() {
               </Btn>
               <Btn variant="primary" type="submit" disabled={busy}>
                 {busy ? "Creating…" : "Save & Generate Code"}
+              </Btn>
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* EDIT PARTNER BANK / UPI DETAILS MODAL */}
+      <Modal
+        open={bankModalOpen && !!editingPartner}
+        onClose={() => setBankModalOpen(false)}
+        title={`Payout Details — ${editingPartner?.name || ""} [${editingPartner?.code || ""}]`}
+      >
+        <form onSubmit={handleSavePartnerBank} className="space-y-4 pt-1">
+          <div className="bg-[#F7FAF9] p-3 rounded-xl border border-[#E2ECE9] flex flex-wrap items-center gap-4">
+            <span className="text-xs font-bold text-[#41564F]">Preferred Payout Method:</span>
+            <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer">
+              <input
+                type="radio"
+                name="adminPayoutMethod"
+                value="upi"
+                checked={editBankForm.payoutMethod === "upi"}
+                onChange={() => setEditBankForm({ ...editBankForm, payoutMethod: "upi" })}
+              />
+              <span>UPI ID (Instant Transfer)</span>
+            </label>
+            <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer">
+              <input
+                type="radio"
+                name="adminPayoutMethod"
+                value="bank"
+                checked={editBankForm.payoutMethod === "bank"}
+                onChange={() => setEditBankForm({ ...editBankForm, payoutMethod: "bank" })}
+              />
+              <span>Bank Account (NEFT / IMPS)</span>
+            </label>
+          </div>
+
+          {editBankForm.payoutMethod === "upi" ? (
+            <Field label="UPI ID (VPA) *">
+              <input
+                className={inputCls}
+                placeholder="e.g. 9876543210@paytm or name@okaxis"
+                value={editBankForm.upiId}
+                onChange={(e) => setEditBankForm({ ...editBankForm, upiId: e.target.value.trim() })}
+                required={editBankForm.payoutMethod === "upi"}
+              />
+            </Field>
+          ) : (
+            <div className="space-y-3">
+              <Field label="Account Holder Name *">
+                <input
+                  className={inputCls}
+                  placeholder="e.g. Ramesh Kumar"
+                  value={editBankForm.accountName}
+                  onChange={(e) => setEditBankForm({ ...editBankForm, accountName: e.target.value })}
+                  required={editBankForm.payoutMethod === "bank"}
+                />
+              </Field>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field label="Bank Account Number *">
+                  <input
+                    className={inputCls}
+                    placeholder="e.g. 5010023456789"
+                    value={editBankForm.accountNumber}
+                    onChange={(e) => setEditBankForm({ ...editBankForm, accountNumber: e.target.value.trim() })}
+                    required={editBankForm.payoutMethod === "bank"}
+                  />
+                </Field>
+
+                <Field label="Bank IFSC Code *">
+                  <input
+                    className={inputCls}
+                    placeholder="e.g. HDFC0001234"
+                    value={editBankForm.ifscCode}
+                    onChange={(e) =>
+                      setEditBankForm({ ...editBankForm, ifscCode: e.target.value.trim().toUpperCase() })
+                    }
+                    required={editBankForm.payoutMethod === "bank"}
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field label="Bank Name">
+                  <input
+                    className={inputCls}
+                    placeholder="e.g. HDFC Bank, SBI, ICICI"
+                    value={editBankForm.bankName}
+                    onChange={(e) => setEditBankForm({ ...editBankForm, bankName: e.target.value })}
+                  />
+                </Field>
+
+                <Field label="Branch Name">
+                  <input
+                    className={inputCls}
+                    placeholder="e.g. Puducherry Main Branch"
+                    value={editBankForm.branchName}
+                    onChange={(e) => setEditBankForm({ ...editBankForm, branchName: e.target.value })}
+                  />
+                </Field>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between border-t border-[#EEF3F1] pt-3 mt-4">
+            <span className="text-[11px] text-[#7B8E89]">
+              Used directly for weekly payouts and NEFT/UPI settlement exports.
+            </span>
+            <div className="flex items-center gap-2">
+              <Btn variant="ghost" onClick={() => setBankModalOpen(false)} disabled={busy}>
+                Cancel
+              </Btn>
+              <Btn variant="primary" type="submit" disabled={busy}>
+                {busy ? "Saving…" : "Save Payout Details"}
               </Btn>
             </div>
           </div>

@@ -79,11 +79,13 @@ export const CONCESSION_RULES: Record<ConcessionType, ConcessionRule> = {
 };
 
 export interface PartnerBankDetails {
+  payoutMethod?: "upi" | "bank";
   upiId?: string;
   accountName?: string;
   accountNumber?: string;
   ifscCode?: string;
   bankName?: string;
+  branchName?: string;
 }
 
 export interface PartnerStats {

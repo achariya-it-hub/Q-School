@@ -51,10 +51,13 @@ function PartnerContent() {
 
   // Bank details form state
   const [bankForm, setBankForm] = useState({
+    payoutMethod: "upi" as "upi" | "bank",
     upiId: "",
     accountName: "",
     accountNumber: "",
     ifscCode: "",
+    bankName: "",
+    branchName: "",
   });
   const [savingBank, setSavingBank] = useState(false);
 
@@ -89,10 +92,15 @@ function PartnerContent() {
       }
       if (data.partner.bankDetails) {
         setBankForm({
+          payoutMethod:
+            data.partner.bankDetails.payoutMethod ||
+            (data.partner.bankDetails.accountNumber ? "bank" : "upi"),
           upiId: data.partner.bankDetails.upiId || "",
-          accountName: data.partner.bankDetails.accountName || "",
+          accountName: data.partner.bankDetails.accountName || data.partner.name || "",
           accountNumber: data.partner.bankDetails.accountNumber || "",
           ifscCode: data.partner.bankDetails.ifscCode || "",
+          bankName: data.partner.bankDetails.bankName || "",
+          branchName: data.partner.bankDetails.branchName || "",
         });
       }
       showToast(`Welcome back, ${data.partner.name}!`);
@@ -571,6 +579,30 @@ function PartnerContent() {
                 </div>
               </div>
             </div>
+
+            {/* MISSING PAYOUT ACCOUNT ALERT BANNER */}
+            {!partner.bankDetails?.upiId && !partner.bankDetails?.accountNumber && (
+              <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">⚠️</span>
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-amber-950">
+                      Bank or UPI Details Needed for Payouts
+                    </h4>
+                    <p className="text-xs text-amber-900 mt-0.5">
+                      You haven&apos;t added your UPI ID or Bank account yet. Provide your payout details so finance can disburse your earned commissions and Rs. 2,000 referral bonuses.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("payouts")}
+                  className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm whitespace-nowrap self-start sm:self-auto transition"
+                >
+                  Configure Payout Account →
+                </button>
+              </div>
+            )}
 
             {/* Share Referral Link Card */}
             <div className="rounded-2xl border border-[#C5E9DE] bg-gradient-to-br from-[#EAF7EA] via-[#F4FAF7] to-white p-6 shadow-sm">
@@ -1247,62 +1279,171 @@ function PartnerContent() {
         {/* TAB 4: EARNINGS & BANK INFO */}
         {activeTab === "payouts" && (
           <div className="max-w-2xl mx-auto space-y-6">
+            {/* Active Payout Account Card */}
+            {partner.bankDetails?.upiId || partner.bankDetails?.accountNumber ? (
+              <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50/60 p-5 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="h-8 w-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">
+                      ✓
+                    </span>
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-950">
+                        Active Payout Destination
+                      </h4>
+                      <div className="text-sm font-extrabold text-brand-ink mt-0.5">
+                        {partner.bankDetails?.payoutMethod === "bank" || partner.bankDetails?.accountNumber
+                          ? `${partner.bankDetails?.bankName || "Bank"} — A/C ${partner.bankDetails?.accountNumber}`
+                          : `UPI ID: ${partner.bankDetails?.upiId}`}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-full">
+                    Ready for Weekly Payout
+                  </span>
+                </div>
+              </div>
+            ) : null}
+
             <div className="rounded-2xl border border-[#E2ECE9] bg-white p-6 shadow-sm">
               <h3 className="text-lg font-bold text-brand-ink mb-1">Commission Payout Account</h3>
-              <p className="text-xs text-[#7B8E89] mb-4">
-                Update your UPI or Bank details so finance can disburse your earned commissions directly.
+              <p className="text-xs text-[#7B8E89] mb-5">
+                Configure your UPI or Bank details so finance can disburse your weekly referral commissions and Rs. 2,000 bonuses directly.
               </p>
 
               <form onSubmit={handleSaveBank} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[#41564F] mb-1">
-                    UPI ID (Instant Transfer)
+                {/* Method Switcher */}
+                <div className="bg-[#F7FAF9] p-3 rounded-xl border border-[#E2ECE9] flex flex-wrap items-center gap-4">
+                  <span className="text-xs font-bold text-[#41564F]">Preferred Payout Method:</span>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer">
+                    <input
+                      type="radio"
+                      name="payoutMethod"
+                      value="upi"
+                      checked={bankForm.payoutMethod === "upi"}
+                      onChange={() => setBankForm({ ...bankForm, payoutMethod: "upi" })}
+                    />
+                    <span>UPI ID (Instant Transfer)</span>
                   </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. yourname@okaxis / 9876543210@paytm"
-                    value={bankForm.upiId}
-                    onChange={(e) => setBankForm({ ...bankForm, upiId: e.target.value })}
-                    className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm font-mono focus:border-brand-teal focus:bg-white focus:outline-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  <div>
-                    <label className="block text-xs font-semibold text-[#41564F] mb-1">
-                      Account Holder Name
-                    </label>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold cursor-pointer">
                     <input
-                      type="text"
-                      placeholder="e.g. Bala Murugan"
-                      value={bankForm.accountName}
-                      onChange={(e) => setBankForm({ ...bankForm, accountName: e.target.value })}
-                      className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm focus:border-brand-teal focus:bg-white focus:outline-none"
+                      type="radio"
+                      name="payoutMethod"
+                      value="bank"
+                      checked={bankForm.payoutMethod === "bank"}
+                      onChange={() => setBankForm({ ...bankForm, payoutMethod: "bank" })}
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-[#41564F] mb-1">Bank Account Number</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 5010023456789"
-                      value={bankForm.accountNumber}
-                      onChange={(e) => setBankForm({ ...bankForm, accountNumber: e.target.value })}
-                      className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm font-mono focus:border-brand-teal focus:bg-white focus:outline-none"
-                    />
-                  </div>
+                    <span>Direct Bank Account (NEFT / IMPS)</span>
+                  </label>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-[#41564F] mb-1">IFSC Code</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. HDFC0001234"
-                    value={bankForm.ifscCode}
-                    onChange={(e) => setBankForm({ ...bankForm, ifscCode: e.target.value.toUpperCase() })}
-                    className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm font-mono uppercase focus:border-brand-teal focus:bg-white focus:outline-none"
-                  />
-                </div>
+                {bankForm.payoutMethod === "upi" ? (
+                  <div className="space-y-3.5">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                        UPI ID (VPA) *
+                      </label>
+                      <input
+                        type="text"
+                        required={bankForm.payoutMethod === "upi"}
+                        placeholder="e.g. 9876543210@paytm or yourname@okaxis"
+                        value={bankForm.upiId}
+                        onChange={(e) => setBankForm({ ...bankForm, upiId: e.target.value.trim() })}
+                        className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm font-mono focus:border-brand-teal focus:bg-white focus:outline-none"
+                      />
+                      <p className="text-[11px] text-[#7B8E89] mt-1">
+                        Supports Google Pay, PhonePe, Paytm, BHIM and any bank UPI ID.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                        Account Holder / Name as per UPI
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Bala Murugan"
+                        value={bankForm.accountName}
+                        onChange={(e) => setBankForm({ ...bankForm, accountName: e.target.value })}
+                        className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm focus:border-brand-teal focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3.5">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                        Account Holder Name *
+                      </label>
+                      <input
+                        type="text"
+                        required={bankForm.payoutMethod === "bank"}
+                        placeholder="e.g. Bala Murugan"
+                        value={bankForm.accountName}
+                        onChange={(e) => setBankForm({ ...bankForm, accountName: e.target.value })}
+                        className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm focus:border-brand-teal focus:bg-white focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                          Bank Account Number *
+                        </label>
+                        <input
+                          type="text"
+                          required={bankForm.payoutMethod === "bank"}
+                          placeholder="e.g. 5010023456789"
+                          value={bankForm.accountNumber}
+                          onChange={(e) => setBankForm({ ...bankForm, accountNumber: e.target.value.trim() })}
+                          className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm font-mono focus:border-brand-teal focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                          IFSC Code *
+                        </label>
+                        <input
+                          type="text"
+                          required={bankForm.payoutMethod === "bank"}
+                          placeholder="e.g. HDFC0001234"
+                          value={bankForm.ifscCode}
+                          onChange={(e) => setBankForm({ ...bankForm, ifscCode: e.target.value.trim().toUpperCase() })}
+                          className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm font-mono uppercase focus:border-brand-teal focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div>
+                        <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                          Bank Name
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. HDFC Bank, State Bank of India"
+                          value={bankForm.bankName}
+                          onChange={(e) => setBankForm({ ...bankForm, bankName: e.target.value })}
+                          className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm focus:border-brand-teal focus:bg-white focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                          Branch Name
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Puducherry Main Branch"
+                          value={bankForm.branchName}
+                          onChange={(e) => setBankForm({ ...bankForm, branchName: e.target.value })}
+                          className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm focus:border-brand-teal focus:bg-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="pt-2">
                   <button
@@ -1310,19 +1451,25 @@ function PartnerContent() {
                     disabled={savingBank}
                     className="h-11 px-6 rounded-xl bg-brand-deep text-white font-semibold text-xs shadow hover:bg-[#04332D] transition flex items-center justify-center gap-2"
                   >
-                    {savingBank ? "Saving…" : "Save Payout Details"}
+                    {savingBank ? "Saving Details…" : "Save Payout Destination"}
                   </button>
                 </div>
               </form>
             </div>
 
-            {/* Payout Summary Card */}
+            {/* Payout Summary & Guidelines Card */}
             <div className="rounded-2xl border border-[#E2ECE9] bg-white p-6 shadow-sm space-y-3">
-              <h4 className="text-sm font-bold text-brand-ink">Payout Guidelines</h4>
-              <ul className="text-xs text-[#41564F] space-y-2 list-disc pl-4 leading-relaxed">
-                <li>Commissions are calculated as soon as a student admission is entered.</li>
-                <li>When the centre verifies and confirms student admission fees, payouts are marked as <strong>Approved</strong>.</li>
-                <li>Payouts are disbursed weekly every Friday via UPI / NEFT to the bank account listed above.</li>
+              <h4 className="text-sm font-bold text-brand-ink">Weekly Payout Guidelines</h4>
+              <ul className="text-xs text-[#41564F] space-y-2.5 list-disc pl-4 leading-relaxed">
+                <li>
+                  <strong>Weekly Settlement Cycle:</strong> Commissions and referral bonuses are consolidated every week (Monday to Sunday) and disbursed every Friday.
+                </li>
+                <li>
+                  <strong>Trainer / Centre Head (HOC) Referral Policy:</strong> Flat <strong>Rs. 2,000</strong> organic referral bonus is credited per enrolled student upon Admin approval.
+                </li>
+                <li>
+                  <strong>Direct Disbursal:</strong> Funds are sent directly via UPI or NEFT with a banking reference code.
+                </li>
               </ul>
             </div>
           </div>
