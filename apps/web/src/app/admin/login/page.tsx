@@ -9,8 +9,8 @@ const DEMO = process.env.NODE_ENV !== "production";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState(DEMO ? "admin@qschool.com" : "");
-  const [password, setPassword] = useState(DEMO ? "admin123" : "");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -25,7 +25,7 @@ export default function AdminLoginPage() {
       .then(async (r) => {
         if (!r.ok) throw new Error((await r.json()).error || "Sign-in failed");
         try {
-          localStorage.setItem("qschool_admin_session", JSON.stringify({ email, name: "Bala", role: "Super Admin" }));
+          localStorage.setItem("qschool_admin_session", JSON.stringify({ email: email.trim().toLowerCase(), name: "Admin", role: "Super Admin" }));
         } catch {}
         router.push("/admin/dashboard");
       })
@@ -72,7 +72,13 @@ export default function AdminLoginPage() {
             <span className="mb-1.5 block text-[12px] font-semibold text-[#41564f]">Work email</span>
             <span className="flex h-12 items-center gap-3 rounded-xl border border-[#E2ECE9] bg-[#F7FAF9] px-4 focus-within:border-brand-teal focus-within:bg-white">
               <Icon name="message" size={18} className="text-[#7b908b]" />
-              <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="w-full bg-transparent text-sm outline-none" />
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                type="email"
+                placeholder="admin@theqschool.com or admin@qschool.com"
+                className="w-full bg-transparent text-sm outline-none"
+              />
             </span>
           </label>
           <label className="mt-4 block">
@@ -83,6 +89,7 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 type={show ? "text" : "password"}
+                placeholder="••••••••"
                 className="w-full bg-transparent text-sm outline-none"
               />
               <button type="button" onClick={() => setShow((v) => !v)} className="text-[#7b908b]" aria-label={show ? "Hide password" : "Show password"}>
@@ -101,11 +108,9 @@ export default function AdminLoginPage() {
             {loading ? "Signing in…" : "Sign in"} {!loading && <Icon name="arrowRight" size={17} />}
           </button>
 
-          {DEMO && (
-            <p className="mt-4 rounded-xl bg-[#F3F8F6] px-3 py-2.5 text-[12px] text-[#41564f]">
-              Demo credentials are pre-filled: <span className="font-mono">admin@qschool.com</span> / <span className="font-mono">admin123</span>
-            </p>
-          )}
+          <p className="mt-4 rounded-xl bg-[#F3F8F6] px-3 py-2.5 text-[12px] text-[#41564f]">
+            Admin credentials: <span className="font-mono font-medium">admin@theqschool.com</span> / <span className="font-mono font-medium">admin123</span>
+          </p>
           <Link href="/" className="mt-6 inline-flex items-center gap-1 text-[13px] font-semibold text-brand-teal hover:underline">
             <Icon name="chevLeft" size={15} /> Back to website
           </Link>

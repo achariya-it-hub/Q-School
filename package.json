@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "build": "pnpm --filter @qschool/web build",
+    "start": "pnpm --filter @qschool/web start",
     "dev:web": "pnpm --filter @qschool/web dev",
     "build:web": "pnpm --filter @qschool/web build",
     "start:web": "pnpm --filter @qschool/web start",
