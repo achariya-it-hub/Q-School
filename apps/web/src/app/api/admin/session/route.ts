@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   res.cookies.set(COOKIE, sign(String(email).toLowerCase()), {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.COOKIE_SECURE === "true" || (process.env.NODE_ENV === "production" && (process.env.PUBLIC_BASE_URL?.startsWith("https://") ?? false)),
+    secure: process.env.NODE_ENV === "production" || process.env.COOKIE_SECURE === "true",
     path: "/",
     maxAge: 60 * 60 * 12,
   });

@@ -4,11 +4,10 @@ import { promises as fs } from "fs";
 import path from "path";
 import { dataFile } from "@/lib/data-dir";
 
-const USERS_FILE = dataFile("users.json");
-
 async function readUsers() {
   try {
-    const data = await fs.readFile(USERS_FILE, "utf8");
+    const file = dataFile("users.json");
+    const data = await fs.readFile(file, "utf8");
     return JSON.parse(data);
   } catch {
     return [];
@@ -16,7 +15,8 @@ async function readUsers() {
 }
 
 async function writeUsers(users: unknown[]) {
-  await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2));
+  const file = dataFile("users.json");
+  await fs.writeFile(file, JSON.stringify(users, null, 2));
 }
 
 // GET all users
@@ -26,13 +26,13 @@ export async function GET() {
     const users = await readUsers();
     return NextResponse.json({ ok: true, count: users.length, users });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 });
+    return NextResponse.json({ error: (error as Error)?.message || "Failed to fetch users" }, { status: 500 });
   }
 }
 
 // POST create user
 export async function POST(req: Request) {
-  if (!isAdmin()) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  if (!isAdmin()) return NextResponse.json({ error: "Unauthorised - please log in first" }, { status: 401 });
   try {
     const body = await req.json();
     const { name, email, role, phone, status } = body;
@@ -63,7 +63,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, user: newUser });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to create user" }, { status: 500 });
+    console.error("Failed to create user:", error);
+    return NextResponse.json({ error: (error as Error)?.message || "Failed to create user" }, { status: 500 });
   }
 }
 

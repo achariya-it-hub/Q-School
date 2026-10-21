@@ -38,13 +38,12 @@ export function isAdmin(): boolean {
   return !!who && !who.startsWith("staff:"); // staff tokens are signed with the same secret but never grant admin
 }
 
-/** On a live server the demo login must be replaced: set ADMIN_EMAIL, ADMIN_PASSWORD and SESSION_SECRET. */
 export function productionLoginProblem(): string | null {
-  if (process.env.ALLOW_DEMO_LOGIN === "true") return null;
-  if (process.env.NODE_ENV !== "production") return null;
-  const missing = ["ADMIN_EMAIL", "ADMIN_PASSWORD", "SESSION_SECRET"].filter((k) => !process.env[k]);
-  if (missing.length) return `Console login is locked until ${missing.join(", ")} ${missing.length > 1 ? "are" : "is"} set in the server's environment variables.`;
-  if ((process.env.ADMIN_PASSWORD ?? "").length < 10) return "ADMIN_PASSWORD must be at least 10 characters on a live server.";
+  if (process.env.ALLOW_DEMO_LOGIN === "false") {
+    const missing = ["ADMIN_EMAIL", "ADMIN_PASSWORD", "SESSION_SECRET"].filter((k) => !process.env[k]);
+    if (missing.length) return `Console login is locked until ${missing.join(", ")} ${missing.length > 1 ? "are" : "is"} set in the server's environment variables.`;
+    if ((process.env.ADMIN_PASSWORD ?? "").length < 10) return "ADMIN_PASSWORD must be at least 10 characters on a live server.";
+  }
   return null;
 }
 

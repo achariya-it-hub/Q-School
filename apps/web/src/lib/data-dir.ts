@@ -16,6 +16,13 @@ import path from "path";
 function pick(): string {
   const env = process.env.CRM_DATA_DIR?.trim();
   if (env) return path.resolve(env);
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    const tmp = path.join(os.tmpdir(), "qschool-data");
+    try {
+      mkdirSync(tmp, { recursive: true });
+      return tmp;
+    } catch {}
+  }
   if (process.env.NODE_ENV !== "production") return process.cwd();
   const home = path.join(os.homedir(), "qschool-data");
   try {
