@@ -12,6 +12,7 @@ const GROUPS: { title: string; items: { label: string; icon: IconName; href: str
     title: "CRM",
     items: [
       { label: "Leads & Pipeline", icon: "kanban", href: "/admin/leads" },
+      { label: "Campaign Calendar", icon: "calendar", href: "/admin/campaigns" },
       { label: "Events", icon: "calendar", href: "/admin/events" },
       { label: "Partners & Referrals", icon: "community", href: "/admin/partners" },
       { label: "Follow-ups", icon: "phone", href: "/admin/followups" },
