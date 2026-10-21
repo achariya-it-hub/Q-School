@@ -112,6 +112,8 @@ export interface Partner {
   updatedAt: string; // ISO
 }
 
+export type ConcessionApprovalStatus = "Pending Approval" | "Approved" | "Rejected";
+
 export interface PartnerAdmission {
   id: string; // REF-0001
   partnerId: string;
@@ -134,6 +136,10 @@ export interface PartnerAdmission {
   concessionType?: ConcessionType;
   concessionPercent?: number; // e.g. 50
   concessionAmount?: number; // discount amount in ₹
+  concessionApprovalStatus?: ConcessionApprovalStatus;
+  concessionApprovedBy?: string; // e.g. "finance.head@qschool.com"
+  concessionApprovedAt?: string; // ISO
+  concessionNotes?: string;
   referralBonus?: number; // e.g. 2000
   feeReductionMonths?: number; // e.g. 1
   commissionAmount: number; // Calculated commission

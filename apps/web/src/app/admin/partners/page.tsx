@@ -48,6 +48,7 @@ function PartnersContent() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [payoutFilter, setPayoutFilter] = useState<string>("all");
+  const [concessionFilter, setConcessionFilter] = useState<string>("all");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -181,6 +182,30 @@ function PartnersContent() {
     }
   };
 
+  // Finance Head Concession Approval Handler
+  const handleUpdateConcession = async (admissionId: string, status: "Approved" | "Rejected") => {
+    try {
+      const res = await fetch("/api/admin/partners/concession", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          admissionId,
+          status,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not update concession approval");
+
+      show(`Concession ${status.toLowerCase()} by Finance Head`);
+      setAdmissions((prev) =>
+        prev.map((a) => (a.id === admissionId ? data.admission : a))
+      );
+      loadData();
+    } catch (err) {
+      show((err as Error).message);
+    }
+  };
+
   // Copy partner marketer app link
   const copyPartnerPortalLink = (code: string) => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -258,10 +283,19 @@ function PartnersContent() {
     });
   }, [partners, categoryFilter, search]);
 
+  // Pending Finance Head Concession Approvals
+  const pendingConcessions = useMemo(
+    () => admissions.filter((a) => a.concessionApprovalStatus === "Pending Approval"),
+    [admissions]
+  );
+
   // Filtered admissions list
   const filteredAdmissions = useMemo(() => {
     return admissions.filter((a) => {
       if (payoutFilter !== "all" && a.payoutStatus !== payoutFilter) return false;
+      if (concessionFilter === "pending" && a.concessionApprovalStatus !== "Pending Approval") return false;
+      if (concessionFilter === "approved" && a.concessionApprovalStatus !== "Approved") return false;
+      if (concessionFilter === "rejected" && a.concessionApprovalStatus !== "Rejected") return false;
       if (search.trim()) {
         const q = search.toLowerCase();
         return (
@@ -276,7 +310,7 @@ function PartnersContent() {
       }
       return true;
     });
-  }, [admissions, payoutFilter, search]);
+  }, [admissions, payoutFilter, concessionFilter, search]);
 
   return (
     <AdminShell>
@@ -373,17 +407,31 @@ function PartnersContent() {
                 ))}
               </select>
             ) : (
-              <select
-                aria-label="Filter by Payout Status"
-                value={payoutFilter}
-                onChange={(e) => setPayoutFilter(e.target.value)}
-                className="h-9 rounded-xl border border-[#E2ECE9] bg-[#F7FAF9] px-3 text-xs font-semibold text-[#41564F] outline-none"
-              >
-                <option value="all">All Payout Statuses</option>
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Paid">Paid</option>
-              </select>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  aria-label="Filter by Payout Status"
+                  value={payoutFilter}
+                  onChange={(e) => setPayoutFilter(e.target.value)}
+                  className="h-9 rounded-xl border border-[#E2ECE9] bg-[#F7FAF9] px-3 text-xs font-semibold text-[#41564F] outline-none"
+                >
+                  <option value="all">All Payout Statuses</option>
+                  <option value="Pending">Pending Payout</option>
+                  <option value="Approved">Approved Payout</option>
+                  <option value="Paid">Paid Payout</option>
+                </select>
+
+                <select
+                  aria-label="Filter by Finance Concession Approval"
+                  value={concessionFilter}
+                  onChange={(e) => setConcessionFilter(e.target.value)}
+                  className="h-9 rounded-xl border border-amber-300 bg-amber-50/70 px-3 text-xs font-semibold text-amber-900 outline-none"
+                >
+                  <option value="all">All Concessions</option>
+                  <option value="pending">⏳ Pending Finance Head Approval ({pendingConcessions.length})</option>
+                  <option value="approved">✓ Concessions Approved</option>
+                  <option value="rejected">✕ Concessions Rejected</option>
+                </select>
+              </div>
             )}
           </div>
 
@@ -393,6 +441,29 @@ function PartnersContent() {
             onChange={setSearch}
           />
         </div>
+
+        {/* Pending Finance Head Concessions Alert Banner */}
+        {tab === "admissions" && pendingConcessions.length > 0 && (
+          <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">⚠️</span>
+              <div>
+                <div className="text-xs font-bold uppercase tracking-wider text-amber-900">
+                  Finance Head Action Required
+                </div>
+                <div className="text-[12px] text-amber-800">
+                  {pendingConcessions.length} fee concession{pendingConcessions.length > 1 ? "s" : ""} awaiting official approval. Review and approve or reject below.
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setConcessionFilter(concessionFilter === "pending" ? "all" : "pending")}
+              className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold self-start sm:self-auto shadow-sm transition"
+            >
+              {concessionFilter === "pending" ? "Show All Admissions" : `Filter ${pendingConcessions.length} Pending`}
+            </button>
+          </div>
+        )}
 
         {/* TAB 1: PARTNERS DIRECTORY */}
         {tab === "partners" && (
@@ -519,6 +590,7 @@ function PartnersContent() {
                   <th className="p-3 text-right">Fee (₹)</th>
                   <th className="p-3 text-right">Commission (₹)</th>
                   <th className="p-3 text-center">ERP Status</th>
+                  <th className="p-3 text-center">Finance Concession</th>
                   <th className="p-3 text-center">Payout</th>
                   <th className="p-3 text-right">Actions</th>
                 </tr>
@@ -526,7 +598,7 @@ function PartnersContent() {
               <tbody className="divide-y divide-[#EEF3F1]">
                 {filteredAdmissions.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="p-8 text-center text-[#7B8E89]">
+                    <td colSpan={10} className="p-8 text-center text-[#7B8E89]">
                       No partner-referred admissions found.
                     </td>
                   </tr>
@@ -595,6 +667,52 @@ function PartnersContent() {
                         >
                           {a.erpStatus}
                         </span>
+                      </td>
+
+                      <td className="p-3 text-center">
+                        {a.concessionType && a.concessionType !== "none" ? (
+                          a.concessionApprovalStatus === "Pending Approval" ? (
+                            <div className="inline-flex flex-col items-center gap-1.5 bg-amber-50 border border-amber-200 p-1.5 rounded-xl">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900 animate-pulse">
+                                ⏳ Pending Finance
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleUpdateConcession(a.id, "Approved")}
+                                  className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold shadow-sm"
+                                  title="Approve 50% concession / referral bonus as Finance Head"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateConcession(a.id, "Rejected")}
+                                  className="px-1.5 py-0.5 rounded bg-red-100 hover:bg-red-200 text-red-700 text-[10px] font-bold"
+                                  title="Reject concession (revert to full fee)"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </div>
+                          ) : a.concessionApprovalStatus === "Approved" ? (
+                            <div className="flex flex-col items-center">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                ✓ Approved
+                              </span>
+                              <span className="text-[9px] text-[#7B8E89] mt-0.5">
+                                {a.concessionApprovedBy ? a.concessionApprovedBy.split("@")[0] : "Finance Head"}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800">
+                                ✕ Rejected
+                              </span>
+                              <span className="text-[9px] text-red-600 mt-0.5">Full fee</span>
+                            </div>
+                          )
+                        ) : (
+                          <span className="text-[11px] text-[#A0B0AB] italic">—</span>
+                        )}
                       </td>
 
                       <td className="p-3 text-center">

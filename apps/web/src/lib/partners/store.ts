@@ -301,6 +301,9 @@ export async function createPartnerAdmission(input: NewPartnerAdmissionInput): P
       concessionType,
       concessionPercent: concessionPercent || undefined,
       concessionAmount: concessionAmount || undefined,
+      concessionApprovalStatus: concessionType && concessionType !== "none" ? "Pending Approval" : "Approved",
+      concessionApprovedBy: concessionType && concessionType !== "none" ? undefined : "System",
+      concessionApprovedAt: concessionType && concessionType !== "none" ? undefined : now,
       referralBonus: referralBonus || undefined,
       feeReductionMonths: feeReductionMonths || undefined,
       commissionAmount: commission,
@@ -401,6 +404,67 @@ export async function updateAdmissionPayout(
       summary: `Updated referral payout status to "${payoutStatus}" for admission ${admissionId} (Partner: ${prev.partnerName})`,
       previousData: { payoutStatus: prevStatus, payoutReference: prev.payoutReference },
       newData: { payoutStatus, payoutReference: updated.payoutReference },
+    }).catch(() => {});
+
+    return updated;
+  });
+}
+
+export async function updateConcessionApproval(
+  admissionId: string,
+  status: "Approved" | "Rejected",
+  approvedBy = "Finance Head",
+  notes?: string
+): Promise<PartnerAdmission> {
+  return serial(async () => {
+    const admissions = await listPartnerAdmissions();
+    const idx = admissions.findIndex((a) => a.id === admissionId);
+    if (idx === -1) throw new Error("Admission referral record not found");
+
+    const prev = admissions[idx];
+    const prevStatus = prev.concessionApprovalStatus;
+    const now = new Date().toISOString();
+
+    // If rejected, tuition fee reverts to the original full fee without concession discount
+    let finalFee = prev.feeAmount;
+    if (status === "Rejected" && prev.concessionAmount) {
+      finalFee = prev.originalFee || prev.feeAmount + prev.concessionAmount;
+    }
+
+    const updated: PartnerAdmission = {
+      ...prev,
+      feeAmount: finalFee,
+      concessionAmount: status === "Rejected" ? 0 : prev.concessionAmount,
+      concessionApprovalStatus: status,
+      concessionApprovedBy: approvedBy,
+      concessionApprovedAt: now,
+      concessionNotes: notes || prev.concessionNotes,
+    };
+
+    admissions[idx] = updated;
+    await writeJson(ADMISSIONS_FILE, admissions);
+
+    // Audit trail log for Finance Head action
+    await recordAuditLog({
+      action: "STATUS_CHANGE",
+      module: "Finance & Concessions",
+      entityId: admissionId,
+      entityName: `${prev.studentName} (${admissionId})`,
+      summary: `Finance Head [${approvedBy}] ${status.toUpperCase()} concession (${prev.concessionType}) of ₹${prev.concessionAmount || 0} for ${prev.studentName}.${status === "Rejected" ? ` Course fee reverted to ₹${finalFee}.` : ""}`,
+      performedBy: approvedBy,
+      previousData: {
+        concessionApprovalStatus: prevStatus,
+        feeAmount: prev.feeAmount,
+        concessionAmount: prev.concessionAmount,
+      },
+      newData: {
+        concessionApprovalStatus: status,
+        concessionApprovedBy: approvedBy,
+        concessionApprovedAt: now,
+        feeAmount: finalFee,
+        concessionAmount: updated.concessionAmount,
+        concessionNotes: notes,
+      },
     }).catch(() => {});
 
     return updated;

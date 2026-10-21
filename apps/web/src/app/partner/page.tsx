@@ -1156,9 +1156,26 @@ function PartnerContent() {
                           ₹{a.feeAmount.toLocaleString("en-IN")}
                           <div className="text-[10px] text-[#7B8E89]">{a.paymentMode}</div>
                           {a.concessionType && a.concessionType !== "none" && (
-                            <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
-                              {CONCESSION_RULES[a.concessionType]?.badgeText || a.concessionType}
-                            </span>
+                            <div className="mt-1 flex flex-col items-end gap-0.5">
+                              <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                                {CONCESSION_RULES[a.concessionType]?.badgeText || a.concessionType}
+                              </span>
+                              <span
+                                className={`text-[9.5px] font-bold ${
+                                  a.concessionApprovalStatus === "Approved"
+                                    ? "text-emerald-700"
+                                    : a.concessionApprovalStatus === "Rejected"
+                                    ? "text-red-700"
+                                    : "text-amber-700 animate-pulse"
+                                }`}
+                              >
+                                {a.concessionApprovalStatus === "Approved"
+                                  ? "✓ Finance Approved"
+                                  : a.concessionApprovalStatus === "Rejected"
+                                  ? "✕ Concession Rejected"
+                                  : "⏳ Finance Approval Pending"}
+                              </span>
+                            </div>
                           )}
                         </td>
 
