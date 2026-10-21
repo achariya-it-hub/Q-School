@@ -961,7 +961,7 @@ function PartnerContent() {
                           className="w-full h-11 px-3 rounded-xl border-2 border-[#EAD766] bg-[#FFFDEB] text-xs font-bold text-brand-ink focus:border-brand-teal focus:outline-none"
                         >
                           <option value="none">Standard / None (Regular Fee)</option>
-                          <option value="trainer_hoc">Trainer/HOC Referral (Organic Lead) — Rs. 2,000</option>
+                          <option value="trainer_hoc">Trainer / Centre Head (HOC) Referral — Rs. 2,000 Bonus</option>
                           <option value="parent_referral">Parent Referral Per Admission — 1 Month Fee Off</option>
                           <option value="staff_child">Staff-Child Concession (50% Off)</option>
                           <option value="sibling">Sibling Concession (50% Off)</option>
@@ -990,7 +990,7 @@ function PartnerContent() {
 
                         {form.concessionType === "trainer_hoc" && (
                           <p className="mt-1.5 text-[11px] font-semibold text-amber-800 bg-amber-50 p-1.5 rounded-lg border border-amber-200">
-                            ★ Trainer/HOC Organic Lead: Flat ₹2,000 referral bonus will be credited to partner upon admission.
+                            ★ Trainer or Centre Head (HOC) Referral: Flat ₹2,000 referral bonus will be credited to the referrer upon Admin approval.
                           </p>
                         )}
                         {form.concessionType === "parent_referral" && (
@@ -1180,7 +1180,24 @@ function PartnerContent() {
                         </td>
 
                         <td className="p-3.5 text-right font-bold text-emerald-700 text-sm">
-                          +₹{a.commissionAmount.toLocaleString("en-IN")}
+                          <div>+₹{a.commissionAmount.toLocaleString("en-IN")}</div>
+                          {a.partnerCode !== "DIRECT" && (
+                            <span
+                              className={`inline-block text-[9.5px] font-semibold mt-0.5 px-1.5 py-0.5 rounded ${
+                                a.referralApprovalStatus === "Approved"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : a.referralApprovalStatus === "Rejected"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-amber-100 text-amber-800 animate-pulse"
+                              }`}
+                            >
+                              {a.referralApprovalStatus === "Approved"
+                                ? "✓ Admin Approved"
+                                : a.referralApprovalStatus === "Rejected"
+                                ? "✕ Referral Rejected"
+                                : "⏳ Admin Approval Pending"}
+                            </span>
+                          )}
                         </td>
 
                         <td className="p-3.5 text-center">

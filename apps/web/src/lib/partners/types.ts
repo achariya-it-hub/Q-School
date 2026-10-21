@@ -1,4 +1,5 @@
 export type PartnerCategory =
+  | "Trainer / Centre Head (HOC)"
   | "Trainer / HOC"
   | "Parent Ambassador"
   | "Staff Referral"
@@ -13,10 +14,12 @@ export type PartnerCategory =
 export type CommissionType = "percentage" | "flat";
 export type PartnerStatus = "active" | "inactive" | "pending";
 export type PayoutStatus = "Pending" | "Approved" | "Paid";
+export type ReferralApprovalStatus = "Pending" | "Approved" | "Rejected";
+export type ConcessionApprovalStatus = "Pending Approval" | "Approved" | "Rejected";
 
 /**
  * Referral Bonus & Concession Schemes (as per Q-School Policy):
- * 1. Trainer/HOC referral bonus (Organic Lead) - Rs. 2,000
+ * 1. Trainer or Centre Head (HOC) referral bonus (Organic Lead) - Rs. 2,000 (Credited upon Admin approval)
  * 2. Parent Referral Per Admission - 1 month fee reduction
  * 3. Staff-child concession (50%)
  * 4. Sibling concession (50%)
@@ -47,10 +50,10 @@ export const CONCESSION_RULES: Record<ConcessionType, ConcessionRule> = {
   },
   trainer_hoc: {
     type: "trainer_hoc",
-    label: "Trainer/HOC Referral Bonus (Organic Lead) — Rs. 2,000",
+    label: "Trainer / Centre Head (HOC) Referral Bonus — Rs. 2,000",
     bonusAmount: 2000,
-    description: "Trainer / HOC receives a flat Rs. 2,000 referral bonus per organic admission",
-    badgeText: "₹2,000 Bonus",
+    description: "Parent referred by a Trainer or Centre Head (HOC) — Rs. 2,000 credited to them on Admin approval",
+    badgeText: "₹2,000 Trainer/HOC",
   },
   parent_referral: {
     type: "parent_referral",
@@ -112,8 +115,6 @@ export interface Partner {
   updatedAt: string; // ISO
 }
 
-export type ConcessionApprovalStatus = "Pending Approval" | "Approved" | "Rejected";
-
 export interface PartnerAdmission {
   id: string; // REF-0001
   partnerId: string;
@@ -143,6 +144,9 @@ export interface PartnerAdmission {
   referralBonus?: number; // e.g. 2000
   feeReductionMonths?: number; // e.g. 1
   commissionAmount: number; // Calculated commission
+  referralApprovalStatus?: ReferralApprovalStatus; // Admin user approval: "Pending" | "Approved" | "Rejected"
+  referralApprovedBy?: string; // Admin email
+  referralApprovedAt?: string; // ISO
   paymentMode: string; // Cash, UPI, Card, Net Banking
   paymentStatus: "Paid" | "Partial" | "Pending";
   erpStatus: "Pending" | "Active";
@@ -190,6 +194,7 @@ export interface NewPartnerAdmissionInput {
 }
 
 export const PARTNER_CATEGORIES: PartnerCategory[] = [
+  "Trainer / Centre Head (HOC)",
   "Trainer / HOC",
   "Parent Ambassador",
   "Staff Referral",

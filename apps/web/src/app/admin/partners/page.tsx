@@ -49,6 +49,7 @@ function PartnersContent() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [payoutFilter, setPayoutFilter] = useState<string>("all");
   const [concessionFilter, setConcessionFilter] = useState<string>("all");
+  const [referralFilter, setReferralFilter] = useState<string>("all");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -206,6 +207,30 @@ function PartnersContent() {
     }
   };
 
+  // Admin Referral Approval Handler
+  const handleUpdateReferral = async (admissionId: string, status: "Approved" | "Rejected") => {
+    try {
+      const res = await fetch("/api/admin/partners/referral-approval", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          admissionId,
+          status,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not update referral approval");
+
+      show(`Referral ${status.toLowerCase()} by Admin`);
+      setAdmissions((prev) =>
+        prev.map((a) => (a.id === admissionId ? data.admission : a))
+      );
+      loadData();
+    } catch (err) {
+      show((err as Error).message);
+    }
+  };
+
   // Copy partner marketer app link
   const copyPartnerPortalLink = (code: string) => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -289,10 +314,19 @@ function PartnersContent() {
     [admissions]
   );
 
+  // Pending Admin Referral Approvals (Parent referred by Trainer / Centre Head or Partner)
+  const pendingReferrals = useMemo(
+    () => admissions.filter((a) => a.partnerCode !== "DIRECT" && a.referralApprovalStatus === "Pending"),
+    [admissions]
+  );
+
   // Filtered admissions list
   const filteredAdmissions = useMemo(() => {
     return admissions.filter((a) => {
       if (payoutFilter !== "all" && a.payoutStatus !== payoutFilter) return false;
+      if (referralFilter === "pending" && a.referralApprovalStatus !== "Pending") return false;
+      if (referralFilter === "approved" && a.referralApprovalStatus !== "Approved") return false;
+      if (referralFilter === "rejected" && a.referralApprovalStatus !== "Rejected") return false;
       if (concessionFilter === "pending" && a.concessionApprovalStatus !== "Pending Approval") return false;
       if (concessionFilter === "approved" && a.concessionApprovalStatus !== "Approved") return false;
       if (concessionFilter === "rejected" && a.concessionApprovalStatus !== "Rejected") return false;
@@ -310,7 +344,7 @@ function PartnersContent() {
       }
       return true;
     });
-  }, [admissions, payoutFilter, concessionFilter, search]);
+  }, [admissions, payoutFilter, referralFilter, concessionFilter, search]);
 
   return (
     <AdminShell>
@@ -359,7 +393,12 @@ function PartnersContent() {
         </div>
         <div className="p-4 space-y-2.5 text-sm text-black">
           <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-            <span className="font-medium text-gray-900">Trainer/HOC referral bonus (Organic Lead)</span>
+            <div>
+              <span className="font-medium text-gray-900">Trainer or Centre Head (HOC) referral bonus (Organic Lead)</span>
+              <span className="block text-[11px] text-amber-900 font-semibold mt-0.5">
+                ★ Rs. 2,000 credited to Trainer/Centre Head upon Admin Approval
+              </span>
+            </div>
             <span className="font-extrabold text-base whitespace-nowrap ml-2 text-black">- Rs. 2,000</span>
           </div>
           <div className="flex items-center justify-between pb-2 border-b border-gray-200">
@@ -421,6 +460,18 @@ function PartnersContent() {
                 </select>
 
                 <select
+                  aria-label="Filter by Admin Referral Approval"
+                  value={referralFilter}
+                  onChange={(e) => setReferralFilter(e.target.value)}
+                  className="h-9 rounded-xl border border-emerald-300 bg-emerald-50/70 px-3 text-xs font-semibold text-emerald-900 outline-none"
+                >
+                  <option value="all">All Referral States</option>
+                  <option value="pending">⏳ Pending Admin Referral Approval ({pendingReferrals.length})</option>
+                  <option value="approved">✓ Referral Approved</option>
+                  <option value="rejected">✕ Referral Rejected</option>
+                </select>
+
+                <select
                   aria-label="Filter by Finance Concession Approval"
                   value={concessionFilter}
                   onChange={(e) => setConcessionFilter(e.target.value)}
@@ -441,6 +492,29 @@ function PartnersContent() {
             onChange={setSearch}
           />
         </div>
+
+        {/* Pending Admin Referral Approvals Alert Banner */}
+        {tab === "admissions" && pendingReferrals.length > 0 && (
+          <div className="mb-3 rounded-xl border border-emerald-300 bg-emerald-50/90 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-emerald-900 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">👥</span>
+              <div>
+                <div className="text-xs font-bold uppercase tracking-wider text-emerald-900">
+                  Admin Referral Approval Required
+                </div>
+                <div className="text-[12px] text-emerald-800">
+                  {pendingReferrals.length} admission{pendingReferrals.length > 1 ? "s" : ""} referred by Trainer or Centre Head (HOC) / Marketers awaiting Admin sign-off to credit Rs. 2,000 bonus / commission.
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setReferralFilter(referralFilter === "pending" ? "all" : "pending")}
+              className="px-3 py-1.5 rounded-lg bg-brand-deep hover:bg-[#04332D] text-white text-xs font-bold self-start sm:self-auto shadow-sm transition"
+            >
+              {referralFilter === "pending" ? "Show All Admissions" : `Review ${pendingReferrals.length} Pending`}
+            </button>
+          </div>
+        )}
 
         {/* Pending Finance Head Concessions Alert Banner */}
         {tab === "admissions" && pendingConcessions.length > 0 && (
@@ -588,7 +662,7 @@ function PartnersContent() {
                   <th className="p-3">Partner Attributed</th>
                   <th className="p-3">Centre & Program</th>
                   <th className="p-3 text-right">Fee (₹)</th>
-                  <th className="p-3 text-right">Commission (₹)</th>
+                  <th className="p-3 text-right">Referral Bonus / Comm. (₹)</th>
                   <th className="p-3 text-center">ERP Status</th>
                   <th className="p-3 text-center">Finance Concession</th>
                   <th className="p-3 text-center">Payout</th>
@@ -653,8 +727,55 @@ function PartnersContent() {
                         ) : null}
                       </td>
 
-                      <td className="p-3 text-right font-bold text-emerald-700">
-                        +₹{a.commissionAmount.toLocaleString("en-IN")}
+                      <td className="p-3 text-right">
+                        <div className="font-bold text-emerald-700">
+                          +₹{a.commissionAmount.toLocaleString("en-IN")}
+                        </div>
+                        {a.concessionType === "trainer_hoc" && (
+                          <div className="text-[10px] text-amber-800 font-semibold">
+                            Trainer/Centre Head Bonus
+                          </div>
+                        )}
+                        {a.partnerCode !== "DIRECT" && (
+                          a.referralApprovalStatus === "Pending" ? (
+                            <div className="mt-1 inline-flex flex-col items-end gap-1 bg-amber-50 border border-amber-200 p-1.5 rounded-lg">
+                              <span className="text-[9.5px] font-bold text-amber-900 bg-amber-200 px-1.5 py-0.5 rounded animate-pulse">
+                                ⏳ Admin Approval Pending
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleUpdateReferral(a.id, "Approved")}
+                                  className="px-2 py-0.5 rounded bg-brand-deep hover:bg-[#04332D] text-white text-[10px] font-bold shadow-sm"
+                                  title="Approve referral and credit Rs. 2,000 / commission"
+                                >
+                                  Approve
+                                </button>
+                                <button
+                                  onClick={() => handleUpdateReferral(a.id, "Rejected")}
+                                  className="px-1.5 py-0.5 rounded bg-red-100 hover:bg-red-200 text-red-700 text-[10px] font-bold"
+                                  title="Reject referral"
+                                >
+                                  Reject
+                                </button>
+                              </div>
+                            </div>
+                          ) : a.referralApprovalStatus === "Approved" ? (
+                            <div className="mt-1 flex flex-col items-end">
+                              <span className="text-[9.5px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded">
+                                ✓ Admin Approved
+                              </span>
+                              {a.referralApprovedBy && (
+                                <span className="text-[9px] text-[#7B8E89]">by {a.referralApprovedBy.split("@")[0]}</span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="mt-1 flex flex-col items-end">
+                              <span className="text-[9.5px] font-bold text-red-800 bg-red-100 px-1.5 py-0.5 rounded">
+                                ✕ Referral Rejected
+                              </span>
+                            </div>
+                          )
+                        )}
                       </td>
 
                       <td className="p-3 text-center">
@@ -805,7 +926,7 @@ function PartnersContent() {
                     value={newPartner.category}
                     onChange={(e) => {
                       const cat = e.target.value as any;
-                      if (cat === "Trainer / HOC") {
+                      if (cat === "Trainer / Centre Head (HOC)" || cat === "Trainer / HOC") {
                         setNewPartner({
                           ...newPartner,
                           category: cat,

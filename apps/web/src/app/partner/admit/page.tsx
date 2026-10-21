@@ -388,7 +388,7 @@ function PartnerAdmitContent() {
                       <option value="none">Standard Admission (No Concession)</option>
                       <option value="staff_child">Staff-Child Concession (50% Fee Waiver)</option>
                       <option value="sibling">Sibling Concession (50% Fee Waiver)</option>
-                      <option value="trainer_hoc">Trainer / HOC Referral (Rs. 2,000 Bonus)</option>
+                      <option value="trainer_hoc">Trainer or Centre Head (HOC) Referral (Rs. 2,000 Bonus)</option>
                       <option value="parent_referral">Parent Referral (1-Month Fee Reduction)</option>
                     </select>
                     <p className="text-[11px] text-[#7B8E89] mt-1">
@@ -420,7 +420,7 @@ function PartnerAdmitContent() {
                 {/* Policy Highlights Note */}
                 <div className="mt-3 rounded-xl border border-[#FFE8A3] bg-[#FFFBEA] p-2.5 text-[11px] text-[#7A5A00] flex items-center justify-between">
                   <span>
-                    ⚡ <strong>Policy:</strong> Staff-child & Sibling = 50% concession &bull; Trainer/HOC = Rs. 2,000 bonus &bull; Parent Referral = 1 mo. fee off
+                    ⚡ <strong>Policy:</strong> Staff-child & Sibling = 50% concession &bull; Trainer/Centre Head (HOC) = Rs. 2,000 bonus &bull; Parent Referral = 1 mo. fee off (Subject to approval)
                   </span>
                   <span className="font-bold uppercase tracking-wider text-[10px] text-amber-900 bg-amber-200/60 px-2 py-0.5 rounded">
                     Verified

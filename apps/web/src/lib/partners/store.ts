@@ -310,6 +310,9 @@ export async function createPartnerAdmission(input: NewPartnerAdmissionInput): P
       paymentMode: input.paymentMode || "Cash",
       paymentStatus: input.paymentStatus || "Paid",
       erpStatus: student.status,
+      referralApprovalStatus: (partner.code === "DIRECT" && (!concessionType || concessionType === "none")) ? "Approved" : "Pending",
+      referralApprovedBy: (partner.code === "DIRECT" && (!concessionType || concessionType === "none")) ? "System" : undefined,
+      referralApprovedAt: (partner.code === "DIRECT" && (!concessionType || concessionType === "none")) ? now : undefined,
       payoutStatus: "Pending",
       notes: input.notes?.trim(),
       createdAt: now,
@@ -324,7 +327,7 @@ export async function createPartnerAdmission(input: NewPartnerAdmissionInput): P
       module: "Partners & Referrals",
       entityId: admissionId,
       entityName: `${input.studentName.trim()} (${admissionId})`,
-      summary: `Admitted student ${input.studentName} via partner ${partner.name} [${partner.code}]${concessionType !== "none" ? ` (${CONCESSION_RULES[concessionType]?.label})` : ""}`,
+      summary: `Admitted student ${input.studentName} via partner ${partner.name} [${partner.code}]${concessionType !== "none" ? ` (${CONCESSION_RULES[concessionType]?.label})` : ""} - Referral awaiting Admin approval for bonus/commission`,
       performedBy: partner.name,
       newData: {
         admissionId,
@@ -333,20 +336,22 @@ export async function createPartnerAdmission(input: NewPartnerAdmissionInput): P
         concessionType,
         concessionAmount,
         commission,
+        referralApprovalStatus: admissionRecord.referralApprovalStatus,
       },
     }).catch(() => {});
 
-    // 5. Update Partner Stats
+    // 5. Update Partner Stats (Commission credited upon Admin approval)
     const partners = await listPartners();
     const pIdx = partners.findIndex((p) => p.id === partner.id);
     if (pIdx !== -1) {
       const p = partners[pIdx];
+      const isAutoApproved = admissionRecord.referralApprovalStatus === "Approved";
       p.stats = {
         ...p.stats,
         totalAdmissions: p.stats.totalAdmissions + 1,
         totalRevenue: p.stats.totalRevenue + finalFee,
-        totalCommission: p.stats.totalCommission + commission,
-        pendingCommission: p.stats.pendingCommission + commission,
+        totalCommission: p.stats.totalCommission + (isAutoApproved ? commission : 0),
+        pendingCommission: p.stats.pendingCommission + (isAutoApproved ? commission : 0),
       };
       p.updatedAt = now;
       await writeJson(PARTNERS_FILE, partners);
@@ -465,6 +470,68 @@ export async function updateConcessionApproval(
         concessionAmount: updated.concessionAmount,
         concessionNotes: notes,
       },
+    }).catch(() => {});
+
+    return updated;
+  });
+}
+
+export async function updateReferralApproval(
+  admissionId: string,
+  status: "Approved" | "Rejected",
+  approvedBy = "Admin",
+  notes?: string
+): Promise<PartnerAdmission> {
+  return serial(async () => {
+    const admissions = await listPartnerAdmissions();
+    const idx = admissions.findIndex((a) => a.id === admissionId);
+    if (idx === -1) throw new Error("Admission referral record not found");
+
+    const prev = admissions[idx];
+    const prevStatus = prev.referralApprovalStatus;
+    const now = new Date().toISOString();
+
+    const updated: PartnerAdmission = {
+      ...prev,
+      referralApprovalStatus: status,
+      referralApprovedBy: approvedBy,
+      referralApprovedAt: now,
+      notes: notes ? `${prev.notes ? prev.notes + " | " : ""}${notes}` : prev.notes,
+    };
+
+    admissions[idx] = updated;
+    await writeJson(ADMISSIONS_FILE, admissions);
+
+    // Update partner stats: credit referral bonus / commission upon Admin approval
+    const partners = await listPartners();
+    const pIdx = partners.findIndex((p) => p.id === prev.partnerId);
+    if (pIdx !== -1) {
+      const p = partners[pIdx];
+      if (prevStatus !== "Approved" && status === "Approved") {
+        // Credit the Rs. 2,000 bonus or commission to the Trainer/Centre Head or Partner
+        p.stats.totalCommission += prev.commissionAmount;
+        p.stats.pendingCommission += prev.commissionAmount;
+        p.updatedAt = now;
+        await writeJson(PARTNERS_FILE, partners);
+      } else if (prevStatus === "Approved" && status === "Rejected") {
+        // Rollback commission if previously approved
+        p.stats.totalCommission = Math.max(0, p.stats.totalCommission - prev.commissionAmount);
+        p.stats.pendingCommission = Math.max(0, p.stats.pendingCommission - prev.commissionAmount);
+        p.updatedAt = now;
+        await writeJson(PARTNERS_FILE, partners);
+      }
+    }
+
+    // Record Audit Trail
+    await recordAuditLog({
+      action: "UPDATE",
+      module: "Partners & Referrals",
+      entityId: admissionId,
+      entityName: `${prev.studentName} (${admissionId})`,
+      summary: `Admin [${approvedBy}] ${status.toUpperCase()} referral admission for ${prev.studentName}. ${status === "Approved" ? `Credited ₹${prev.commissionAmount.toLocaleString("en-IN")} referral bonus to ${prev.partnerName}.` : "Referral rejected; bonus not credited."}`,
+      performedBy: approvedBy,
+      previousData: { referralApprovalStatus: prevStatus },
+      newData: { referralApprovalStatus: status, referralApprovedBy: approvedBy, referralApprovedAt: now },
     }).catch(() => {});
 
     return updated;
