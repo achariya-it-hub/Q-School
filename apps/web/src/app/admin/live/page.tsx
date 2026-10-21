@@ -49,6 +49,7 @@ const blank = (platform: Platform = "bbb") => {
 interface PlatformCfg {
   enabled: Record<Platform, boolean>;
   defaultPlatform: Platform;
+  livekitDomain?: string;
   jitsiDomain: string;
 }
 type Form = ReturnType<typeof blank> & { id?: string };
@@ -245,15 +246,28 @@ export default function LiveSessionsPage() {
               <div className="space-y-3 rounded-2xl border border-[#E2ECE9] bg-[#FAFCFB] p-4">
                 <TextField
                   label={`${PLATFORMS[edit.platform].label} meeting link`}
-                  hint={edit.platform === "jitsi" ? `blank = new room on ${pcfg?.jitsiDomain ?? "meet.jit.si"}` : "students are sent here"}
+                  hint={
+                    edit.platform === "livekit"
+                      ? `blank = auto-create room on ${pcfg?.livekitDomain ?? "meet.livekit.io"}`
+                      : edit.platform === "jitsi"
+                      ? `blank = new room on ${pcfg?.jitsiDomain ?? "meet.jit.si"}`
+                      : "students are sent here"
+                  }
                   value={edit.joinUrl}
                   onChange={(joinUrl) => setEdit({ ...edit, joinUrl })}
                   max={1000}
                   placeholder={PLATFORMS[edit.platform].linkHint}
                 />
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {edit.platform === "zoom" && (
-                    <TextField label="Host start link" hint="optional" value={edit.hostUrl} onChange={(hostUrl) => setEdit({ ...edit, hostUrl })} max={1000} placeholder="https://…zoom.us/s/…" />
+                  {(edit.platform === "zoom" || edit.platform === "livekit") && (
+                    <TextField
+                      label="Host start link"
+                      hint="optional"
+                      value={edit.hostUrl}
+                      onChange={(hostUrl) => setEdit({ ...edit, hostUrl })}
+                      max={1000}
+                      placeholder={edit.platform === "livekit" ? "https://…/rooms/… (host moderator link)" : "https://…zoom.us/s/…"}
+                    />
                   )}
                   <TextField label="Passcode" hint="optional, shown only to registered students" value={edit.passcode} onChange={(passcode) => setEdit({ ...edit, passcode })} max={60} />
                 </div>

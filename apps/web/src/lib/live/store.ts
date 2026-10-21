@@ -52,6 +52,7 @@ function checkLink(platform: Platform, url: string, field: string, jupiterUrl: s
     throw new Error(`${field} isn't a valid link`);
   }
   if (u.protocol !== "https:") throw new Error(`${field} must start with https://`);
+  if (platform === "livekit") return;
   const rx = PLATFORMS[platform].hosts;
   if (rx && !rx.test(u.hostname)) throw new Error(`${field} doesn't look like a ${PLATFORMS[platform].label} link`);
   if (platform === "jupitermeet" && jupiterUrl && !url.startsWith(jupiterUrl)) throw new Error(`${field} should be on your JupiterMeet site (${jupiterUrl})`);
@@ -75,6 +76,10 @@ async function cleanWithPlatform(input: Record<string, unknown>, prev?: LiveSess
   const hostUrl = "hostUrl" in input ? s(input.hostUrl, 1000) : (prev?.hostUrl ?? "");
   const passcode = "passcode" in input ? s(input.passcode, 60) : (prev?.passcode ?? "");
   if (platform === "bbb") return { ...base, platform, joinUrl: "", hostUrl: "", passcode: "" };
+  if (platform === "livekit" && !joinUrl) {
+    const lkDomain = st.platforms.livekitDomain || "meet.livekit.io";
+    joinUrl = `https://${lkDomain}/rooms/QSchool-${slug(base.title)}-${randomBytes(4).toString("hex")}`;
+  }
   if (platform === "jitsi" && !joinUrl) joinUrl = `https://${st.platforms.jitsiDomain}/QSchool-${slug(base.title)}-${randomBytes(4).toString("hex")}`;
   if (!joinUrl) throw new Error(`Add the ${PLATFORMS[platform].label} meeting link`);
   checkLink(platform, joinUrl, "Meeting link", st.platforms.jupiterUrl);

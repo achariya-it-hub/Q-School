@@ -243,8 +243,7 @@ function PlatformsCard({ data, save, show }: { data: PublicSettings; save: (p: R
   return (
     <Card title="Meeting platforms">
       <p className="-mt-1 mb-3 text-[12.5px] text-[#6b807b]">
-        Choose where each session runs when you schedule it. BigBlueButton rooms are created automatically; for Teams, Zoom, JupiterMeet or any other link you paste the
-        meeting link, and students only see it on their personal join page when the room opens.
+        Choose where each session runs when you schedule it. LiveKit (Zoom alternative) and BigBlueButton rooms are created automatically with browser WebRTC; for Teams, Zoom, JupiterMeet or other platforms you can paste your meeting link. Students only see meeting links on their personal join page when the room opens.
       </p>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {KEYS.map((k) => (
@@ -253,7 +252,17 @@ function PlatformsCard({ data, save, show }: { data: PublicSettings; save: (p: R
             <div className="[&>label]:pl-8">
               <Toggle
                 label={PLATFORMS[k].label}
-                hint={k === "bbb" ? (data.bbb.configured ? "server connected below" : "needs the server below") : k === "jitsi" ? "rooms created automatically" : "paste the meeting link"}
+                hint={
+                  k === "livekit"
+                    ? "WebRTC Zoom alternative (auto-creates rooms)"
+                    : k === "bbb"
+                    ? data.bbb.configured
+                      ? "server connected below"
+                      : "needs the server below"
+                    : k === "jitsi"
+                    ? "rooms created automatically"
+                    : "paste the meeting link"
+                }
                 checked={p.enabled[k]}
                 onChange={(v) => setP({ ...p, enabled: { ...p.enabled, [k]: v } })}
               />
@@ -261,7 +270,7 @@ function PlatformsCard({ data, save, show }: { data: PublicSettings; save: (p: R
           </div>
         ))}
       </div>
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <label className="block">
           <span className="mb-1.5 block text-[12px] font-semibold text-[#41564f]">Default for new sessions</span>
           <select value={p.defaultPlatform} onChange={(e) => setP({ ...p, defaultPlatform: e.target.value as Platform })} className={fieldInput}>
@@ -272,6 +281,7 @@ function PlatformsCard({ data, save, show }: { data: PublicSettings; save: (p: R
             ))}
           </select>
         </label>
+        <TextField label="LiveKit server" hint="meet.livekit.io or custom" value={p.livekitDomain || "meet.livekit.io"} onChange={(v) => setP({ ...p, livekitDomain: v })} max={120} placeholder="meet.livekit.io" />
         <TextField label="Jitsi server" hint="or your own" value={p.jitsiDomain} onChange={(v) => setP({ ...p, jitsiDomain: v })} max={120} placeholder="meet.jit.si" />
         <TextField label="JupiterMeet site" hint="optional" value={p.jupiterUrl} onChange={(v) => setP({ ...p, jupiterUrl: v })} max={300} placeholder="https://meet.yourschool.in" />
       </div>

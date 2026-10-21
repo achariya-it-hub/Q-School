@@ -5,12 +5,22 @@ export type LiveStatus = "scheduled" | "live" | "ended" | "cancelled";
 
 export const KIND_LABEL: Record<LiveKind, string> = { webinar: "Webinar", workshop: "Workshop", class: "Live class" };
 
-export type Platform = "bbb" | "teams" | "zoom" | "jitsi" | "jupitermeet" | "other";
+export type Platform = "livekit" | "bbb" | "teams" | "zoom" | "jitsi" | "jupitermeet" | "other";
 
 export const PLATFORMS: Record<
   Platform,
   { label: string; short: string; color: string; linkHint: string; hostHint?: string; studentTip: string; note?: string; hosts?: RegExp }
 > = {
+  livekit: {
+    label: "LiveKit (Zoom Alternative)",
+    short: "LiveKit",
+    color: "#002CF2",
+    linkHint: "Leave blank to auto-create room, or paste LiveKit room link",
+    hostHint: "Optional host moderator link",
+    studentTip: "Opens in your browser powered by WebRTC. No app installation or Zoom account required.",
+    note: "LiveKit WebRTC: Ultra-low latency, crystal-clear audio & video, screen sharing and recording. Works in any browser on desktop and mobile without installing Zoom.",
+    hosts: /(^|\.)(livekit\.(io|cloud)|meet\.livekit\.io)/,
+  },
   bbb: {
     label: "BigBlueButton",
     short: "BBB",

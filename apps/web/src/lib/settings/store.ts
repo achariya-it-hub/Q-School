@@ -43,6 +43,7 @@ export interface BbbSettings {
 export interface PlatformSettings {
   enabled: Record<Platform, boolean>;
   defaultPlatform: Platform;
+  livekitDomain: string; // e.g. meet.livekit.io or your own LiveKit Cloud / self-hosted domain
   jitsiDomain: string; // e.g. meet.jit.si or your own Jitsi server
   jupiterUrl: string; // base address of your JupiterMeet install (optional, for link checks)
 }
@@ -122,8 +123,9 @@ export const DEFAULT_SETTINGS: Settings = {
     joinEarlyMinutes: 15,
   },
   platforms: {
-    enabled: { bbb: true, teams: true, zoom: true, jitsi: true, jupitermeet: true, other: true },
-    defaultPlatform: "bbb",
+    enabled: { livekit: true, bbb: true, teams: true, zoom: true, jitsi: true, jupitermeet: true, other: true },
+    defaultPlatform: "livekit",
+    livekitDomain: "meet.livekit.io",
     jitsiDomain: "meet.jit.si",
     jupiterUrl: "",
   },
@@ -162,7 +164,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
 };
 
-const PLATFORM_KEYS: Platform[] = ["bbb", "teams", "zoom", "jitsi", "jupitermeet", "other"];
+const PLATFORM_KEYS: Platform[] = ["livekit", "bbb", "teams", "zoom", "jitsi", "jupitermeet", "other"];
 
 const s = (v: unknown, max = 300, fb = "") => (typeof v === "string" ? v.trim().slice(0, max) : fb);
 const b = (v: unknown, fb: boolean) => (typeof v === "boolean" ? v : fb);
@@ -239,6 +241,7 @@ function normalise(input: unknown, prev: Settings): Settings {
     platforms: {
       enabled: Object.fromEntries(PLATFORM_KEYS.map((k) => [k, b(en[k], pp.enabled[k] ?? true)])) as Record<Platform, boolean>,
       defaultPlatform: PLATFORM_KEYS.includes(pl.defaultPlatform as Platform) ? (pl.defaultPlatform as Platform) : pp.defaultPlatform,
+      livekitDomain: "livekitDomain" in pl ? host(s(pl.livekitDomain, 120)) || "meet.livekit.io" : (pp.livekitDomain || "meet.livekit.io"),
       jitsiDomain: "jitsiDomain" in pl ? host(s(pl.jitsiDomain, 120)) || "meet.jit.si" : pp.jitsiDomain,
       jupiterUrl: "jupiterUrl" in pl ? (/^https:\/\//i.test(s(pl.jupiterUrl, 300)) ? s(pl.jupiterUrl, 300).replace(/\/+$/, "") : "") : pp.jupiterUrl,
     },
