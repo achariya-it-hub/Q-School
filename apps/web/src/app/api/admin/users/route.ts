@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   if (!isAdmin()) return NextResponse.json({ error: "Unauthorised - please log in first" }, { status: 401 });
   try {
     const body = await req.json();
-    const { name, email, role, phone, status } = body;
+    const { name, email, role, phone, status, password } = body;
 
     if (!name || !email) {
       return NextResponse.json({ error: "Name and email are required" }, { status: 400 });
@@ -55,6 +55,7 @@ export async function POST(req: Request) {
       role: role || "Student",
       status: status || "Active",
       phone: phone || "",
+      password: password ? String(password).trim() : undefined,
       joined: new Date().toISOString().split("T")[0],
     };
 
@@ -73,7 +74,7 @@ export async function PUT(req: Request) {
   if (!isAdmin()) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   try {
     const body = await req.json();
-    const { id, name, email, role, phone, status } = body;
+    const { id, name, email, role, phone, status, password } = body;
 
     if (!id) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
@@ -93,12 +94,13 @@ export async function PUT(req: Request) {
       role: role || users[index].role,
       status: status || users[index].status,
       phone: phone !== undefined ? String(phone) : users[index].phone,
+      ...(password ? { password: String(password).trim() } : {}),
     };
 
     await writeUsers(users);
     return NextResponse.json({ ok: true, user: users[index] });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to update user" }, { status: 500 });
+    return NextResponse.json({ error: (error as Error)?.message || "Failed to update user" }, { status: 500 });
   }
 }
 

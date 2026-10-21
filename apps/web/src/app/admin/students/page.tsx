@@ -19,6 +19,7 @@ interface User {
   status: "Active" | "Suspended";
   joined: string;
   phone?: string;
+  password?: string;
 }
 
 /** Users come from /api/admin/users (users.json); fee status is joined from the fee ledger by name. */
@@ -233,6 +234,18 @@ export default function UsersPage() {
                 <option>Admin</option>
               </select>
             </Field>
+            <div className="col-span-2">
+              <Field label={edit.id ? "Password (leave blank to keep current)" : "Password"}>
+                <input
+                  type="password"
+                  placeholder={edit.id ? "Leave empty to keep unchanged" : "Enter password for login"}
+                  className={inputCls}
+                  value={edit.password ?? ""}
+                  onChange={(e) => setEdit({ ...edit, password: e.target.value })}
+                  required={!edit.id}
+                />
+              </Field>
+            </div>
             <div className="col-span-2 flex justify-end gap-2 pt-1">
               <Btn variant="ghost" onClick={() => setEdit(null)}>
                 Cancel
