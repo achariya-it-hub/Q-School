@@ -35,11 +35,11 @@ interface State {
 }
 
 let state: State = {
-  accounts: structuredClone(FEE_ACCOUNTS),
-  leads: structuredClone(PIPELINE),
-  expenses: structuredClone(EXPENSES),
-  leaves: structuredClone(LEAVES),
-  stock: structuredClone(INVENTORY),
+  accounts: [],
+  leads: [],
+  expenses: [],
+  leaves: [],
+  stock: [],
   tasks: [], // loaded from the server by syncTasks()
 };
 

@@ -43,12 +43,12 @@ export function CrmDashboard() {
       <section className={grid4}>
         <Figure label="Open leads" value={String(leads.length)} sub="In the pipeline now" icon="kanban" />
         <Figure label="SLA breached" value={String(breached.length)} sub="No follow-up in time" icon="alert" />
-        <Figure label="Enquiries (Oct)" value={String(FUNNEL[0].value)} sub="Top of the funnel" icon="users" />
-        <Figure label="Enquiry → admission" value={`${((FUNNEL[4].value / FUNNEL[0].value) * 100).toFixed(1)}%`} sub={`${FUNNEL[4].value} admissions`} icon="checkCircle" />
+        <Figure label="Enquiries (Oct)" value={String(FUNNEL[0]?.value ?? 0)} sub="Top of the funnel" icon="users" />
+        <Figure label="Enquiry → admission" value={FUNNEL[0]?.value ? `${((FUNNEL[4].value / FUNNEL[0].value) * 100).toFixed(1)}%` : "0%"} sub={`${FUNNEL[4]?.value ?? 0} admissions`} icon="checkCircle" />
       </section>
       <div className={row2}>
         <Card title="Admissions funnel" action={<ViewToggle table={t1} onChange={setT1} />}>
-          <HBars data={FUNNEL.map((f) => ({ label: f.stage, value: f.value }))} table={t1} valueCol="People" note={(i) => (i === 0 ? null : `${Math.round((FUNNEL[i].value / FUNNEL[i - 1].value) * 100)}%`)} />
+          <HBars data={FUNNEL.map((f) => ({ label: f.stage, value: f.value }))} table={t1} valueCol="People" note={(i) => (i === 0 || !FUNNEL[i - 1]?.value ? null : `${Math.round((FUNNEL[i].value / FUNNEL[i - 1].value) * 100)}%`)} />
         </Card>
         <Card title="Leads by source" action={<ViewToggle table={t2} onChange={setT2} />}>
           <HBars data={LEAD_SOURCES.map((s) => ({ label: s.source, value: s.value }))} table={t2} valueCol="Leads" />
