@@ -5,13 +5,23 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("host") || "";
 
-  // If accessed via erp subdomain (e.g. erp.theqschool.com or erp.localhost),
+  // If accessed via erp subdomain (e.g. erp.theqschool.com),
   // automatically route root visits directly to the Admin / ERP Console.
   if (host.startsWith("erp.")) {
     if (pathname === "/" || pathname === "") {
       const url = request.nextUrl.clone();
       url.pathname = "/admin";
       return NextResponse.redirect(url);
+    }
+  }
+
+  // If accessed via register subdomain (e.g. register.theqschool.com),
+  // automatically route root visits directly to the Registration page.
+  if (host.startsWith("register.")) {
+    if (pathname === "/" || pathname === "") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/register/index.html";
+      return NextResponse.rewrite(url);
     }
   }
 
