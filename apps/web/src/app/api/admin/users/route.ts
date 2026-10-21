@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/crm/auth";
+import { getCurrentUserEmail, isAdmin } from "@/lib/crm/auth";
 import { promises as fs } from "fs";
 import path from "path";
 import { dataFile } from "@/lib/data-dir";
+import { recordAuditLog } from "@/lib/audit/store";
 
 async function readUsers() {
   try {
@@ -62,6 +63,17 @@ export async function POST(req: Request) {
     users.unshift(newUser);
     await writeUsers(users);
 
+    const currentUser = getCurrentUserEmail();
+    await recordAuditLog({
+      action: "CREATE",
+      module: "Users",
+      entityId: newUser.id,
+      entityName: newUser.name,
+      summary: `Created user "${newUser.name}" (${newUser.role})`,
+      performedBy: currentUser,
+      newData: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role, status: newUser.status },
+    }).catch(() => {});
+
     return NextResponse.json({ ok: true, user: newUser });
   } catch (error) {
     console.error("Failed to create user:", error);
@@ -87,6 +99,8 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const prevUser = { ...users[index] };
+
     users[index] = {
       ...users[index],
       name: name ? String(name).trim() : users[index].name,
@@ -98,6 +112,19 @@ export async function PUT(req: Request) {
     };
 
     await writeUsers(users);
+
+    const currentUser = getCurrentUserEmail();
+    await recordAuditLog({
+      action: "UPDATE",
+      module: "Users",
+      entityId: id,
+      entityName: users[index].name,
+      summary: `Updated user "${users[index].name}"`,
+      performedBy: currentUser,
+      previousData: { name: prevUser.name, email: prevUser.email, role: prevUser.role, status: prevUser.status },
+      newData: { name: users[index].name, email: users[index].email, role: users[index].role, status: users[index].status },
+    }).catch(() => {});
+
     return NextResponse.json({ ok: true, user: users[index] });
   } catch (error) {
     return NextResponse.json({ error: (error as Error)?.message || "Failed to update user" }, { status: 500 });
@@ -116,14 +143,26 @@ export async function DELETE(req: Request) {
     }
 
     let users = await readUsers();
-    const initialLength = users.length;
-    users = users.filter((u: { id: string }) => u.id !== id);
+    const targetUser = users.find((u: { id: string }) => u.id === id);
 
-    if (users.length === initialLength) {
+    if (!targetUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    users = users.filter((u: { id: string }) => u.id !== id);
     await writeUsers(users);
+
+    const currentUser = getCurrentUserEmail();
+    await recordAuditLog({
+      action: "DELETE",
+      module: "Users",
+      entityId: id,
+      entityName: targetUser.name,
+      summary: `Deleted user "${targetUser.name}" (${targetUser.email})`,
+      performedBy: currentUser,
+      previousData: targetUser,
+    }).catch(() => {});
+
     return NextResponse.json({ ok: true, id });
   } catch (error) {
     return NextResponse.json({ error: "Failed to delete user" }, { status: 500 });

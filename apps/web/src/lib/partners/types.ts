@@ -1,4 +1,8 @@
 export type PartnerCategory =
+  | "Trainer / HOC"
+  | "Parent Ambassador"
+  | "Staff Referral"
+  | "Sibling Referral"
   | "Marketing Team"
   | "Affiliate"
   | "School Partner"
@@ -9,6 +13,67 @@ export type PartnerCategory =
 export type CommissionType = "percentage" | "flat";
 export type PartnerStatus = "active" | "inactive" | "pending";
 export type PayoutStatus = "Pending" | "Approved" | "Paid";
+
+/**
+ * Referral Bonus & Concession Schemes (as per Q-School Policy):
+ * 1. Trainer/HOC referral bonus (Organic Lead) - Rs. 2,000
+ * 2. Parent Referral Per Admission - 1 month fee reduction
+ * 3. Staff-child concession (50%)
+ * 4. Sibling concession (50%)
+ */
+export type ConcessionType =
+  | "none"
+  | "trainer_hoc"
+  | "parent_referral"
+  | "staff_child"
+  | "sibling";
+
+export interface ConcessionRule {
+  type: ConcessionType;
+  label: string;
+  bonusAmount?: number; // e.g. 2000
+  concessionPercent?: number; // e.g. 50
+  feeReductionMonths?: number; // e.g. 1
+  description: string;
+  badgeText: string;
+}
+
+export const CONCESSION_RULES: Record<ConcessionType, ConcessionRule> = {
+  none: {
+    type: "none",
+    label: "Standard / None",
+    description: "Standard course fee with no concession applied",
+    badgeText: "Standard",
+  },
+  trainer_hoc: {
+    type: "trainer_hoc",
+    label: "Trainer/HOC Referral Bonus (Organic Lead) — Rs. 2,000",
+    bonusAmount: 2000,
+    description: "Trainer / HOC receives a flat Rs. 2,000 referral bonus per organic admission",
+    badgeText: "₹2,000 Bonus",
+  },
+  parent_referral: {
+    type: "parent_referral",
+    label: "Parent Referral Per Admission — 1 Month Fee Reduction",
+    feeReductionMonths: 1,
+    description: "Referring parent receives 1 month fee reduction voucher per new admission",
+    badgeText: "1 Mo. Fee Off",
+  },
+  staff_child: {
+    type: "staff_child",
+    label: "Staff-Child Concession (50%)",
+    concessionPercent: 50,
+    description: "50% concession on tuition fees for children of active Q-School staff",
+    badgeText: "50% Staff Child",
+  },
+  sibling: {
+    type: "sibling",
+    label: "Sibling Concession (50%)",
+    concessionPercent: 50,
+    description: "50% concession on tuition fees for enrolled sibling / second child",
+    badgeText: "50% Sibling",
+  },
+};
 
 export interface PartnerBankDetails {
   upiId?: string;
@@ -64,7 +129,13 @@ export interface PartnerAdmission {
   centreId: string;
   centreName: string;
   course: string;
-  feeAmount: number; // Total agreed/collected fee
+  feeAmount: number; // Final agreed/collected fee
+  originalFee?: number; // Fee before concession
+  concessionType?: ConcessionType;
+  concessionPercent?: number; // e.g. 50
+  concessionAmount?: number; // discount amount in ₹
+  referralBonus?: number; // e.g. 2000
+  feeReductionMonths?: number; // e.g. 1
   commissionAmount: number; // Calculated commission
   paymentMode: string; // Cash, UPI, Card, Net Banking
   paymentStatus: "Paid" | "Partial" | "Pending";
@@ -103,12 +174,20 @@ export interface NewPartnerAdmissionInput {
   centreId: string;
   course: string;
   feeAmount: number;
+  originalFee?: number;
+  concessionType?: ConcessionType;
+  concessionAmount?: number;
+  referralBonus?: number;
   paymentMode?: string;
   paymentStatus?: "Paid" | "Partial" | "Pending";
   notes?: string;
 }
 
 export const PARTNER_CATEGORIES: PartnerCategory[] = [
+  "Trainer / HOC",
+  "Parent Ambassador",
+  "Staff Referral",
+  "Sibling Referral",
   "Marketing Team",
   "Affiliate",
   "School Partner",

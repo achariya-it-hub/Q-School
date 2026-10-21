@@ -21,6 +21,7 @@ import {
 import { Icon } from "@/components/icons";
 import { ADMISSION_CENTRES, centreName } from "@qschool/shared";
 import {
+  CONCESSION_RULES,
   PARTNER_CATEGORIES,
   type NewPartnerInput,
   type Partner,
@@ -315,6 +316,33 @@ function PartnersContent() {
         />
       </div>
 
+      {/* Referral Bonus & Concession Policy Banner matching official document */}
+      <div className="mb-5 rounded-2xl border-2 border-black overflow-hidden bg-white shadow-sm max-w-2xl">
+        <div className="bg-[#FFFF00] px-4 py-2.5 text-center border-b-2 border-black">
+          <h3 className="font-black text-black tracking-wide text-sm sm:text-base uppercase">
+            REFERRAL BONUS &amp; CONCESSION
+          </h3>
+        </div>
+        <div className="p-4 space-y-2.5 text-sm text-black">
+          <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+            <span className="font-medium text-gray-900">Trainer/HOC referral bonus (Organic Lead)</span>
+            <span className="font-extrabold text-base whitespace-nowrap ml-2 text-black">- Rs. 2,000</span>
+          </div>
+          <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+            <span className="font-medium text-gray-900">Parent Referral Per Admission</span>
+            <span className="font-extrabold text-sm whitespace-nowrap ml-2 text-black">- 1 month fee reduction</span>
+          </div>
+          <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+            <span className="font-medium text-gray-900">Staff-child concession</span>
+            <span className="font-extrabold text-base whitespace-nowrap ml-2 text-black">(50%)</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-gray-900">Sibling concession</span>
+            <span className="font-extrabold text-base whitespace-nowrap ml-2 text-black">(50%)</span>
+          </div>
+        </div>
+      </div>
+
       {/* Main Container Card */}
       <Card>
         {/* Top Controls Bar */}
@@ -534,11 +562,23 @@ function PartnersContent() {
                       <td className="p-3">
                         <div className="font-medium text-brand-deep">{a.centreName}</div>
                         <div className="text-xs text-[#7B8E89] truncate max-w-[180px]">{a.course}</div>
-                        <div className="text-[10px] text-[#41564F]">{a.grade}</div>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          <span className="text-[10px] text-[#41564F]">{a.grade}</span>
+                          {a.concessionType && a.concessionType !== "none" && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-[#FFF2B2] text-[#7A5A00] border border-[#FFE082]">
+                              {CONCESSION_RULES[a.concessionType]?.badgeText || a.concessionType}
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="p-3 text-right font-semibold text-brand-ink">
-                        ₹{a.feeAmount.toLocaleString("en-IN")}
+                        <div>₹{a.feeAmount.toLocaleString("en-IN")}</div>
+                        {a.concessionAmount ? (
+                          <div className="text-[10px] text-emerald-800 font-medium">
+                            Saved ₹{a.concessionAmount.toLocaleString("en-IN")}
+                          </div>
+                        ) : null}
                       </td>
 
                       <td className="p-3 text-right font-bold text-emerald-700">
@@ -645,7 +685,19 @@ function PartnersContent() {
                   <select
                     className={inputCls}
                     value={newPartner.category}
-                    onChange={(e) => setNewPartner({ ...newPartner, category: e.target.value as any })}
+                    onChange={(e) => {
+                      const cat = e.target.value as any;
+                      if (cat === "Trainer / HOC") {
+                        setNewPartner({
+                          ...newPartner,
+                          category: cat,
+                          commissionType: "flat",
+                          commissionValue: 2000,
+                        });
+                      } else {
+                        setNewPartner({ ...newPartner, category: cat });
+                      }
+                    }}
                   >
                     {PARTNER_CATEGORIES.map((c) => (
                       <option key={c} value={c}>

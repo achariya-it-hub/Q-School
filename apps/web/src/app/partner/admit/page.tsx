@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Icon } from "@/components/icons";
 import { ADMISSION_CENTRES } from "@qschool/shared";
-import type { Partner } from "@/lib/partners/types";
+import { CONCESSION_RULES, type ConcessionType, type Partner } from "@/lib/partners/types";
 
 function PartnerAdmitContent() {
   const searchParams = useSearchParams();
@@ -17,6 +17,8 @@ function PartnerAdmitContent() {
   const [success, setSuccess] = useState<{
     studentId: string;
     studentName: string;
+    fee: number;
+    concessionLabel?: string;
   } | null>(null);
   const [error, setError] = useState("");
 
@@ -32,6 +34,7 @@ function PartnerAdmitContent() {
     centreId: "mk",
     course: "Comprehensive Robotics & AI Program",
     feeAmount: "25000",
+    concessionType: "none" as ConcessionType,
   });
 
   useEffect(() => {
@@ -47,11 +50,20 @@ function PartnerAdmitContent() {
           if (data.partner.centreId && data.partner.centreId !== "all") {
             setForm((f) => ({ ...f, centreId: data.partner.centreId }));
           }
+          if (data.partner.category === "Trainer / HOC") {
+            setForm((f) => ({ ...f, concessionType: "trainer_hoc" }));
+          } else if (data.partner.category === "Parent Ambassador") {
+            setForm((f) => ({ ...f, concessionType: "parent_referral" }));
+          }
         }
       })
       .catch(() => {})
       .finally(() => setLoadingPartner(false));
   }, [refCode]);
+
+  const baseFee = Number(form.feeAmount) || 25000;
+  const is50Percent = form.concessionType === "staff_child" || form.concessionType === "sibling";
+  const finalPayableFee = is50Percent ? baseFee * 0.5 : baseFee;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,10 +80,13 @@ function PartnerAdmitContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          feeAmount: finalPayableFee,
+          originalFee: baseFee,
+          concessionType: form.concessionType,
           partnerCode: refCode || partner?.code || "DIRECT",
           paymentMode: "Pending",
           paymentStatus: "Pending",
-          notes: "Parent online submission via referral link",
+          notes: `Parent online submission via referral link (${CONCESSION_RULES[form.concessionType]?.label || "Standard"})`,
         }),
       });
       const data = await res.json();
@@ -80,6 +95,8 @@ function PartnerAdmitContent() {
       setSuccess({
         studentId: data.studentId,
         studentName: form.studentName,
+        fee: finalPayableFee,
+        concessionLabel: CONCESSION_RULES[form.concessionType]?.badgeText,
       });
     } catch (err) {
       setError((err as Error).message);
@@ -87,6 +104,7 @@ function PartnerAdmitContent() {
       setSubmitting(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-[#F4F8F7] text-brand-ink flex flex-col justify-between">
@@ -343,6 +361,70 @@ function PartnerAdmitContent() {
                       <option value="Python Coding & IoT Kit">Python Coding & IoT Kit</option>
                     </select>
                   </div>
+                </div>
+              </div>
+
+              {/* Concession & Referral Policy Selection */}
+              <div className="pt-2 border-t border-[#EEF3F1]">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-brand-deep">
+                    Concession & Referral Policy
+                  </h4>
+                  <span className="text-[10px] font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
+                    Official Policy
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                      Concession / Referral Scheme
+                    </label>
+                    <select
+                      value={form.concessionType}
+                      onChange={(e) => setForm({ ...form, concessionType: e.target.value as ConcessionType })}
+                      className="w-full h-11 px-3 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-xs font-semibold focus:border-brand-teal focus:bg-white focus:outline-none"
+                    >
+                      <option value="none">Standard Admission (No Concession)</option>
+                      <option value="staff_child">Staff-Child Concession (50% Fee Waiver)</option>
+                      <option value="sibling">Sibling Concession (50% Fee Waiver)</option>
+                      <option value="trainer_hoc">Trainer / HOC Referral (Rs. 2,000 Bonus)</option>
+                      <option value="parent_referral">Parent Referral (1-Month Fee Reduction)</option>
+                    </select>
+                    <p className="text-[11px] text-[#7B8E89] mt-1">
+                      {CONCESSION_RULES[form.concessionType]?.description}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#41564F] mb-1">Course Tuition Fee</label>
+                    <div className="rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] p-2.5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[#7B8E89]">Standard Program Fee:</span>
+                        <span className="font-semibold text-brand-ink">₹{baseFee.toLocaleString("en-IN")}</span>
+                      </div>
+                      {is50Percent && (
+                        <div className="flex justify-between items-center text-xs text-emerald-800 font-semibold mt-1">
+                          <span>50% Concession Discount:</span>
+                          <span>-₹{(baseFee * 0.5).toLocaleString("en-IN")}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center text-xs font-bold text-brand-deep pt-1.5 mt-1.5 border-t border-[#E2ECE9]">
+                        <span>Payable Fee:</span>
+                        <span className="text-base text-brand-deep">₹{finalPayableFee.toLocaleString("en-IN")}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Policy Highlights Note */}
+                <div className="mt-3 rounded-xl border border-[#FFE8A3] bg-[#FFFBEA] p-2.5 text-[11px] text-[#7A5A00] flex items-center justify-between">
+                  <span>
+                    ⚡ <strong>Policy:</strong> Staff-child & Sibling = 50% concession &bull; Trainer/HOC = Rs. 2,000 bonus &bull; Parent Referral = 1 mo. fee off
+                  </span>
+                  <span className="font-bold uppercase tracking-wider text-[10px] text-amber-900 bg-amber-200/60 px-2 py-0.5 rounded">
+                    Verified
+                  </span>
                 </div>
               </div>
 

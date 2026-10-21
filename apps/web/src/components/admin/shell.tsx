@@ -52,6 +52,7 @@ const GROUPS: { title: string; items: { label: string; icon: IconName; href: str
     title: "Insights & setup",
     items: [
       { label: "Reports", icon: "chart", href: "/admin/reports" },
+      { label: "Audit Trail", icon: "shield", href: "/admin/audit" },
       { label: "Settings", icon: "settings", href: "/admin/settings" },
     ],
   },

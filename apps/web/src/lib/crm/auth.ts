@@ -40,6 +40,15 @@ export function isAdmin(): boolean {
   return !!who && !who.startsWith("staff:"); // staff tokens are signed with the same secret but never grant admin
 }
 
+export function getCurrentUserEmail(): string {
+  try {
+    const who = verify(cookies().get(COOKIE)?.value);
+    return who || "Admin";
+  } catch {
+    return "Admin";
+  }
+}
+
 export function productionLoginProblem(): string | null {
   if (process.env.ALLOW_DEMO_LOGIN === "false") {
     const missing = ["ADMIN_EMAIL", "ADMIN_PASSWORD", "SESSION_SECRET"].filter((k) => !process.env[k]);

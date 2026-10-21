@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { isAdmin } from "@/lib/crm/auth";
+import { isAdmin, getCurrentUserEmail } from "@/lib/crm/auth";
 import { createCourse, deleteCourse, getCourse, readCourses, updateCourse } from "@/lib/courses/store";
+import { recordAuditLog } from "@/lib/audit/store";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,17 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   if (!isAdmin()) return unauthorised();
   try {
-    return NextResponse.json({ ok: true, course: await createCourse(await req.json()) });
+    const course = await createCourse(await req.json());
+    recordAuditLog({
+      action: "CREATE",
+      module: "Courses",
+      entityId: course.id,
+      entityName: course.title,
+      performedBy: getCurrentUserEmail() || "admin",
+      summary: `Created new course "${course.title}" (${course.category}, Level: ${course.level})`,
+      newData: course,
+    }).catch(() => {});
+    return NextResponse.json({ ok: true, course });
   } catch (e) {
     return fail(e);
   }
@@ -35,7 +46,19 @@ export async function PUT(req: Request) {
   try {
     const body = await req.json();
     if (!body?.id) return NextResponse.json({ error: "Course ID is required" }, { status: 400 });
-    return NextResponse.json({ ok: true, course: await updateCourse(String(body.id), body) });
+    const existing = await getCourse(String(body.id));
+    const course = await updateCourse(String(body.id), body);
+    recordAuditLog({
+      action: "UPDATE",
+      module: "Courses",
+      entityId: course.id,
+      entityName: course.title,
+      performedBy: getCurrentUserEmail() || "admin",
+      summary: `Updated course "${course.title}" details/curriculum`,
+      previousData: existing || undefined,
+      newData: course,
+    }).catch(() => {});
+    return NextResponse.json({ ok: true, course });
   } catch (e) {
     return fail(e, (e as Error).message === "Course not found" ? 404 : 400);
   }
@@ -47,8 +70,20 @@ export async function DELETE(req: Request) {
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "Course ID is required" }, { status: 400 });
   try {
-    return NextResponse.json({ ok: true, id: await deleteCourse(id) });
+    const existing = await getCourse(id);
+    const deletedId = await deleteCourse(id);
+    recordAuditLog({
+      action: "DELETE",
+      module: "Courses",
+      entityId: id,
+      entityName: existing?.title || id,
+      performedBy: getCurrentUserEmail() || "admin",
+      summary: `Deleted course "${existing?.title || id}"`,
+      previousData: existing || undefined,
+    }).catch(() => {});
+    return NextResponse.json({ ok: true, id: deletedId });
   } catch (e) {
     return fail(e, 404);
   }
 }
+
