@@ -9,6 +9,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { DATA_DIR } from "@/lib/data-dir";
+import { recordAuditLog } from "@/lib/audit/store";
 import { AGENTS, PIPELINE, STAGES, type PipelineLead, type Stage } from "@qschool/shared";
 
 const DIR = DATA_DIR;
@@ -265,3 +266,114 @@ export async function updateLead(
     return l;
   });
 }
+
+export async function bulkIngestLeads(
+  inputs: (IncomingLead & { owner?: string; value?: number; stage?: Stage })[]
+): Promise<{ created: number; duplicate: number; total: number; leads: CrmLead[] }> {
+  return serial(async () => {
+    const leads = await readLeads();
+    const st = await readState();
+    let createdCount = 0;
+    let duplicateCount = 0;
+    const now = new Date();
+    const when = now.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const results: CrmLead[] = [];
+
+    for (let i = 0; i < inputs.length; i++) {
+      const input = inputs[i];
+      const sourceKey = input.sourceKey || "webhook";
+      const source = clip(input.source || SOURCE_LABEL[sourceKey] || "Bulk Upload", 40);
+      const phone = normalisePhone(input.phone);
+      const email = clip(input.email, 160).toLowerCase();
+
+      // Check duplicate against existing leads
+      const dup = leads.find(
+        (l) =>
+          (input.externalId && l.externalId === input.externalId) ||
+          (phone && phoneKey(l.phone) === phoneKey(phone)) ||
+          (email && l.email && l.email.toLowerCase() === email)
+      );
+
+      if (dup) {
+        dup.timeline.push({
+          when,
+          what: `Re-enquired via ${source} (Bulk Upload)${input.interest ? ` — ${clip(input.interest, 80)}` : ""}`,
+        });
+        dup.lastActivity = "Just now";
+        if (input.owner && AGENTS.includes(input.owner)) dup.owner = input.owner;
+        if (typeof input.value === "number" && input.value > 0) dup.value = input.value;
+        if (input.stage && STAGES.includes(input.stage)) dup.stage = input.stage;
+        duplicateCount++;
+        results.push(dup);
+      } else {
+        const owner =
+          input.owner && AGENTS.includes(input.owner)
+            ? input.owner
+            : AGENTS[st.rr % AGENTS.length];
+
+        const stage: Stage =
+          input.stage && STAGES.includes(input.stage) ? input.stage : "Enquiry";
+
+        const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const lead: CrmLead = {
+          id: `L-${Date.now().toString(36).toUpperCase()}-${randomSuffix}`,
+          name: clip(input.name, 120) || (phone ? `Lead ${prettyPhone(phone)}` : "Unknown lead"),
+          phone: prettyPhone(phone),
+          email: email || undefined,
+          interest: clip(input.interest, 120) || "General enquiry",
+          source,
+          sourceKey,
+          stage,
+          owner,
+          value: typeof input.value === "number" ? Math.max(0, input.value) : 0,
+          createdAt: now.toISOString(),
+          lastActivity: "Just now",
+          externalId: input.externalId,
+          campaign: clip(input.campaign, 120) || undefined,
+          formName: clip(input.formName, 120) || undefined,
+          timeline: [
+            {
+              when,
+              what: `Imported via Bulk Upload · Source: ${source}${input.campaign ? ` · ${clip(input.campaign, 60)}` : ""}`,
+            },
+            { when, what: `Assigned to ${owner}` },
+          ],
+        };
+
+        leads.unshift(lead);
+        st.rr = (st.rr + 1) % AGENTS.length;
+        st.counts[sourceKey] = (st.counts[sourceKey] ?? 0) + 1;
+        st.last[sourceKey] = now.toISOString();
+        createdCount++;
+        results.push(lead);
+      }
+    }
+
+    await writeJson(LEADS_FILE, leads);
+    await writeJson(STATE_FILE, st);
+
+    await recordAuditLog({
+      action: "CREATE",
+      module: "Leads",
+      entityId: `BULK-${Date.now()}`,
+      entityName: `Bulk Upload (${inputs.length} leads)`,
+      summary: `Bulk imported ${inputs.length} leads: ${createdCount} created, ${duplicateCount} merged/duplicate`,
+      newData: { total: inputs.length, created: createdCount, duplicate: duplicateCount },
+    }).catch(() => {});
+
+    return {
+      created: createdCount,
+      duplicate: duplicateCount,
+      total: inputs.length,
+      leads: results,
+    };
+  });
+}
+

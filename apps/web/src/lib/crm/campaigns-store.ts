@@ -399,6 +399,76 @@ export async function createCampaign(input: NewCampaignInput): Promise<CampaignI
   });
 }
 
+export async function bulkCreateCampaigns(
+  inputs: NewCampaignInput[]
+): Promise<{ created: number; campaigns: CampaignItem[] }> {
+  return serial(async () => {
+    const list = await listCampaigns();
+    const now = new Date().toISOString();
+
+    // Determine starting numeric ID
+    const maxNum = list.reduce((max, c) => {
+      const match = c.id.match(/^CMP-(\d+)$/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        return num > max ? num : max;
+      }
+      return max;
+    }, 0);
+
+    const createdItems: CampaignItem[] = [];
+
+    inputs.forEach((input, idx) => {
+      const id = `CMP-${String(maxNum + idx + 1).padStart(3, "0")}`;
+      const item: CampaignItem = {
+        postDate: input.postDate,
+        writer: input.writer || "Srikeha",
+        contentPillar: input.contentPillar || "Brand & Category Awareness",
+        format: input.format || "Static Image",
+        platforms: input.platforms || "Meta (FB/IG)",
+        audience: input.audience || "B2C",
+        postConcept: input.postConcept,
+        postContent: input.postContent || "",
+        sheetLink: input.sheetLink || "",
+        workedOn: input.workedOn || "",
+        status: input.status || "Work in Progress",
+        approvalStatus: input.approvalStatus || "Pending",
+        approvedOn: input.approvedOn || "",
+        designer: input.designer || "Hari",
+        assignedOn: input.assignedOn || "",
+        completedOn: input.completedOn || "",
+        driveLink: input.driveLink || "",
+        creativeApprovalStatus: input.creativeApprovalStatus || "Pending",
+        creativeApprovedOn: input.creativeApprovedOn || "",
+        postStatus: input.postStatus || "Draft",
+        postUrl: input.postUrl || "",
+        publishedBy: input.publishedBy || "",
+        publishedOn: input.publishedOn || "",
+        budget: typeof input.budget === "number" ? Math.max(0, input.budget) : 0,
+        notes: input.notes || "",
+        id,
+        createdAt: now,
+        updatedAt: now,
+      };
+      createdItems.push(item);
+    });
+
+    list.unshift(...createdItems);
+    await writeJson(CAMPAIGNS_FILE, list);
+
+    await recordAuditLog({
+      action: "CREATE",
+      module: "Campaign Calendar",
+      entityId: `BULK-${Date.now()}`,
+      entityName: `Bulk Upload (${createdItems.length} campaigns)`,
+      summary: `Bulk imported ${createdItems.length} campaign posts into Campaign Calendar`,
+      newData: { count: createdItems.length, sample: createdItems.slice(0, 5).map((c) => c.postConcept) },
+    }).catch(() => {});
+
+    return { created: createdItems.length, campaigns: createdItems };
+  });
+}
+
 export async function updateCampaign(
   id: string,
   updates: Partial<CampaignItem>

@@ -8,6 +8,7 @@ import { Btn, Drawer, Field, Modal, PageHeader, SearchInput, StatusBadge, Toast,
 import { useCrmLeads, type CrmLead } from "@/components/admin/crm";
 import { Icon } from "@/components/icons";
 import { WaChat } from "@/components/admin/whatsapp";
+import { downloadCsvFile, parseCsvRows } from "@/lib/csv-helper";
 
 const SOURCE_FILTERS = [
   { key: "all", label: "All sources" },
@@ -109,7 +110,7 @@ const STAGE_THEME: Record<Stage, StageTheme> = {
 };
 
 export default function LeadsPage() {
-  const { leads, loading, fresh, clearFresh, patch, create } = useCrmLeads();
+  const { leads, loading, fresh, clearFresh, patch, create, reload } = useCrmLeads();
   const [q, setQ] = useState("");
   const [owner, setOwner] = useState("All");
   const [src, setSrc] = useState("all");
@@ -118,6 +119,7 @@ export default function LeadsPage() {
   const [over, setOver] = useState<Stage | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [toast, show] = useToast();
 
   // Telephony 1-Click Calling State
@@ -220,6 +222,9 @@ export default function LeadsPage() {
         >
           <Icon name="globe" size={16} /> Lead sources
         </Link>
+        <Btn variant="ghost" icon="upload" onClick={() => setBulkOpen(true)}>
+          Bulk upload
+        </Btn>
         <Btn icon="plus" onClick={() => setAdding(true)}>
           New lead
         </Btn>
@@ -598,6 +603,16 @@ export default function LeadsPage() {
         }}
       />
 
+      <BulkUploadLeadsModal
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        onSuccess={async (summary) => {
+          setBulkOpen(false);
+          show(summary);
+          await reload();
+        }}
+      />
+
       <Toast msg={toast} />
     </AdminShell>
   );
@@ -871,6 +886,228 @@ function NewLead({
           </Btn>
         </div>
       </form>
+    </Modal>
+  );
+}
+
+function BulkUploadLeadsModal({
+  open,
+  onClose,
+  onSuccess,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSuccess: (summary: string) => void;
+}) {
+  const [csvText, setCsvText] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const sampleTemplate = () => {
+    const csv =
+      "Name,Phone,Email,Source,Interest,Owner,Stage,Value\n" +
+      "Aarav Sharma,9876543210,aarav.parent@gmail.com,Meta Ads,Robotics Foundations,Priya,Enquiry,15000\n" +
+      "Diya Patel,9123456780,diya.p@yahoo.com,Google Ads,AI & Python Bootcamp,Karthik,Contacted,18000\n" +
+      "Rohan Iyer,9988776655,,Walk-in,Junior Coding,Sangeetha,Enquiry,12000";
+    downloadCsvFile("leads_import_template.csv", csv);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    setError(null);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = String(evt.target?.result || "");
+      setCsvText(text);
+    };
+    reader.onerror = () => setError("Failed to read file.");
+    reader.readAsText(file);
+  };
+
+  // Parse rows
+  const parsedRecords = parseCsvRows(csvText);
+  const leadRows = parsedRecords.map((r) => ({
+    name: r.name || r.fullname || r.studentname || r.leadname || "",
+    phone: r.phone || r.mobile || r.contact || r.phonenumber || "",
+    email: r.email || r.mail || "",
+    source: r.source || r.leadsource || r.channel || "Bulk Upload",
+    interest: r.interest || r.course || r.program || r.interestedin || "General enquiry",
+    owner: r.owner || r.assignedto || r.counselor || "",
+    stage: (r.stage || r.status || "Enquiry") as Stage,
+    value: Number(r.value || r.fee || r.amount || 0) || 0,
+  }));
+
+  const validRows = leadRows.filter((r) => r.name.trim() || r.phone.trim());
+
+  const handleUpload = async () => {
+    if (!validRows.length) {
+      setError("Please upload or paste CSV data with at least Name or Phone.");
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/crm/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows: validRows }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to import leads");
+
+      onSuccess(
+        `Imported ${data.total} leads: ${data.created} new leads created, ${data.duplicate} existing leads updated.`
+      );
+      setCsvText("");
+      setFileName("");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <Modal open={open} title="Bulk Upload Leads" onClose={onClose} ratio169>
+      <div className="space-y-4 text-xs">
+        {/* Helper bar & Download Template */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 rounded-xl bg-[#F0F5F4] p-3 border border-[#E2ECE9]">
+          <div className="text-[#41564f]">
+            <p className="font-bold text-brand-ink">Upload CSV file or paste spreadsheet data</p>
+            <p className="text-[11px] text-[#7B8E89]">Columns: Name, Phone, Email, Source, Interest, Owner, Stage, Value</p>
+          </div>
+          <button
+            type="button"
+            onClick={sampleTemplate}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#D9E6E2] bg-white text-brand-deep font-bold text-xs hover:border-brand-teal transition shadow-2xs self-start sm:self-auto"
+          >
+            <Icon name="download" size={13} />
+            <span>Download CSV Template</span>
+          </button>
+        </div>
+
+        {/* Dropzone / File Picker */}
+        <div className="border-2 border-dashed border-[#D9E6E2] hover:border-brand-teal/60 rounded-2xl p-4 text-center transition bg-[#FBFDFD]">
+          <input
+            type="file"
+            accept=".csv,text/csv,text/plain"
+            onChange={handleFileChange}
+            id="leads-csv-input"
+            className="hidden"
+          />
+          <label htmlFor="leads-csv-input" className="cursor-pointer flex flex-col items-center gap-1.5">
+            <span className="p-2.5 rounded-full bg-[#E9F6F2] text-brand-deep">
+              <Icon name="upload" size={18} />
+            </span>
+            <span className="font-bold text-brand-ink">
+              {fileName ? fileName : "Click to select .CSV file or drag & drop"}
+            </span>
+            <span className="text-[11px] text-[#7B8E89]">Supports standard UTF-8 CSV exports from Google Sheets or Excel</span>
+          </label>
+        </div>
+
+        {/* Paste CSV Textarea Toggle */}
+        <div>
+          <label className="block text-[11px] font-bold text-[#41564f] uppercase tracking-wider mb-1">
+            Or paste CSV text directly:
+          </label>
+          <textarea
+            rows={4}
+            value={csvText}
+            onChange={(e) => {
+              setCsvText(e.target.value);
+              setError(null);
+            }}
+            placeholder="Name,Phone,Email,Source,Interest&#10;Aarav Sharma,9876543210,aarav@gmail.com,Meta Ads,Robotics"
+            className="w-full font-mono text-[11px] p-2.5 rounded-xl border border-[#D9E6E2] bg-white text-brand-ink outline-none focus:border-brand-teal"
+          />
+        </div>
+
+        {/* Real-time Preview Table */}
+        {validRows.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-brand-ink">
+                Preview: {validRows.length} {validRows.length === 1 ? "lead" : "leads"} ready to import
+              </span>
+              <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                ✓ Valid formatting detected
+              </span>
+            </div>
+
+            <div className="max-h-48 overflow-y-auto rounded-xl border border-[#E2ECE9] bg-white">
+              <table className="w-full text-left text-[11.5px] whitespace-nowrap">
+                <thead className="bg-[#F7FAF9] border-b border-[#EEF3F1] text-[10.5px] font-bold text-[#41564f] uppercase">
+                  <tr>
+                    <th className="p-2">Name</th>
+                    <th className="p-2">Phone</th>
+                    <th className="p-2">Email</th>
+                    <th className="p-2">Source</th>
+                    <th className="p-2">Interest</th>
+                    <th className="p-2">Owner</th>
+                    <th className="p-2">Stage</th>
+                    <th className="p-2 text-right">Fee (₹)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F0F4F3]">
+                  {validRows.slice(0, 5).map((r, i) => (
+                    <tr key={i} className="hover:bg-[#F9FBFB]">
+                      <td className="p-2 font-bold text-brand-ink">{r.name || "—"}</td>
+                      <td className="p-2 font-mono">{r.phone || "—"}</td>
+                      <td className="p-2 text-[#7B8E89]">{r.email || "—"}</td>
+                      <td className="p-2">
+                        <span className="px-1.5 py-0.5 rounded bg-slate-100 font-medium text-[10.5px]">
+                          {r.source}
+                        </span>
+                      </td>
+                      <td className="p-2 text-gray-700">{r.interest}</td>
+                      <td className="p-2">{r.owner || <span className="text-gray-400 italic">Auto</span>}</td>
+                      <td className="p-2">
+                        <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold">
+                          {r.stage}
+                        </span>
+                      </td>
+                      <td className="p-2 text-right font-mono">
+                        {r.value ? `₹${r.value.toLocaleString("en-IN")}` : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {validRows.length > 5 && (
+                <div className="p-2 text-center text-[10.5px] text-[#7B8E89] bg-[#F7FAF9] border-t border-[#EEF3F1]">
+                  ...and {validRows.length - 5} more records
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
+            {error}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#EEF3F1]">
+          <Btn variant="ghost" onClick={onClose} disabled={uploading}>
+            Cancel
+          </Btn>
+          <Btn
+            variant="primary"
+            icon="upload"
+            onClick={handleUpload}
+            disabled={uploading || validRows.length === 0}
+          >
+            {uploading ? "Importing leads…" : `Confirm & Import ${validRows.length} Leads`}
+          </Btn>
+        </div>
+      </div>
     </Modal>
   );
 }

@@ -16,6 +16,7 @@ import {
   useToast,
 } from "@/components/admin/ui";
 import { Icon } from "@/components/icons";
+import { downloadCsvFile, parseCsvRows } from "@/lib/csv-helper";
 import {
   CAMPAIGN_PLATFORMS,
   CONTENT_FORMATS,
@@ -47,6 +48,7 @@ function CampaignsContent() {
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CampaignItem | null>(null);
   const [busy, setBusy] = useState(false);
   const [toast, show] = useToast();
@@ -399,6 +401,9 @@ function CampaignsContent() {
       >
         <Btn variant="primary" icon="plus" onClick={() => openCreateModal()}>
           New Campaign Post
+        </Btn>
+        <Btn variant="ghost" icon="upload" onClick={() => setBulkModalOpen(true)}>
+          Bulk Upload
         </Btn>
         <Btn variant="ghost" icon="download" onClick={handleExportCsv}>
           Export Calendar CSV
@@ -1380,8 +1385,240 @@ function CampaignsContent() {
         </form>
       </Modal>
 
+      <BulkUploadCampaignsModal
+        open={bulkModalOpen}
+        onClose={() => setBulkModalOpen(false)}
+        onSuccess={async (summary) => {
+          setBulkModalOpen(false);
+          show(summary);
+          await loadData();
+        }}
+      />
+
       <Toast msg={toast} />
     </AdminShell>
+  );
+}
+
+function BulkUploadCampaignsModal({
+  open,
+  onClose,
+  onSuccess,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSuccess: (summary: string) => void;
+}) {
+  const [csvText, setCsvText] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const sampleTemplate = () => {
+    const csv =
+      "Post Date,Writer,Content Pillar,Format,Platforms,Audience,Post Concept,Post Content,Sheet Link,Copy Status,Designer,Drive Link,Post Status,Budget\n" +
+      "2026-10-25,Srikeha,Sales & Admission Ad,Lead Form Ad,Meta (FB/IG),B2C,Weekend STEM Trial Classes,Join our fun weekend coding & robotics sessions. Free kit demonstration.,https://docs.google.com/document/d/demo-1,Work in Progress,Hari,https://drive.google.com/drive/demo-1,Draft,5000\n" +
+      "2026-10-26,Srikeha,Program & Framework,Carousel,LinkedIn,B2B,School STEM Lab Partnerships,Empower your school with world-class robotics curriculum.,https://docs.google.com/document/d/demo-2,Ready for Review,Hari,https://drive.google.com/drive/demo-2,Scheduled,8000";
+    downloadCsvFile("campaigns_import_template.csv", csv);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    setError(null);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      const text = String(evt.target?.result || "");
+      setCsvText(text);
+    };
+    reader.onerror = () => setError("Failed to read file.");
+    reader.readAsText(file);
+  };
+
+  const parsedRecords = parseCsvRows(csvText);
+  const campaignRows = parsedRecords.map((r) => ({
+    postDate: r.postdate || r.date || r.scheduleddate || new Date().toISOString().split("T")[0],
+    writer: r.writer || r.copywriter || "Srikeha",
+    contentPillar: (r.contentpillar || r.pillar || "Brand & Category Awareness") as ContentPillar,
+    format: (r.format || r.adformat || "Static Image") as ContentFormat,
+    platforms: (r.platforms || r.platform || "Meta (FB/IG)") as CampaignPlatform,
+    audience: (r.audience?.toUpperCase() === "B2B" ? "B2B" : "B2C") as any,
+    postConcept: r.postconcept || r.concept || r.campaignname || r.title || "",
+    postContent: r.postcontent || r.content || r.copy || "",
+    sheetLink: r.sheetlink || r.doclink || r.doc || "",
+    status: (r.copystatus || r.status || "Work in Progress") as any,
+    designer: r.designer || "Hari",
+    driveLink: r.drivelink || r.drive || r.assetlink || "",
+    postStatus: (r.poststatus || "Draft") as any,
+    budget: Number(r.budget || 0) || 0,
+  }));
+
+  const validRows = campaignRows.filter((r) => r.postConcept.trim());
+
+  const handleUpload = async () => {
+    if (!validRows.length) {
+      setError("Please upload or paste CSV data with at least a Post Concept / Campaign Name.");
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/campaigns", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows: validRows }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to import campaigns");
+
+      onSuccess(`Successfully imported ${data.created} campaign posts into Campaign Calendar.`);
+      setCsvText("");
+      setFileName("");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <Modal open={open} title="Bulk Upload Campaigns" onClose={onClose} ratio169>
+      <div className="space-y-4 text-xs">
+        {/* Helper bar & Download Template */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 rounded-xl bg-[#F0F5F4] p-3 border border-[#E2ECE9]">
+          <div className="text-[#41564f]">
+            <p className="font-bold text-brand-ink">Upload CSV file or paste campaign calendar sheet</p>
+            <p className="text-[11px] text-[#7B8E89]">
+              Columns: Post Date, Writer, Content Pillar, Format, Platforms, Audience, Post Concept, Budget
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={sampleTemplate}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#D9E6E2] bg-white text-brand-deep font-bold text-xs hover:border-brand-teal transition shadow-2xs self-start sm:self-auto"
+          >
+            <Icon name="download" size={13} />
+            <span>Download CSV Template</span>
+          </button>
+        </div>
+
+        {/* Dropzone / File Picker */}
+        <div className="border-2 border-dashed border-[#D9E6E2] hover:border-brand-teal/60 rounded-2xl p-4 text-center transition bg-[#FBFDFD]">
+          <input
+            type="file"
+            accept=".csv,text/csv,text/plain"
+            onChange={handleFileChange}
+            id="campaigns-csv-input"
+            className="hidden"
+          />
+          <label htmlFor="campaigns-csv-input" className="cursor-pointer flex flex-col items-center gap-1.5">
+            <span className="p-2.5 rounded-full bg-[#E9F6F2] text-brand-deep">
+              <Icon name="upload" size={18} />
+            </span>
+            <span className="font-bold text-brand-ink">
+              {fileName ? fileName : "Click to select .CSV file or drag & drop"}
+            </span>
+            <span className="text-[11px] text-[#7B8E89]">Supports standard UTF-8 CSV exports from Google Sheets or Excel</span>
+          </label>
+        </div>
+
+        {/* Paste CSV Textarea */}
+        <div>
+          <label className="block text-[11px] font-bold text-[#41564f] uppercase tracking-wider mb-1">
+            Or paste CSV text directly:
+          </label>
+          <textarea
+            rows={4}
+            value={csvText}
+            onChange={(e) => {
+              setCsvText(e.target.value);
+              setError(null);
+            }}
+            placeholder="Post Date,Platforms,Content Pillar,Post Concept,Budget&#10;2026-10-25,Meta (FB/IG),Sales & Admission Ad,Trial Class Campaign,5000"
+            className="w-full font-mono text-[11px] p-2.5 rounded-xl border border-[#D9E6E2] bg-white text-brand-ink outline-none focus:border-brand-teal"
+          />
+        </div>
+
+        {/* Real-time Preview Table */}
+        {validRows.length > 0 && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-brand-ink">
+                Preview: {validRows.length} {validRows.length === 1 ? "campaign" : "campaigns"} ready to import
+              </span>
+              <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                ✓ Valid formatting detected
+              </span>
+            </div>
+
+            <div className="max-h-48 overflow-y-auto rounded-xl border border-[#E2ECE9] bg-white">
+              <table className="w-full text-left text-[11.5px] whitespace-nowrap">
+                <thead className="bg-[#F7FAF9] border-b border-[#EEF3F1] text-[10.5px] font-bold text-[#41564f] uppercase">
+                  <tr>
+                    <th className="p-2">Date</th>
+                    <th className="p-2">Concept / Campaign</th>
+                    <th className="p-2">Platform</th>
+                    <th className="p-2">Pillar</th>
+                    <th className="p-2">Format</th>
+                    <th className="p-2">Audience</th>
+                    <th className="p-2">Writer</th>
+                    <th className="p-2 text-right">Budget (₹)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F0F4F3]">
+                  {validRows.slice(0, 5).map((r, i) => (
+                    <tr key={i} className="hover:bg-[#F9FBFB]">
+                      <td className="p-2 font-mono font-bold text-brand-ink">{r.postDate}</td>
+                      <td className="p-2 font-bold text-brand-ink max-w-xs truncate">{r.postConcept}</td>
+                      <td className="p-2">
+                        <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold text-[10px]">
+                          {r.platforms}
+                        </span>
+                      </td>
+                      <td className="p-2 text-gray-700">{r.contentPillar}</td>
+                      <td className="p-2 text-[#7B8E89]">{r.format}</td>
+                      <td className="p-2 font-bold text-[10px]">{r.audience}</td>
+                      <td className="p-2">{r.writer}</td>
+                      <td className="p-2 text-right font-mono font-bold text-emerald-700">
+                        {r.budget ? `₹${r.budget.toLocaleString("en-IN")}` : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {validRows.length > 5 && (
+                <div className="p-2 text-center text-[10.5px] text-[#7B8E89] bg-[#F7FAF9] border-t border-[#EEF3F1]">
+                  ...and {validRows.length - 5} more campaigns
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Error message */}
+        {error && (
+          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
+            {error}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#EEF3F1]">
+          <Btn variant="ghost" onClick={onClose} disabled={uploading}>
+            Cancel
+          </Btn>
+          <Btn
+            variant="primary"
+            icon="upload"
+            onClick={handleUpload}
+            disabled={uploading || validRows.length === 0}
+          >
+            {uploading ? "Importing campaigns…" : `Confirm & Import ${validRows.length} Campaigns`}
+          </Btn>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
