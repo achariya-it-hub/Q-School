@@ -22,6 +22,7 @@ export function SiteFooter({ stickyCtaSpace = false }: { stickyCtaSpace?: boolea
             <li><Link href="/live" className="hover:text-white">Live &amp; Webinars</Link></li>
             <li><Link href="/dashboard" className="hover:text-white">My Learning</Link></li>
             <li><Link href="/#pricing" className="hover:text-white">Pricing</Link></li>
+            <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
             <li><Link href="/admin/login" className="hover:text-white">Admin Console</Link></li>
           </ul>
         </div>
