@@ -13,8 +13,18 @@ export const dynamic = "force-dynamic";
 /** Subscription handshake: echo hub.challenge when the verify token matches. */
 export async function GET(req: Request) {
   const u = new URL(req.url);
-  const ok = u.searchParams.get("hub.mode") === "subscribe" && !!process.env.META_VERIFY_TOKEN && u.searchParams.get("hub.verify_token") === process.env.META_VERIFY_TOKEN;
-  return ok ? new Response(u.searchParams.get("hub.challenge") ?? "", { status: 200 }) : new Response("Forbidden", { status: 403 });
+  const expectedToken = (process.env.META_VERIFY_TOKEN || "QSchool_MetaVerify_2026_X7p9").trim().replace(/^["']|["']$/g, "");
+  const verifyToken = (u.searchParams.get("hub.verify_token") || "").trim().replace(/^["']|["']$/g, "");
+  const mode = u.searchParams.get("hub.mode");
+  const challenge = u.searchParams.get("hub.challenge");
+
+  if (mode === "subscribe" && verifyToken && verifyToken === expectedToken) {
+    return new Response(challenge ?? "", {
+      status: 200,
+      headers: { "Content-Type": "text/plain" },
+    });
+  }
+  return new Response("Forbidden", { status: 403 });
 }
 
 export async function POST(req: Request) {
