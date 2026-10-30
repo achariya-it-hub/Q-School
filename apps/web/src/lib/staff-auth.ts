@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { dataFile } from "@/lib/data-dir";
 import { sign, verify } from "@/lib/crm/auth";
 import { DEFAULT_STAFF, type StaffLogin } from "@/lib/default-staff";
+import { findDbStaffLogin, getDbStaffLogins, saveDbStaffLogin } from "@/lib/db";
 
 export const STAFF_COOKIE = "qs_staff";
 const FILE = dataFile("staff-logins.json");
@@ -19,6 +20,11 @@ interface Login {
 }
 
 async function read(): Promise<Login[]> {
+  try {
+    const dbStaff = await getDbStaffLogins();
+    if (dbStaff && dbStaff.length > 0) return dbStaff;
+  } catch {}
+
   try {
     if (!existsSync(FILE)) {
       await fs.writeFile(FILE, JSON.stringify(DEFAULT_STAFF, null, 2));
@@ -53,11 +59,21 @@ export async function saveLogin(name: string, email: string, password: string, c
   const all = await read();
   const salt = randomBytes(16).toString("hex");
   const rec: Login = { name, email: email.trim().toLowerCase(), salt, hash: hashPw(password, salt), ...(centre ? { centre } : {}) };
-  await fs.writeFile(FILE, JSON.stringify([...all.filter((l) => l.name !== name && l.email !== rec.email), rec], null, 2));
+  await Promise.all([
+    fs.writeFile(FILE, JSON.stringify([...all.filter((l) => l.name !== name && l.email !== rec.email), rec], null, 2)),
+    saveDbStaffLogin(rec),
+  ]);
 }
 
 export async function checkStaff(email: string, password: string): Promise<Login | null> {
-  const l = (await read()).find((x) => x.email === email.trim().toLowerCase());
+  const cleanEmail = email.trim().toLowerCase();
+  let l: Login | null = null;
+  try {
+    l = await findDbStaffLogin(cleanEmail);
+  } catch {}
+  if (!l) {
+    l = (await read()).find((x) => x.email === cleanEmail) || null;
+  }
   if (!l) return null;
   const a = Buffer.from(l.hash, "hex");
   const b = Buffer.from(hashPw(password, l.salt), "hex");

@@ -141,3 +141,4 @@ export const DEFAULT_USERS: SeedUser[] = [
     password: "admin123",
   },
 ];
+

@@ -5,8 +5,12 @@ import path from "path";
 import { dataFile } from "@/lib/data-dir";
 import { recordAuditLog } from "@/lib/audit/store";
 import { DEFAULT_USERS } from "@/lib/default-users";
+import { deleteDbUser, getDbUsers, insertDbUser, updateDbUser, type DbUser } from "@/lib/db";
 
-async function readUsers() {
+async function readUsers(): Promise<DbUser[]> {
+  const dbUsers = await getDbUsers();
+  if (dbUsers && dbUsers.length > 0) return dbUsers;
+
   try {
     const file = dataFile("users.json");
     if (!existsSync(file)) {
@@ -66,21 +70,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "A user with this email already exists" }, { status: 400 });
     }
 
-    const newUser = {
+    const newUser: DbUser = {
       id: `usr_${Date.now()}`,
       name: String(name).trim(),
       email: String(email).trim().toLowerCase(),
-      role: role || "Student",
+      role: (role as any) || "Student",
       location: location ? String(location).trim() : undefined,
       centreId: centreId ? String(centreId).trim() : undefined,
-      status: status || "Active",
+      status: (status as any) || "Active",
       phone: phone || "",
       password: password ? String(password).trim() : undefined,
       joined: new Date().toISOString().split("T")[0],
     };
 
     users.unshift(newUser);
-    await writeUsers(users);
+    await Promise.all([
+      writeUsers(users),
+      insertDbUser(newUser),
+    ]);
 
     const currentUser = getCurrentUserEmail();
     await recordAuditLog({
@@ -132,7 +139,10 @@ export async function PUT(req: Request) {
       ...(password ? { password: String(password).trim() } : {}),
     };
 
-    await writeUsers(users);
+    await Promise.all([
+      writeUsers(users),
+      updateDbUser(users[index]),
+    ]);
 
     const currentUser = getCurrentUserEmail();
     await recordAuditLog({
@@ -171,7 +181,10 @@ export async function DELETE(req: Request) {
     }
 
     users = users.filter((u: { id: string }) => u.id !== id);
-    await writeUsers(users);
+    await Promise.all([
+      writeUsers(users),
+      deleteDbUser(id),
+    ]);
 
     const currentUser = getCurrentUserEmail();
     await recordAuditLog({

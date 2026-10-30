@@ -12,11 +12,12 @@ import { checkCredentials, getCurrentUserEmail, isAdmin } from "@/lib/crm/auth";
 import { readProfile, removePhoto, setName, setPassword, setPhoto } from "@/lib/admin-profile";
 import { dataFile } from "@/lib/data-dir";
 import { DEFAULT_USERS } from "@/lib/default-users";
+import { findDbUserByEmail } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 const email = () => process.env.ADMIN_EMAIL || "admin@qschool.com";
-const view = () => {
+const view = async () => {
   const currentEmail = getCurrentUserEmail()?.toLowerCase();
   const defaultEmail = email().toLowerCase();
 
@@ -30,6 +31,14 @@ const view = () => {
   if (def) {
     return { name: def.name, email: def.email, role: def.role || "Faculty", hasPhoto: false };
   }
+
+  // Check database
+  try {
+    const dbUser = await findDbUserByEmail(currentEmail);
+    if (dbUser) {
+      return { name: dbUser.name, email: dbUser.email, role: dbUser.role || "Faculty", hasPhoto: false };
+    }
+  } catch {}
 
   try {
     const file = dataFile("users.json");
@@ -45,11 +54,12 @@ const view = () => {
 
   return { name: currentEmail.split("@")[0], email: currentEmail, role: "Faculty", hasPhoto: false };
 };
+
 const deny = () => NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
 export async function GET() {
   if (!isAdmin()) return deny();
-  return NextResponse.json({ ok: true, ...view() });
+  return NextResponse.json({ ok: true, ...(await view()) });
 }
 
 export async function PATCH(req: Request) {
