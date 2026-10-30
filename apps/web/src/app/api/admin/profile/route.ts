@@ -29,14 +29,16 @@ const view = async () => {
   // Check bundled default users
   const def = DEFAULT_USERS.find((u) => u.email.toLowerCase() === currentEmail);
   if (def) {
-    return { name: def.name, email: def.email, role: def.role || "Faculty", hasPhoto: false };
+    const roleLabel = def.role === "CentreManager" ? "Centre Manager" : def.role || "Staff";
+    return { name: def.name, email: def.email, role: roleLabel, hasPhoto: false };
   }
 
   // Check database
   try {
     const dbUser = await findDbUserByEmail(currentEmail);
     if (dbUser) {
-      return { name: dbUser.name, email: dbUser.email, role: dbUser.role || "Faculty", hasPhoto: false };
+      const roleLabel = dbUser.role === "CentreManager" ? "Centre Manager" : dbUser.role || "Staff";
+      return { name: dbUser.name, email: dbUser.email, role: roleLabel, hasPhoto: false };
     }
   } catch {}
 
@@ -48,11 +50,12 @@ const view = async () => {
     }
     const u = list.find((x: any) => x.email?.toLowerCase() === currentEmail);
     if (u) {
-      return { name: u.name, email: u.email, role: u.role || "Faculty", hasPhoto: false };
+      const roleLabel = u.role === "CentreManager" ? "Centre Manager" : u.role || "Staff";
+      return { name: u.name, email: u.email, role: roleLabel, hasPhoto: false };
     }
   } catch {}
 
-  return { name: currentEmail.split("@")[0], email: currentEmail, role: "Faculty", hasPhoto: false };
+  return { name: currentEmail.split("@")[0], email: currentEmail, role: "Staff", hasPhoto: false };
 };
 
 const deny = () => NextResponse.json({ error: "Unauthorised" }, { status: 401 });

@@ -1,12 +1,12 @@
 import { neon } from "@neondatabase/serverless";
-import { DEFAULT_USERS, type SeedUser } from "@/lib/default-users";
+import { DEFAULT_USERS, type SeedUser, type UserRole } from "@/lib/default-users";
 import { DEFAULT_STAFF, type StaffLogin } from "@/lib/default-staff";
 
 export interface DbUser {
   id: string;
   name: string;
   email: string;
-  role: "Admin" | "Faculty" | "Student";
+  role: UserRole;
   location?: string;
   centreId?: string;
   status: "Active" | "Suspended";

@@ -10,7 +10,28 @@ import { Icon } from "@/components/icons";
 import { ACCOUNT_TONE } from "@/components/admin/finance";
 import { downloadCsv, useConsole } from "@/components/admin/store";
 
-type Role = "Admin" | "Faculty" | "Student";
+type Role = "Admin" | "CentreManager" | "Faculty" | "Counsellor" | "Finance" | "Student";
+
+const ROLE_LABEL: Record<string, string> = {
+  CentreManager: "Centre Manager",
+  "Centre Manager": "Centre Manager",
+  Faculty: "Faculty",
+  Admin: "Admin",
+  Counsellor: "Counsellor",
+  Finance: "Finance",
+  Student: "Student",
+};
+
+const ROLE_BADGE: Record<string, string> = {
+  CentreManager: "bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD]",
+  "Centre Manager": "bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD]",
+  Faculty: "bg-[#EEF2FF] text-[#3B4CB8] border border-[#C7D2FE]",
+  Admin: "bg-[#FEF3E2] text-[#9A5B00] border border-[#FDE68A]",
+  Counsellor: "bg-[#FDF4FF] text-[#A21CAF] border border-[#F5D0FE]",
+  Finance: "bg-[#FEFCE8] text-[#854D0E] border border-[#FEF08A]",
+  Student: "bg-[#E8F5F1] text-[#054038] border border-[#A7F3D0]",
+};
+
 interface User {
   id: string;
   name: string;
@@ -46,17 +67,22 @@ export default function UsersPage() {
   const rows = useMemo(() => {
     const ledgerOnly: User[] = accounts
       .filter((a) => !users.some((u) => u.name.toLowerCase() === a.student.toLowerCase()))
-      .map((a) => ({ id: a.id, name: a.student, email: a.email, role: "Student", status: "Active", joined: a.installments[0].due, phone: a.phone }));
+      .map((a) => ({ id: a.id, name: a.student, email: a.email, role: "Student" as Role, status: "Active" as const, joined: a.installments[0].due, phone: a.phone }));
     return [...users, ...ledgerOnly]
-      .filter((u) => role === "All" || u.role === role)
-      .filter((u) => `${u.name} ${u.email} ${u.phone ?? ""}`.toLowerCase().includes(q.toLowerCase()));
+      .filter((u) => {
+        if (role === "All") return true;
+        if (role === "CentreManager") return u.role === "CentreManager" || (u.role as string) === "Centre Manager";
+        return u.role === role;
+      })
+      .filter((u) => `${u.name} ${u.email} ${u.phone ?? ""} ${u.role} ${(u as any).location ?? ""}`.toLowerCase().includes(q.toLowerCase()));
   }, [users, accounts, role, q]);
 
   const fee = (name: string) => {
     const a = accounts.find((x) => x.student.toLowerCase() === name.toLowerCase());
     return a ? { a, t: accountTotals(a) } : null;
   };
-  const count = (r: Role) => rows.filter((u) => u.role === r).length;
+  const count = (r: Role) =>
+    rows.filter((u) => u.role === r || (r === "CentreManager" && (u.role as string) === "Centre Manager")).length;
 
   const save = async (u: Partial<User>) => {
     const res = await fetch("/api/admin/users", {
@@ -96,24 +122,28 @@ export default function UsersPage() {
         </Btn>
       </PageHeader>
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Figure label="Students" value={String(count("Student"))} sub="With login or on the fee ledger" icon="users" />
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Figure label="Centre Managers" value={String(count("CentreManager"))} sub="Location & branch leads" icon="briefcase" />
         <Figure label="Faculty" value={String(count("Faculty"))} sub="Instructors & mentors" icon="lessons" />
         <Figure label="Admins" value={String(count("Admin"))} sub="Console access" icon="shield" />
+        <Figure label="Students" value={String(count("Student"))} sub="With login or on fee ledger" icon="users" />
       </section>
 
       <Card className="mt-5">
         <div className="mb-4 flex flex-wrap items-center gap-3">
-          <SearchInput value={q} onChange={setQ} placeholder="Search name, email, phone…" />
+          <SearchInput value={q} onChange={setQ} placeholder="Search name, email, phone, location…" />
           <Segmented<"All" | Role>
             label="Role"
             value={role}
             onChange={setRole}
             options={[
               { value: "All", label: "All" },
-              { value: "Student", label: "Students" },
+              { value: "CentreManager", label: "Centre Managers" },
               { value: "Faculty", label: "Faculty" },
               { value: "Admin", label: "Admins" },
+              { value: "Counsellor", label: "Counsellors" },
+              { value: "Finance", label: "Finance" },
+              { value: "Student", label: "Students" },
             ]}
           />
         </div>
@@ -154,14 +184,14 @@ export default function UsersPage() {
                   <Td className="whitespace-nowrap text-[#41564f]">{u.phone || "—"}</Td>
                   <Td className="text-brand-ink">
                     <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${
-                      u.role === "Faculty" ? "bg-[#EEF2FF] text-[#3B4CB8]" : u.role === "Admin" ? "bg-[#FEF3E2] text-[#9A5B00]" : "bg-[#E8F5F1] text-[#054038]"
+                      ROLE_BADGE[u.role] || "bg-[#F1F5F4] text-[#41564f]"
                     }`}>
-                      {u.role}
+                      {ROLE_LABEL[u.role] || u.role}
                     </span>
                   </Td>
                   <Td>
                     <span className="block max-w-[200px] truncate text-[#41564f]">
-                      {u.role === "Faculty" ? (u.location ? `Centre: ${u.location}` : "Faculty") : f ? f.a.course : "—"}
+                      {(u as any).location ? `Centre: ${(u as any).location}` : f ? f.a.course : "—"}
                     </span>
                   </Td>
                   <Td>
@@ -237,12 +267,41 @@ export default function UsersPage() {
               <input className={inputCls} value={edit.phone ?? ""} onChange={(e) => setEdit({ ...edit, phone: e.target.value })} />
             </Field>
             <Field label="Role">
-              <select className={inputCls} value={edit.role} onChange={(e) => setEdit({ ...edit, role: e.target.value as Role })}>
-                <option>Student</option>
-                <option>Faculty</option>
-                <option>Admin</option>
+              <select
+                className={inputCls}
+                value={
+                  (edit.role as string) === "Centre Manager" || (edit.role as string)?.toLowerCase() === "centremanager"
+                    ? "CentreManager"
+                    : edit.role?.toLowerCase() === "faculty"
+                    ? "Faculty"
+                    : edit.role?.toLowerCase() === "admin"
+                    ? "Admin"
+                    : edit.role?.toLowerCase() === "counsellor"
+                    ? "Counsellor"
+                    : edit.role?.toLowerCase() === "finance"
+                    ? "Finance"
+                    : edit.role || "Student"
+                }
+                onChange={(e) => setEdit({ ...edit, role: e.target.value as Role })}
+              >
+                <option value="CentreManager">Centre Manager</option>
+                <option value="Faculty">Faculty</option>
+                <option value="Admin">Admin</option>
+                <option value="Counsellor">Counsellor</option>
+                <option value="Finance">Finance</option>
+                <option value="Student">Student</option>
               </select>
             </Field>
+            <div className="col-span-2">
+              <Field label="Centre / Location (optional)">
+                <input
+                  className={inputCls}
+                  placeholder="e.g. Pondy, Adyar, Valasaravakkam, Whitefield, Coimbatore..."
+                  value={edit.location ?? ""}
+                  onChange={(e) => setEdit({ ...edit, location: e.target.value })}
+                />
+              </Field>
+            </div>
             <div className="col-span-2">
               <Field label={edit.id ? "Password (leave blank to keep current)" : "Password"}>
                 <input

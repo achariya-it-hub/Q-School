@@ -1,8 +1,10 @@
+export type UserRole = "Admin" | "CentreManager" | "Faculty" | "Counsellor" | "Finance" | "Student";
+
 export interface SeedUser {
   id: string;
   name: string;
   email: string;
-  role: "Admin" | "Faculty" | "Student";
+  role: UserRole;
   location?: string;
   centreId?: string;
   status: "Active" | "Suspended";
@@ -36,7 +38,7 @@ export const DEFAULT_USERS: SeedUser[] = [
     id: "usr_pondy",
     name: "Faculty - Pondy",
     email: "pondy@theqschool.com",
-    role: "Faculty",
+    role: "CentreManager",
     location: "pondy",
     centreId: "mk",
     status: "Active",
@@ -48,7 +50,7 @@ export const DEFAULT_USERS: SeedUser[] = [
     id: "usr_adyar",
     name: "Faculty - Adyar",
     email: "adyar@theqschool.com",
-    role: "Faculty",
+    role: "CentreManager",
     location: "adyar",
     centreId: "ad",
     status: "Active",
@@ -60,7 +62,7 @@ export const DEFAULT_USERS: SeedUser[] = [
     id: "usr_wk",
     name: "Faculty - WK",
     email: "wk@theqschool.com",
-    role: "Faculty",
+    role: "CentreManager",
     location: "wk",
     centreId: "vl",
     status: "Active",
@@ -72,7 +74,7 @@ export const DEFAULT_USERS: SeedUser[] = [
     id: "usr_coimbatore",
     name: "Faculty - Coimbatore",
     email: "coimbatore@theqschool.com",
-    role: "Faculty",
+    role: "CentreManager",
     location: "coimbatore",
     centreId: "sc",
     status: "Active",
@@ -84,7 +86,7 @@ export const DEFAULT_USERS: SeedUser[] = [
     id: "usr_pune",
     name: "Faculty - Pune",
     email: "pune@theqschool.com",
-    role: "Faculty",
+    role: "CentreManager",
     location: "Pune",
     centreId: "au",
     status: "Active",
@@ -96,7 +98,7 @@ export const DEFAULT_USERS: SeedUser[] = [
     id: "usr_hyderabad",
     name: "Faculty - Hyderabad",
     email: "hyderabad@theqschool.com",
-    role: "Faculty",
+    role: "CentreManager",
     location: "Hyderabad",
     centreId: "bh",
     status: "Active",
@@ -108,7 +110,7 @@ export const DEFAULT_USERS: SeedUser[] = [
     id: "usr_ksm",
     name: "Faculty - Kasturi Nagar",
     email: "ksm@theqschool.com",
-    role: "Faculty",
+    role: "CentreManager",
     location: "Kasturi Nagar",
     centreId: "kn",
     status: "Active",
@@ -120,7 +122,7 @@ export const DEFAULT_USERS: SeedUser[] = [
     id: "usr_whitefield",
     name: "Faculty - Whitefield",
     email: "whitefield@theqschool.com",
-    role: "Faculty",
+    role: "CentreManager",
     location: "Whitefield",
     centreId: "wf",
     status: "Active",
@@ -132,7 +134,7 @@ export const DEFAULT_USERS: SeedUser[] = [
     id: "usr_trichy",
     name: "Faculty - Trichy",
     email: "trichy@theqschool.com",
-    role: "Faculty",
+    role: "CentreManager",
     location: "Trichy",
     centreId: "tn",
     status: "Active",

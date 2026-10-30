@@ -31,13 +31,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Wrong email or password" }, { status: 401 });
   }
 
+  const formatRole = (r?: string) => (r === "CentreManager" ? "Centre Manager" : r || "Staff");
+
   let user = { email: cleanEmail, name: "Admin", role: "Super Admin" };
 
   const def = DEFAULT_USERS.find((u) => u.email.toLowerCase() === cleanEmail);
   if (def) {
-    user = { email: def.email, name: def.name, role: def.role };
+    user = { email: def.email, name: def.name, role: formatRole(def.role) };
   } else if (dbUser) {
-    user = { email: dbUser.email, name: dbUser.name || "User", role: dbUser.role || "Faculty" };
+    user = { email: dbUser.email, name: dbUser.name || "User", role: formatRole(dbUser.role) };
   } else {
     try {
       const file = dataFile("users.json");
@@ -47,7 +49,7 @@ export async function POST(req: Request) {
       }
       const u = list.find((x: any) => x.email?.toLowerCase() === cleanEmail);
       if (u) {
-        user = { email: u.email, name: u.name || "User", role: u.role || "Faculty" };
+        user = { email: u.email, name: u.name || "User", role: formatRole(u.role) };
       }
     } catch {}
   }
