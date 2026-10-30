@@ -11,6 +11,7 @@ import path from "path";
 import { checkCredentials, getCurrentUserEmail, isAdmin } from "@/lib/crm/auth";
 import { readProfile, removePhoto, setName, setPassword, setPhoto } from "@/lib/admin-profile";
 import { dataFile } from "@/lib/data-dir";
+import { DEFAULT_USERS } from "@/lib/default-users";
 
 export const dynamic = "force-dynamic";
 
@@ -24,22 +25,17 @@ const view = () => {
     return { name: p.name || ADMIN_USER.name, email: defaultEmail, role: ADMIN_USER.role, hasPhoto: !!p.hasPhoto };
   }
 
+  // Check bundled default users
+  const def = DEFAULT_USERS.find((u) => u.email.toLowerCase() === currentEmail);
+  if (def) {
+    return { name: def.name, email: def.email, role: def.role || "Faculty", hasPhoto: false };
+  }
+
   try {
     const file = dataFile("users.json");
     let list: any[] = [];
     if (existsSync(file)) {
       try { list = JSON.parse(readFileSync(file, "utf8")); } catch {}
-    }
-    if (!list.length) {
-      const candidates = [
-        path.join(process.cwd(), "users.json"),
-        path.join(process.cwd(), "apps", "web", "users.json"),
-      ];
-      for (const s of candidates) {
-        if (existsSync(s)) {
-          try { list = JSON.parse(readFileSync(s, "utf8")); if (list.length) break; } catch {}
-        }
-      }
     }
     const u = list.find((x: any) => x.email?.toLowerCase() === currentEmail);
     if (u) {

@@ -1,0 +1,73 @@
+export interface StaffLogin {
+  name: string;
+  email: string;
+  salt: string;
+  hash: string;
+  centre?: string;
+}
+
+export const DEFAULT_STAFF: StaffLogin[] = [
+  {
+    name: "Faculty - Pondy",
+    email: "pondy@theqschool.com",
+    salt: "7483a1e6bd14b037e79bd570ea3a29d8",
+    hash: "53d8499405f6cba515192f3658ce36dca351663cd30f5fc477f5f97087014b48",
+    centre: "mk",
+  },
+  {
+    name: "Faculty - Adyar",
+    email: "adyar@theqschool.com",
+    salt: "ce3c5a8ec980f427849d0a9231c9cbe9",
+    hash: "0e3ae56970954d2f9fd3828007c01ec1b687c26e352ace4c5bb8d3884578180f",
+    centre: "ad",
+  },
+  {
+    name: "Faculty - WK",
+    email: "wk@theqschool.com",
+    salt: "68796eb6bcfacc9398eb1f7ac43c835e",
+    hash: "2e8eaf38b982a72e44d3b920277cae5f759dc70886a366617ad9be4019d4dcd7",
+    centre: "vl",
+  },
+  {
+    name: "Faculty - Coimbatore",
+    email: "coimbatore@theqschool.com",
+    salt: "1744e08aeecd75cf61c01aa9d54fea07",
+    hash: "60ac5a85bef1d991a4e586ae2b3d1401f027069747bee1a94d026cea2c1e07e3",
+    centre: "sc",
+  },
+  {
+    name: "Faculty - Pune",
+    email: "pune@theqschool.com",
+    salt: "c5d900e08baaa0b1a93a54e5dc33d4f5",
+    hash: "32ad468481a1709cbd9f976df2f9474d2e10067bdafe17159b9da75b239d3986",
+    centre: "au",
+  },
+  {
+    name: "Faculty - Hyderabad",
+    email: "hyderabad@theqschool.com",
+    salt: "a3591972780d71edcd7125995bf158cb",
+    hash: "20135561187f51478547a3c55289aa4ae4b1db388081ef73b969bebb3272c7f1",
+    centre: "bh",
+  },
+  {
+    name: "Faculty - Kasturi Nagar",
+    email: "ksm@theqschool.com",
+    salt: "42e42108be701cc72c65f1a2c6ed4d2a",
+    hash: "c58ebd3c5b9e3a66fcb5c6870bb63420abdbe072ed32a38166d86d6131565839",
+    centre: "kn",
+  },
+  {
+    name: "Faculty - Whitefield",
+    email: "whitefield@theqschool.com",
+    salt: "73c07a717b12348068131921eac956dd",
+    hash: "00dd9a02f20dcc1bd5a37ef2f8787cf745c25fde48f994279c8b1a24d5546e54",
+    centre: "wf",
+  },
+  {
+    name: "Faculty - Trichy",
+    email: "trichy@theqschool.com",
+    salt: "d295a77ea962d179619bfa6d5b484d6a",
+    hash: "451f81df6348e49da8b69117892a58f20bc5d43e527e4af28df2b26cc4f8f6eb",
+    centre: "tn",
+  },
+];

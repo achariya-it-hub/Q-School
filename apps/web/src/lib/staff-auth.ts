@@ -1,9 +1,10 @@
 /** Server-only: staff accounts (staff-logins.json, scrypt-hashed passwords) and the staff session cookie. */
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
-import { promises as fs } from "fs";
+import { existsSync, promises as fs } from "fs";
 import { cookies } from "next/headers";
 import { dataFile } from "@/lib/data-dir";
 import { sign, verify } from "@/lib/crm/auth";
+import { DEFAULT_STAFF, type StaffLogin } from "@/lib/default-staff";
 
 export const STAFF_COOKIE = "qs_staff";
 const FILE = dataFile("staff-logins.json");
@@ -19,9 +20,26 @@ interface Login {
 
 async function read(): Promise<Login[]> {
   try {
-    return JSON.parse(await fs.readFile(FILE, "utf8"));
+    if (!existsSync(FILE)) {
+      await fs.writeFile(FILE, JSON.stringify(DEFAULT_STAFF, null, 2));
+      return DEFAULT_STAFF;
+    }
+    const data = await fs.readFile(FILE, "utf8");
+    const list = JSON.parse(data);
+    if (!Array.isArray(list) || !list.length) {
+      await fs.writeFile(FILE, JSON.stringify(DEFAULT_STAFF, null, 2));
+      return DEFAULT_STAFF;
+    }
+    // Merge any missing default staff logins
+    const missing = DEFAULT_STAFF.filter((d) => !list.some((l) => l.email.toLowerCase() === d.email.toLowerCase()));
+    if (missing.length) {
+      const merged = [...list, ...missing];
+      await fs.writeFile(FILE, JSON.stringify(merged, null, 2));
+      return merged;
+    }
+    return list;
   } catch {
-    return [];
+    return DEFAULT_STAFF;
   }
 }
 

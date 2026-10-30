@@ -1,17 +1,34 @@
 import { NextResponse } from "next/server";
 import { getCurrentUserEmail, isAdmin } from "@/lib/crm/auth";
-import { promises as fs } from "fs";
+import { existsSync, promises as fs } from "fs";
 import path from "path";
 import { dataFile } from "@/lib/data-dir";
 import { recordAuditLog } from "@/lib/audit/store";
+import { DEFAULT_USERS } from "@/lib/default-users";
 
 async function readUsers() {
   try {
     const file = dataFile("users.json");
+    if (!existsSync(file)) {
+      await fs.writeFile(file, JSON.stringify(DEFAULT_USERS, null, 2));
+      return DEFAULT_USERS;
+    }
     const data = await fs.readFile(file, "utf8");
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      await fs.writeFile(file, JSON.stringify(DEFAULT_USERS, null, 2));
+      return DEFAULT_USERS;
+    }
+    // Merge any default users not yet present
+    const missing = DEFAULT_USERS.filter((d) => !parsed.some((p: any) => p.email?.toLowerCase() === d.email.toLowerCase()));
+    if (missing.length) {
+      const merged = [...parsed, ...missing];
+      await fs.writeFile(file, JSON.stringify(merged, null, 2));
+      return merged;
+    }
+    return parsed;
   } catch {
-    return [];
+    return DEFAULT_USERS;
   }
 }
 

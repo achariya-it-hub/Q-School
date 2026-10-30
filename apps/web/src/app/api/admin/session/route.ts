@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { COOKIE, checkCredentials, isAdmin, productionLoginProblem, sign } from "@/lib/crm/auth";
 import { dataFile } from "@/lib/data-dir";
+import { DEFAULT_USERS } from "@/lib/default-users";
 
 export const dynamic = "force-dynamic";
 
@@ -17,28 +18,22 @@ export async function POST(req: Request) {
   const cleanEmail = String(email).trim().toLowerCase();
   let user = { email: cleanEmail, name: "Admin", role: "Super Admin" };
 
-  try {
-    const file = dataFile("users.json");
-    let list: any[] = [];
-    if (existsSync(file)) {
-      try { list = JSON.parse(readFileSync(file, "utf8")); } catch {}
-    }
-    if (!list.length) {
-      const candidates = [
-        path.join(process.cwd(), "users.json"),
-        path.join(process.cwd(), "apps", "web", "users.json"),
-      ];
-      for (const s of candidates) {
-        if (existsSync(s)) {
-          try { list = JSON.parse(readFileSync(s, "utf8")); if (list.length) break; } catch {}
-        }
+  const def = DEFAULT_USERS.find((u) => u.email.toLowerCase() === cleanEmail);
+  if (def) {
+    user = { email: def.email, name: def.name, role: def.role };
+  } else {
+    try {
+      const file = dataFile("users.json");
+      let list: any[] = [];
+      if (existsSync(file)) {
+        try { list = JSON.parse(readFileSync(file, "utf8")); } catch {}
       }
-    }
-    const u = list.find((x: any) => x.email?.toLowerCase() === cleanEmail);
-    if (u) {
-      user = { email: u.email, name: u.name || "User", role: u.role || "Faculty" };
-    }
-  } catch {}
+      const u = list.find((x: any) => x.email?.toLowerCase() === cleanEmail);
+      if (u) {
+        user = { email: u.email, name: u.name || "User", role: u.role || "Faculty" };
+      }
+    } catch {}
+  }
 
   const res = NextResponse.json({ ok: true, user });
   res.cookies.set(COOKIE, sign(cleanEmail), {
