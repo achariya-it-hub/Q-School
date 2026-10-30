@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   if (!isAdmin()) return NextResponse.json({ error: "Unauthorised - please log in first" }, { status: 401 });
   try {
     const body = await req.json();
-    const { name, email, role, phone, status, password } = body;
+    const { name, email, role, phone, status, password, location, centreId } = body;
 
     if (!name || !email) {
       return NextResponse.json({ error: "Name and email are required" }, { status: 400 });
@@ -54,6 +54,8 @@ export async function POST(req: Request) {
       name: String(name).trim(),
       email: String(email).trim().toLowerCase(),
       role: role || "Student",
+      location: location ? String(location).trim() : undefined,
+      centreId: centreId ? String(centreId).trim() : undefined,
       status: status || "Active",
       phone: phone || "",
       password: password ? String(password).trim() : undefined,
@@ -86,7 +88,7 @@ export async function PUT(req: Request) {
   if (!isAdmin()) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   try {
     const body = await req.json();
-    const { id, name, email, role, phone, status, password } = body;
+    const { id, name, email, role, phone, status, password, location, centreId } = body;
 
     if (!id) {
       return NextResponse.json({ error: "User ID is required" }, { status: 400 });
@@ -106,6 +108,8 @@ export async function PUT(req: Request) {
       name: name ? String(name).trim() : users[index].name,
       email: email ? String(email).trim().toLowerCase() : users[index].email,
       role: role || users[index].role,
+      location: location !== undefined ? String(location).trim() : users[index].location,
+      centreId: centreId !== undefined ? String(centreId).trim() : users[index].centreId,
       status: status || users[index].status,
       phone: phone !== undefined ? String(phone) : users[index].phone,
       ...(password ? { password: String(password).trim() } : {}),

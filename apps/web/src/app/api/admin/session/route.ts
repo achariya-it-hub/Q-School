@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { existsSync, readFileSync } from "fs";
+import path from "path";
 import { COOKIE, checkCredentials, isAdmin, productionLoginProblem, sign } from "@/lib/crm/auth";
+import { dataFile } from "@/lib/data-dir";
 
 export const dynamic = "force-dynamic";
 
@@ -10,8 +13,35 @@ export async function POST(req: Request) {
   if (!checkCredentials(String(email), String(password))) {
     return NextResponse.json({ error: "Wrong email or password" }, { status: 401 });
   }
-  const res = NextResponse.json({ ok: true });
-  res.cookies.set(COOKIE, sign(String(email).toLowerCase()), {
+
+  const cleanEmail = String(email).trim().toLowerCase();
+  let user = { email: cleanEmail, name: "Admin", role: "Super Admin" };
+
+  try {
+    const file = dataFile("users.json");
+    let list: any[] = [];
+    if (existsSync(file)) {
+      try { list = JSON.parse(readFileSync(file, "utf8")); } catch {}
+    }
+    if (!list.length) {
+      const candidates = [
+        path.join(process.cwd(), "users.json"),
+        path.join(process.cwd(), "apps", "web", "users.json"),
+      ];
+      for (const s of candidates) {
+        if (existsSync(s)) {
+          try { list = JSON.parse(readFileSync(s, "utf8")); if (list.length) break; } catch {}
+        }
+      }
+    }
+    const u = list.find((x: any) => x.email?.toLowerCase() === cleanEmail);
+    if (u) {
+      user = { email: u.email, name: u.name || "User", role: u.role || "Faculty" };
+    }
+  } catch {}
+
+  const res = NextResponse.json({ ok: true, user });
+  res.cookies.set(COOKIE, sign(cleanEmail), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production" || process.env.COOKIE_SECURE === "true",

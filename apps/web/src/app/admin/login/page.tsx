@@ -24,8 +24,10 @@ export default function AdminLoginPage() {
     fetch("/api/admin/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) })
       .then(async (r) => {
         if (!r.ok) throw new Error((await r.json()).error || "Sign-in failed");
+        const data = await r.json().catch(() => ({}));
         try {
-          localStorage.setItem("qschool_admin_session", JSON.stringify({ email: email.trim().toLowerCase(), name: "Admin", role: "Super Admin" }));
+          const userObj = data.user || { email: email.trim().toLowerCase(), name: "Faculty", role: "Faculty" };
+          localStorage.setItem("qschool_admin_session", JSON.stringify(userObj));
         } catch {}
         router.push("/admin/dashboard");
       })

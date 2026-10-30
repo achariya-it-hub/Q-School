@@ -5,6 +5,7 @@
  */
 import { createHmac, timingSafeEqual } from "crypto";
 import { existsSync, readFileSync } from "fs";
+import path from "path";
 import { cookies } from "next/headers";
 import { checkOverridePassword } from "@/lib/admin-profile";
 import { dataFile } from "@/lib/data-dir";
@@ -86,17 +87,34 @@ export function checkCredentials(email: string, password: string) {
   // Also allow any user created in users.json
   try {
     const file = dataFile("users.json");
+    let users: any[] = [];
     if (existsSync(file)) {
-      const users = JSON.parse(readFileSync(file, "utf8"));
-      if (Array.isArray(users)) {
-        const u = users.find((x: any) => x && x.email && String(x.email).trim().toLowerCase() === inputEmail);
-        if (u) {
-          if (u.password && (u.password === inputPw || inputPw === "admin123" || inputPw === "adminpassword123")) {
-            return true;
-          }
-          if (!u.password && (inputPw === "admin123" || inputPw === "adminpassword123")) {
-            return true;
-          }
+      try {
+        users = JSON.parse(readFileSync(file, "utf8"));
+      } catch {}
+    }
+    if (!users.length) {
+      const candidates = [
+        path.join(process.cwd(), "users.json"),
+        path.join(process.cwd(), "apps", "web", "users.json"),
+      ];
+      for (const s of candidates) {
+        if (existsSync(s)) {
+          try {
+            users = JSON.parse(readFileSync(s, "utf8"));
+            if (users.length) break;
+          } catch {}
+        }
+      }
+    }
+    if (Array.isArray(users)) {
+      const u = users.find((x: any) => x && x.email && String(x.email).trim().toLowerCase() === inputEmail);
+      if (u) {
+        if (u.password && (u.password === inputPw || inputPw === "admin123" || inputPw === "adminpassword123")) {
+          return true;
+        }
+        if (!u.password && (inputPw === "admin123" || inputPw === "adminpassword123")) {
+          return true;
         }
       }
     }

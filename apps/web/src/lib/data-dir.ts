@@ -44,10 +44,21 @@ try {
 export function dataFile(name: string) {
   const p = path.join(DATA_DIR, name);
   if (DATA_DIR !== process.cwd() && !existsSync(p)) {
-    const seed = path.join(process.cwd(), name);
-    try {
-      if (existsSync(seed)) copyFileSync(seed, p);
-    } catch {}
+    const candidates = [
+      path.join(process.cwd(), name),
+      path.join(process.cwd(), "apps", "web", name),
+      path.join(__dirname, "..", "..", "..", name),
+      path.join(__dirname, "..", "..", name),
+      path.join(__dirname, "..", name),
+    ];
+    for (const seed of candidates) {
+      try {
+        if (existsSync(seed)) {
+          copyFileSync(seed, p);
+          break;
+        }
+      } catch {}
+    }
   }
   return p;
 }

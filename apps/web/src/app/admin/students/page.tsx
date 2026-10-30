@@ -20,6 +20,7 @@ interface User {
   joined: string;
   phone?: string;
   password?: string;
+  location?: string;
 }
 
 /** Users come from /api/admin/users (users.json); fee status is joined from the fee ledger by name. */
@@ -151,9 +152,17 @@ export default function UsersPage() {
                     </div>
                   </Td>
                   <Td className="whitespace-nowrap text-[#41564f]">{u.phone || "—"}</Td>
-                  <Td className="text-brand-ink">{u.role}</Td>
+                  <Td className="text-brand-ink">
+                    <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${
+                      u.role === "Faculty" ? "bg-[#EEF2FF] text-[#3B4CB8]" : u.role === "Admin" ? "bg-[#FEF3E2] text-[#9A5B00]" : "bg-[#E8F5F1] text-[#054038]"
+                    }`}>
+                      {u.role}
+                    </span>
+                  </Td>
                   <Td>
-                    <span className="block max-w-[200px] truncate text-[#41564f]">{f ? f.a.course : "—"}</span>
+                    <span className="block max-w-[200px] truncate text-[#41564f]">
+                      {u.role === "Faculty" ? (u.location ? `Centre: ${u.location}` : "Faculty") : f ? f.a.course : "—"}
+                    </span>
                   </Td>
                   <Td>
                     {f ? (

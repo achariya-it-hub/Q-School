@@ -6,15 +6,48 @@
  */
 import { NextResponse } from "next/server";
 import { ADMIN_USER } from "@qschool/shared";
-import { checkCredentials, isAdmin } from "@/lib/crm/auth";
+import { existsSync, readFileSync } from "fs";
+import path from "path";
+import { checkCredentials, getCurrentUserEmail, isAdmin } from "@/lib/crm/auth";
 import { readProfile, removePhoto, setName, setPassword, setPhoto } from "@/lib/admin-profile";
+import { dataFile } from "@/lib/data-dir";
 
 export const dynamic = "force-dynamic";
 
 const email = () => process.env.ADMIN_EMAIL || "admin@qschool.com";
 const view = () => {
-  const p = readProfile();
-  return { name: p.name || ADMIN_USER.name, email: email(), role: ADMIN_USER.role, hasPhoto: !!p.hasPhoto };
+  const currentEmail = getCurrentUserEmail()?.toLowerCase();
+  const defaultEmail = email().toLowerCase();
+
+  if (!currentEmail || currentEmail === "admin" || currentEmail === defaultEmail || currentEmail === "admin@theqschool.com") {
+    const p = readProfile();
+    return { name: p.name || ADMIN_USER.name, email: defaultEmail, role: ADMIN_USER.role, hasPhoto: !!p.hasPhoto };
+  }
+
+  try {
+    const file = dataFile("users.json");
+    let list: any[] = [];
+    if (existsSync(file)) {
+      try { list = JSON.parse(readFileSync(file, "utf8")); } catch {}
+    }
+    if (!list.length) {
+      const candidates = [
+        path.join(process.cwd(), "users.json"),
+        path.join(process.cwd(), "apps", "web", "users.json"),
+      ];
+      for (const s of candidates) {
+        if (existsSync(s)) {
+          try { list = JSON.parse(readFileSync(s, "utf8")); if (list.length) break; } catch {}
+        }
+      }
+    }
+    const u = list.find((x: any) => x.email?.toLowerCase() === currentEmail);
+    if (u) {
+      return { name: u.name, email: u.email, role: u.role || "Faculty", hasPhoto: false };
+    }
+  } catch {}
+
+  return { name: currentEmail.split("@")[0], email: currentEmail, role: "Faculty", hasPhoto: false };
 };
 const deny = () => NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
