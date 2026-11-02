@@ -398,8 +398,33 @@ button:disabled{opacity:.6;pointer-events:none}
       </label>
     </div>
 
-    <!-- 5. CONFIRMATION OF INFORMATION AND ACCEPTANCE OF TERMS AND CONDITIONS -->
-    <div class="sec-title">5. Confirmation &amp; Acceptance</div>
+    <!-- 5. REFERRAL INFORMATION -->
+    <div class="sec-title">5. Referral Information</div>
+    <div class="g">
+      <label>
+        Referral Option <i>*</i>
+        <select name="referralType" id="referralType" required>
+          <option value="">Select referral source</option>
+          <option value="Staff / Counselor Referral">Staff / Counselor Referral</option>
+          <option value="Word of Mouth / Friend or Family">Word of Mouth / Friend or Family</option>
+          <option value="Existing Student / Parent">Existing Student / Parent</option>
+          <option value="Partner / Franchisee Referral">Partner / Franchisee Referral</option>
+          <option value="Social Media (Instagram / Facebook / YouTube)">Social Media (Instagram / Facebook / YouTube)</option>
+          <option value="Google Search / Website">Google Search / Website</option>
+          <option value="Newspaper / Flyer / Event">Newspaper / Flyer / Event</option>
+          <option value="Direct Walk-in">Direct Walk-in</option>
+          <option value="Other">Other</option>
+        </select>
+      </label>
+
+      <label>
+        Referred By
+        <input type="text" name="referredBy" id="referredBy" placeholder="Name of person / staff who referred you">
+      </label>
+    </div>
+
+    <!-- 6. CONFIRMATION OF INFORMATION AND ACCEPTANCE OF TERMS AND CONDITIONS -->
+    <div class="sec-title">6. Confirmation &amp; Acceptance</div>
 
     <div class="confirm-box">
       <label>
@@ -493,6 +518,13 @@ const msg = document.getElementById("msg");
 // URL Params: ?sp=NAME (sales attribution) & ?centre=CODE (branch preselect)
 const ref = new URLSearchParams(location.search).get("sp") || new URLSearchParams(location.search).get("ref") || "";
 document.getElementById("ref").value = ref.slice(0, 60);
+
+if (ref) {
+  const refByEl = document.getElementById("referredBy");
+  if (refByEl) refByEl.value = ref;
+  const refTypeEl = document.getElementById("referralType");
+  if (refTypeEl) refTypeEl.value = "Staff / Counselor Referral";
+}
 
 const pre = new URLSearchParams(location.search).get("centre");
 if (pre) document.getElementById("centre").value = pre;

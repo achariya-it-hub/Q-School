@@ -64,6 +64,8 @@ export interface NewStudent {
   siblingAge?: string | number;
   acceptedByName?: string;
   acceptedTerms?: boolean;
+  referralType?: string;
+  referredBy?: string;
   centreId: string;
   ref: string;
 }

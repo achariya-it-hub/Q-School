@@ -75,6 +75,8 @@ export interface StudentRecord {
   siblingAge?: string | number;
   acceptedByName?: string;
   acceptedTerms?: boolean;
+  referralType?: string;
+  referredBy?: string;
   centreId: string;
   /** Salesperson who shared the form link (?sp=NAME). */
   ref: string;

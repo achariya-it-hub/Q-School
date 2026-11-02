@@ -28,6 +28,8 @@ const HEADERS = [
   "Emergency Phone",
   "Sibling Name",
   "Sibling Age",
+  "Referral Option",
+  "Referred By",
   "Accepted By",
   "Terms Accepted",
   "Shared By (Sales)"
@@ -109,6 +111,8 @@ function doPost(e) {
       clean_(d.emergencyContactPhone),
       clean_(d.siblingName),
       clean_(d.siblingAge),
+      clean_(d.referralType),
+      clean_(d.referredBy || d.ref),
       clean_(d.acceptedByName),
       d.acceptedTerms ? "Yes" : "No",
       clean_(d.ref)

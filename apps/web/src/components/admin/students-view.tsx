@@ -122,7 +122,7 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
                 downloadCsv(
                   "qschool-students.csv",
                   ["ID", "Student", "DOB", "Grade", "School", "Parent", "Phone", "Email", "Aadhaar (masked)", "Address", "Centre", "Shared by", "Status", "Applied", "Paid", "Mode", "Receipt", "Confirmed by"],
-                  rows.map((s) => [s.id, s.studentName, s.dob, s.grade ?? "", s.school ?? "", s.parentName ?? "", s.phone, s.email ?? "", s.aadhaar ? `XXXX XXXX ${s.aadhaar.slice(-4)}` : "", s.address, centreName(s.centreId), s.ref, s.status, fmt(s.createdAt), s.payment?.amount ?? "", s.payment?.mode ?? "", s.payment?.receiptNo ?? "", s.payment?.confirmedBy ?? ""]),
+                  rows.map((s) => [s.id, s.studentName, s.dob, s.grade ?? "", s.school ?? "", s.parentName ?? "", s.phone, s.email ?? "", s.aadhaar ? `XXXX XXXX ${s.aadhaar.slice(-4)}` : "", s.address, centreName(s.centreId), s.referralType ?? "", s.referredBy ?? s.ref ?? "", s.status, fmt(s.createdAt), s.payment?.amount ?? "", s.payment?.mode ?? "", s.payment?.receiptNo ?? "", s.payment?.confirmedBy ?? ""]),
                 )
               }
             >
@@ -214,6 +214,8 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
                 ["Emergency Contact", view.emergencyContactName ? `${view.emergencyContactName} (${view.emergencyContactRelation || "Contact"}) - ${view.emergencyContactPhone || ""}` : "—"],
                 ["Sibling", view.siblingName ? `${view.siblingName}${view.siblingAge ? ` (${view.siblingAge} yrs)` : ""}` : "—"],
                 ["Terms Confirmed", view.acceptedByName ? `I, ${view.acceptedByName} (Agreed)` : (view.acceptedTerms ? "Agreed" : "—")],
+                ["Referral Type", view.referralType || "—"],
+                ["Referred By", view.referredBy || view.ref || "Direct"],
                 ["Applied on", fmt(view.createdAt)],
                 ["Shared by", view.ref || "Direct"],
               ] as [string, string][]).map(([k, v]) => (

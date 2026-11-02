@@ -83,6 +83,8 @@ export async function POST(req: Request) {
     siblingAge: s("siblingAge", 10),
     acceptedByName: s("acceptedByName", 120),
     acceptedTerms: b.acceptedTerms === true || b.acceptedTerms === "true" || b.acceptedTerms === "on" || b.acceptedTerms === 1,
+    referralType: s("referralType", 80),
+    referredBy: s("referredBy", 120) || s("ref", 60),
     centreId: s("centre", 10) || s("centreId", 10) || "mk",
     ref: s("ref", 60),
   };
@@ -127,13 +129,15 @@ export async function POST(req: Request) {
         ...(rec.siblingName ? { "Sibling": `${rec.siblingName}${rec.siblingAge ? ` (${rec.siblingAge} yrs)` : ""}` } : {}),
         ...(rec.address ? { "Address": rec.address } : {}),
         ...(rec.aadhaar ? { "Aadhaar": `XXXX XXXX ${rec.aadhaar.slice(-4)}` } : {}),
+        ...(rec.referralType ? { "Referral Type": rec.referralType } : {}),
+        ...(rec.referredBy ? { "Referred By": rec.referredBy } : {}),
         "Application ID": student.id,
         "Status": "Admission Submitted",
       };
 
       await ingestLead({
         sourceKey: "website",
-        source: "Admission Form",
+        source: rec.referralType ? `Referral (${rec.referralType})` : "Admission Form",
         name: leadName,
         phone: rec.phone,
         email: rec.email || undefined,
