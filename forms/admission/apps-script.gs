@@ -7,8 +7,31 @@
  */
 const SHEET_NAME = "Admissions";
 const FOLDER_NAME = "Q-School Admission Photos";
-const HEADERS = ["Timestamp", "Student Name", "Date of Birth", "Grade", "School", "Centre", "Student Photo",
-  "Parent Name", "Phone", "Email", "Address", "Shared By (Sales)", "Aadhaar No"];
+const HEADERS = [
+  "Timestamp",
+  "Student Name",
+  "Date of Birth",
+  "Age",
+  "Gender",
+  "Aadhaar No",
+  "Student Photo",
+  "Branch / Centre",
+  "Father Name",
+  "Father Profession",
+  "Mother Name",
+  "Mother Profession",
+  "Address",
+  "Phone",
+  "Email",
+  "Emergency Contact Name",
+  "Emergency Relationship",
+  "Emergency Phone",
+  "Sibling Name",
+  "Sibling Age",
+  "Accepted By",
+  "Terms Accepted",
+  "Shared By (Sales)"
+];
 
 function getSheet_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -20,6 +43,7 @@ function getSheet_() {
       .setFontWeight("bold").setBackground("#0e937e").setFontColor("#ffffff");
     sheet.setFrozenRows(1);
     sheet.getRange(1, HEADERS.indexOf("Phone") + 1, sheet.getMaxRows(), 1).setNumberFormat("@"); // phone as text
+    sheet.getRange(1, HEADERS.indexOf("Emergency Phone") + 1, sheet.getMaxRows(), 1).setNumberFormat("@");
     sheet.getRange(1, HEADERS.indexOf("Aadhaar No") + 1, sheet.getMaxRows(), 1).setNumberFormat("@"); // keep leading digits
     sheet.getRange("A:A").setNumberFormat("dd-mmm-yyyy hh:mm");
     sheet.getRange("C:C").setNumberFormat("dd-mmm-yyyy");
@@ -59,24 +83,35 @@ function doPost(e) {
     const d = JSON.parse(e.postData.contents);
     if (d.website) return ContentService.createTextOutput(JSON.stringify({ status: "ok" })) // honeypot
       .setMimeType(ContentService.MimeType.JSON);
-    const required = ["studentName", "dob", "grade", "school", "parentName", "phone", "email", "address"];
-    for (const k of required) if (!String(d[k] || "").trim()) throw new Error("Missing field: " + k);
+    
+    const required = ["studentName", "dob", "phone", "address"];
+    for (const k of required) if (!String(d[k] || "").trim()) throw new Error("Missing required field: " + k);
 
     const photoUrl = savePhoto_(d.photo, d.photoName || d.studentName);
     getSheet_().appendRow([
       new Date(),
       clean_(d.studentName),
       clean_(d.dob),
-      clean_(d.grade),
-      clean_(d.school),
-      clean_(d.centreName || d.centre),
+      clean_(d.age),
+      clean_(d.gender),
+      String(d.aadhaar || "").replace(/\D/g, ""),
       photoUrl,
-      clean_(d.parentName),
+      clean_(d.centreName || d.centre),
+      clean_(d.fatherName),
+      clean_(d.fatherProfession),
+      clean_(d.motherName),
+      clean_(d.motherProfession),
+      clean_(d.address),
       String(d.phone).trim(),
       clean_(d.email),
-      clean_(d.address),
-      clean_(d.ref),
-      String(d.aadhaar || "").replace(/\D/g, "")
+      clean_(d.emergencyContactName),
+      clean_(d.emergencyContactRelation),
+      clean_(d.emergencyContactPhone),
+      clean_(d.siblingName),
+      clean_(d.siblingAge),
+      clean_(d.acceptedByName),
+      d.acceptedTerms ? "Yes" : "No",
+      clean_(d.ref)
     ]);
     return ContentService.createTextOutput(JSON.stringify({ status: "ok" }))
       .setMimeType(ContentService.MimeType.JSON);

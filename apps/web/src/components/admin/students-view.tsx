@@ -122,7 +122,7 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
                 downloadCsv(
                   "qschool-students.csv",
                   ["ID", "Student", "DOB", "Grade", "School", "Parent", "Phone", "Email", "Aadhaar (masked)", "Address", "Centre", "Shared by", "Status", "Applied", "Paid", "Mode", "Receipt", "Confirmed by"],
-                  rows.map((s) => [s.id, s.studentName, s.dob, s.grade, s.school, s.parentName, s.phone, s.email, s.aadhaar ? `XXXX XXXX ${s.aadhaar.slice(-4)}` : "", s.address, centreName(s.centreId), s.ref, s.status, fmt(s.createdAt), s.payment?.amount ?? "", s.payment?.mode ?? "", s.payment?.receiptNo ?? "", s.payment?.confirmedBy ?? ""]),
+                  rows.map((s) => [s.id, s.studentName, s.dob, s.grade ?? "", s.school ?? "", s.parentName ?? "", s.phone, s.email ?? "", s.aadhaar ? `XXXX XXXX ${s.aadhaar.slice(-4)}` : "", s.address, centreName(s.centreId), s.ref, s.status, fmt(s.createdAt), s.payment?.amount ?? "", s.payment?.mode ?? "", s.payment?.receiptNo ?? "", s.payment?.confirmedBy ?? ""]),
                 )
               }
             >
@@ -204,17 +204,20 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]">
               {([
                 ["Date of birth", fmt(view.dob)],
-                ["Grade", view.grade],
-                ["School", view.school],
-                ["Centre", centreName(view.centreId)],
-                ["Parent", view.parentName],
-                ["Phone", view.phone],
-                ["Email", view.email],
+                ["Age", view.age ? `${view.age} yrs` : "—"],
+                ["Gender", view.gender || "—"],
                 ["Aadhaar no.", view.aadhaar ? view.aadhaar.replace(/(\d{4})(?=\d)/g, "$1 ") : "Not provided"],
+                ["Centre", centreName(view.centreId)],
+                ["Phone", view.phone],
+                ["Father", view.fatherName ? `${view.fatherName}${view.fatherProfession ? ` (${view.fatherProfession})` : ""}` : view.parentName],
+                ["Mother", view.motherName ? `${view.motherName}${view.motherProfession ? ` (${view.motherProfession})` : ""}` : "—"],
+                ["Emergency Contact", view.emergencyContactName ? `${view.emergencyContactName} (${view.emergencyContactRelation || "Contact"}) - ${view.emergencyContactPhone || ""}` : "—"],
+                ["Sibling", view.siblingName ? `${view.siblingName}${view.siblingAge ? ` (${view.siblingAge} yrs)` : ""}` : "—"],
+                ["Terms Confirmed", view.acceptedByName ? `I, ${view.acceptedByName} (Agreed)` : (view.acceptedTerms ? "Agreed" : "—")],
                 ["Applied on", fmt(view.createdAt)],
                 ["Shared by", view.ref || "Direct"],
               ] as [string, string][]).map(([k, v]) => (
-                <div key={k} className={k === "Email" || k === "School" ? "col-span-2" : ""}>
+                <div key={k} className={k === "Emergency Contact" || k === "Terms Confirmed" || k === "Address" ? "col-span-2" : ""}>
                   <dt className="text-[11.5px] font-medium text-[#6b807b]">{k}</dt>
                   <dd className="break-words font-medium text-brand-ink">{v}</dd>
                 </div>

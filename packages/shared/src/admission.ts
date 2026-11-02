@@ -52,16 +52,29 @@ export interface StudentRecord {
   id: string; // STU-0001
   studentName: string;
   dob: string; // YYYY-MM-DD
-  grade: string;
-  school: string;
+  age?: string | number;
+  gender?: string;
+  grade?: string;
+  school?: string;
   /** File name of the uploaded photo (served by /api/students/photo/<file>). */
   photo: string;
   parentName: string;
+  fatherName?: string;
+  fatherProfession?: string;
+  motherName?: string;
+  motherProfession?: string;
   phone: string;
-  email: string;
+  email?: string;
   address: string;
   /** Optional 12-digit Aadhaar number (digits only). Sensitive: shown only to admin / the student's own centre. */
   aadhaar?: string;
+  emergencyContactName?: string;
+  emergencyContactRelation?: string;
+  emergencyContactPhone?: string;
+  siblingName?: string;
+  siblingAge?: string | number;
+  acceptedByName?: string;
+  acceptedTerms?: boolean;
   centreId: string;
   /** Salesperson who shared the form link (?sp=NAME). */
   ref: string;

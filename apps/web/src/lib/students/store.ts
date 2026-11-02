@@ -44,13 +44,26 @@ export async function findByPhoto(file: string) {
 export interface NewStudent {
   studentName: string;
   dob: string;
-  grade: string;
-  school: string;
+  age?: string | number;
+  gender?: string;
+  grade?: string;
+  school?: string;
   parentName: string;
+  fatherName?: string;
+  fatherProfession?: string;
+  motherName?: string;
+  motherProfession?: string;
   phone: string;
-  email: string;
+  email?: string;
   address: string;
   aadhaar?: string;
+  emergencyContactName?: string;
+  emergencyContactRelation?: string;
+  emergencyContactPhone?: string;
+  siblingName?: string;
+  siblingAge?: string | number;
+  acceptedByName?: string;
+  acceptedTerms?: boolean;
   centreId: string;
   ref: string;
 }

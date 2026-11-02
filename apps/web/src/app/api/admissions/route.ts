@@ -43,27 +43,51 @@ export async function POST(req: Request) {
   if (b.website) return json({ ok: true }); // honeypot: bots fill hidden fields, humans don't
 
   const s = (k: string, max = 200) => String(b[k] ?? "").trim().slice(0, max);
+  const fatherName = s("fatherName", 120);
+  const motherName = s("motherName", 120);
+  const parentName = s("parentName", 120) || fatherName || motherName || "Parent";
+
   const rec = {
     studentName: s("studentName", 120),
     dob: s("dob", 10),
+    age: s("age", 10),
+    gender: s("gender", 20),
     grade: s("grade", 40),
     school: s("school", 160),
-    parentName: s("parentName", 120),
+    parentName,
+    fatherName,
+    fatherProfession: s("fatherProfession", 120),
+    motherName,
+    motherProfession: s("motherProfession", 120),
     phone: s("phone", 20),
     email: s("email", 160).toLowerCase(),
     address: s("address", 400),
     aadhaar: s("aadhaar", 20).replace(/\D/g, ""),
-    centreId: s("centre", 10),
+    emergencyContactName: s("emergencyContactName", 120),
+    emergencyContactRelation: s("emergencyContactRelation", 80),
+    emergencyContactPhone: s("emergencyContactPhone", 20),
+    siblingName: s("siblingName", 120),
+    siblingAge: s("siblingAge", 10),
+    acceptedByName: s("acceptedByName", 120),
+    acceptedTerms: b.acceptedTerms === true || b.acceptedTerms === "true" || b.acceptedTerms === "on" || b.acceptedTerms === 1,
+    centreId: s("centre", 10) || s("centreId", 10) || "mk",
     ref: s("ref", 60),
   };
 
-  const missing = (["studentName", "dob", "grade", "school", "parentName", "phone", "email", "address", "centreId"] as const).filter((k) => !rec[k]);
-  if (missing.length) return json({ ok: false, error: `Missing: ${missing.join(", ")}` }, 400);
+  const missing: string[] = [];
+  if (!rec.studentName) missing.push("Student Name");
+  if (!rec.dob) missing.push("Date of Birth");
+  if (!rec.fatherName && !rec.motherName && !rec.parentName) missing.push("Parent Name");
+  if (!rec.phone) missing.push("Phone");
+  if (!rec.address) missing.push("Address");
+  if (!rec.centreId) missing.push("Branch / Centre");
+
+  if (missing.length) return json({ ok: false, error: `Missing required fields: ${missing.join(", ")}` }, 400);
   if (!ADMISSION_CENTRES.some((c) => c.id === rec.centreId)) return json({ ok: false, error: "Please choose a valid centre" }, 400);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(rec.dob) || Number.isNaN(Date.parse(rec.dob)) || rec.dob > new Date().toISOString().slice(0, 10))
     return json({ ok: false, error: "Enter a valid date of birth" }, 400);
   if (rec.phone.replace(/\D/g, "").length < 10) return json({ ok: false, error: "Enter a valid phone number" }, 400);
-  if (!/^\S+@\S+\.\S+$/.test(rec.email)) return json({ ok: false, error: "Enter a valid email" }, 400);
+  if (rec.email && !/^\S+@\S+\.\S+$/.test(rec.email)) return json({ ok: false, error: "Enter a valid email" }, 400);
   if (rec.aadhaar && rec.aadhaar.length !== 12) return json({ ok: false, error: "Aadhaar number must be 12 digits" }, 400);
   if (typeof b.photo !== "string" || !b.photo) return json({ ok: false, error: "Student photo is required" }, 400);
 
