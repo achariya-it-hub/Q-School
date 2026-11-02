@@ -6,6 +6,7 @@ import {
   derivePayments,
   deriveInvoices,
   fmtDate,
+  fmtDateIN,
   gstSplit,
   inr,
   numberToWords,
@@ -44,116 +45,275 @@ export function useFinance() {
 }
 
 const ORG = {
-  name: "Q-School Learning Pvt. Ltd.",
+  name: "Q SCHOOL",
+  unit: "(A UNIT OF DIVINE GRACE FOUNDATION)",
+  header: "INVOICE CUM RECEIPT",
+  subHeader: "FEES RECEIPT, INVOICE",
   addr: "2nd Floor, 14 Anna Nagar East, Chennai 600102, Tamil Nadu",
   gstin: "33AABCQ1234F1Z5",
   sac: "999293",
-  email: "accounts@qschool.com",
+  email: "accounts@theqschool.com",
 };
-
-function DocHeader({ title, no, date }: { title: string; no: string; date: string }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-[#E2ECE9] pb-4">
-      <div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.png" alt="Q-School" className="h-10 w-auto" />
-        <p className="mt-2 text-[12px] font-semibold text-brand-ink">{ORG.name}</p>
-        <p className="max-w-[260px] text-[11px] text-[#5C716C]">{ORG.addr}</p>
-        <p className="text-[11px] text-[#5C716C]">GSTIN {ORG.gstin}</p>
-      </div>
-      <div className="text-right">
-        <p className="text-[18px] font-bold uppercase tracking-wide text-brand-deep">{title}</p>
-        <p className="mt-1 font-mono text-[12px] text-brand-ink">{no}</p>
-        <p className="text-[12px] text-[#5C716C]">{date}</p>
-      </div>
-    </div>
-  );
-}
 
 export function InvoiceView({ inv }: { inv: InvoiceDoc }) {
   const g = gstSplit(inv.amount);
+  const isPaid = inv.status === "Paid";
+  const payable = inv.amount;
+  const paid = isPaid ? inv.amount : 0;
+  const dues = isPaid ? 0 : inv.amount;
+  const dateFormatted = fmtDateIN(inv.date);
+  const payMode = inv.method ? (inv.method === "UPI" || inv.method === "Card" || inv.method === "Net Banking" ? `Online Payment (${inv.method})` : inv.method) : "Online Payment / Pending";
+
   return (
-    <div className="print-area rounded-xl border border-[#E2ECE9] bg-white p-5 text-[12.5px]">
-      <DocHeader title="Tax Invoice" no={inv.id} date={fmtDate(inv.date)} />
-      <div className="grid grid-cols-2 gap-4 py-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase text-[#7B8E89]">Billed to</p>
-          <p className="font-semibold text-brand-ink">{inv.student}</p>
-          <p className="text-[#5C716C]">{inv.phone}</p>
-          <p className="text-[#5C716C]">{inv.email}</p>
+    <div className="print-area rounded-xl border border-black/80 bg-white p-6 text-[12.5px] text-black shadow-sm">
+      {/* Official Header */}
+      <div className="relative pb-3 text-center">
+        <div className="absolute right-0 top-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Q-School" className="h-12 w-auto object-contain" />
         </div>
-        <div className="text-right">
-          <p className="text-[11px] font-semibold uppercase text-[#7B8E89]">Due date</p>
-          <p className="font-semibold text-brand-ink">{fmtDate(inv.due)}</p>
-          <p className="text-[#5C716C]">Batch {inv.batch}</p>
-          <p className="text-[#5C716C]">Place of supply: Tamil Nadu (33)</p>
+        <h1 className="font-serif text-[26px] font-black uppercase tracking-wider text-[#054038]">{ORG.name}</h1>
+        <p className="mt-0.5 text-[12px] font-bold uppercase tracking-wider text-[#1F3D36]">{ORG.unit}</p>
+        <div className="mt-1">
+          <span className="inline-block border-b border-black pb-0.5 text-[13px] font-bold uppercase tracking-wider text-black">
+            {ORG.header}
+          </span>
         </div>
       </div>
-      <table className="w-full text-left">
+
+      {/* Two-column Metadata */}
+      <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 border-t border-black/30 py-3 text-[12.5px]">
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Name</span>
+          <span className="font-bold uppercase text-black">: {inv.student}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Receipt No.</span>
+          <span className="font-mono font-bold text-black">: {inv.id}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Father&apos;s Name</span>
+          <span className="font-semibold uppercase text-black">: PARENT</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Date</span>
+          <span className="font-semibold text-black">: {dateFormatted}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Admission No.</span>
+          <span className="font-mono font-semibold text-black">: {inv.accountId.replace("FA-", "00000")}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Roll No</span>
+          <span className="font-semibold text-black">: 0</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Class</span>
+          <span className="font-bold text-[#054038]">: {inv.item}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Section</span>
+          <span className="font-semibold text-black">: {inv.batch?.replace(/.*Batch\s*/i, "") || "A"}</span>
+        </div>
+      </div>
+
+      {/* Table */}
+      <table className="mt-2 w-full border-collapse border border-black text-[12.5px]">
         <thead>
-          <tr className="border-y border-[#E2ECE9] text-[11px] uppercase text-[#7B8E89]">
-            <th className="py-2 font-semibold">Description</th>
-            <th className="py-2 font-semibold">SAC</th>
-            <th className="py-2 text-right font-semibold">Taxable value</th>
+          <tr className="border-b border-black bg-[#F0F5F3] font-bold text-center">
+            <th className="w-12 border-r border-black px-3 py-1.5">Sl</th>
+            <th className="border-r border-black px-3 py-1.5 text-left">Particulars</th>
+            <th className="w-36 border-r border-black px-3 py-1.5 text-right">Payable</th>
+            <th className="w-36 px-3 py-1.5 text-right">Paid</th>
           </tr>
         </thead>
-        <tbody className="tabular-nums">
-          <tr className="border-b border-[#F0F4F3]">
-            <td className="py-2.5 text-brand-ink">{inv.item}</td>
-            <td className="py-2.5 text-[#5C716C]">{ORG.sac}</td>
-            <td className="py-2.5 text-right text-brand-ink">{inr(g.taxable)}</td>
+        <tbody>
+          <tr className="border-b border-black">
+            <td className="border-r border-black px-3 py-2 text-center">1</td>
+            <td className="border-r border-black px-3 py-2 font-semibold text-black">
+              {inv.item}
+              <div className="text-[11px] font-normal text-gray-600">
+                SAC: {ORG.sac} · Taxable: ₹ {g.taxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })} (CGST 9% + SGST 9%)
+              </div>
+            </td>
+            <td className="border-r border-black px-3 py-2 text-right tabular-nums">
+              ₹ {payable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
+            <td className="px-3 py-2 text-right tabular-nums font-bold">
+              ₹ {paid.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
+          </tr>
+          <tr className="border-b border-black bg-[#F8FAF9] font-bold">
+            <td colSpan={2} className="border-r border-black px-3 py-1.5 text-left">
+              TOTAL
+            </td>
+            <td className="border-r border-black px-3 py-1.5 text-right tabular-nums">
+              ₹ {payable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
+            <td className="px-3 py-1.5 text-right tabular-nums">
+              ₹ {paid.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
+          </tr>
+          <tr className="border-b border-black font-bold">
+            <td colSpan={3} className="border-r border-black px-3 py-1.5 text-left">
+              Dues
+            </td>
+            <td className={`px-3 py-1.5 text-right tabular-nums ${dues > 0 ? "text-red-700 font-bold" : ""}`}>
+              ₹ {dues.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
           </tr>
         </tbody>
       </table>
-      <div className="ml-auto mt-3 w-full max-w-[260px] space-y-1 tabular-nums">
-        <Row k="Taxable value" v={inr(g.taxable)} />
-        <Row k="CGST @ 9%" v={inr(g.cgst)} />
-        <Row k="SGST @ 9%" v={inr(g.sgst)} />
-        <div className="flex justify-between border-t border-[#E2ECE9] pt-2 text-[14px] font-bold text-brand-ink">
-          <span>Total</span>
-          <span>{inr(inv.amount)}</span>
+
+      {/* Amount in words */}
+      <div className="mt-1 border-b border-black py-2 text-[12px] font-bold text-black">
+        Received Amount In Words :- Rupees {numberToWords(paid).toUpperCase()} Only
+      </div>
+
+      {/* Remarks box */}
+      <div className="mt-2 border border-black p-2.5 text-[12px] leading-relaxed">
+        <div className="font-semibold text-black">Remarks:-</div>
+        <div className="mt-0.5 font-semibold text-[#054038]">
+          Pay Mode : {payMode} · Status: {inv.status}
         </div>
       </div>
-      <p className="mt-3 text-[11.5px] text-[#5C716C]">Amount in words: Rupees {numberToWords(inv.amount)} only</p>
-      <p className="mt-1 text-[11.5px] text-[#5C716C]">
-        Status: <span className="font-semibold text-brand-ink">{inv.status}</span>
-        {inv.method ? ` · paid by ${inv.method}` : " · pay via UPI, card or net banking at qschool.com/pay"}
-      </p>
-      <p className="mt-4 border-t border-dashed border-[#E2ECE9] pt-3 text-center text-[10.5px] text-[#7B8E89]">
-        This is a computer-generated invoice. Queries: {ORG.email}
-      </p>
+
+      {/* Footer */}
+      <div className="mt-4 text-center text-[10.5px] font-medium tracking-wide text-gray-700">
+        **This is a computer generated receipt, hence, no signature is required**
+      </div>
     </div>
   );
 }
 
 export function ReceiptView({ p, account }: { p: PaymentTxn; account?: FeeAccount }) {
   const t = account ? accountTotals(account) : null;
+  const payable = t ? t.total : p.amount;
+  const paid = p.amount;
+  const dues = t ? Math.max(0, t.outstanding) : 0;
+  const dateFormatted = fmtDateIN(p.date);
+  const fatherName = account?.fatherName || "PARENT";
+  const admissionNo = account?.admissionNo || (account?.id ? account.id.replace("FA-", "00000") : "000001");
+  const rollNo = account?.rollNo ?? 0;
+  const section = account?.section || (account?.batch?.replace(/.*Batch\s*/i, "") || "A");
+  const courseName = account?.course || p.item;
+  const receiptNo = p.receiptNo || "REC-00000007";
+  const payMode = p.method === "UPI" || p.method === "Net Banking" || p.method === "Card" ? "Online Payment" : p.method;
+
   return (
-    <div className="print-area rounded-xl border border-[#E2ECE9] bg-white p-5 text-[12.5px]">
-      <DocHeader title="Fee Receipt" no={p.receiptNo ?? ""} date={fmtDate(p.date)} />
-      <div className="mt-4 rounded-xl bg-[#F3F8F6] p-4 text-center">
-        <p className="text-[11px] font-semibold uppercase text-[#5C716C]">Amount received</p>
-        <p className="mt-1 text-[28px] font-bold text-brand-ink">{inr(p.amount)}</p>
-        <p className="text-[11.5px] text-[#5C716C]">Rupees {numberToWords(p.amount)} only</p>
+    <div className="print-area rounded-xl border border-black/80 bg-white p-6 text-[12.5px] text-black shadow-sm">
+      {/* Official Header */}
+      <div className="relative pb-3 text-center">
+        <div className="absolute right-0 top-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Q-School" className="h-12 w-auto object-contain" />
+        </div>
+        <h1 className="font-serif text-[26px] font-black uppercase tracking-wider text-[#054038]">{ORG.name}</h1>
+        <p className="mt-0.5 text-[12px] font-bold uppercase tracking-wider text-[#1F3D36]">{ORG.unit}</p>
+        <div className="mt-1">
+          <span className="inline-block border-b border-black pb-0.5 text-[13px] font-bold uppercase tracking-wider text-black">
+            {ORG.header}
+          </span>
+        </div>
       </div>
-      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
-        <Def k="Received from" v={p.student} />
-        <Def k="Towards" v={`${p.item}${account && account.installments.length > 1 ? ` — inst. ${p.instNo}` : ""}`} />
-        <Def k="Payment mode" v={p.method} />
-        <Def k="Reference" v={p.ref} mono />
-        <Def k="Transaction" v={p.id} mono />
-        {t && <Def k="Balance due" v={t.status === "Refunded" ? "Refunded" : inr(t.outstanding)} />}
-      </dl>
-      {p.status === "Refunded" && (
-        <p className="mt-3 rounded-lg bg-[#F1F5F4] px-3 py-2 text-[11.5px] font-semibold text-[#41564F]">This payment was refunded.</p>
-      )}
-      <div className="mt-6 flex items-end justify-between">
-        <p className="text-[10.5px] text-[#7B8E89]">Computer-generated receipt — no signature required.</p>
-        <p className="text-right text-[11px] text-[#5C716C]">
-          For {ORG.name}
-          <br />
-          <span className="font-semibold text-brand-ink">Accounts Department</span>
-        </p>
+
+      {/* Two-column Metadata */}
+      <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 border-t border-black/30 py-3 text-[12.5px]">
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Name</span>
+          <span className="font-bold uppercase text-black">: {p.student}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Receipt No.</span>
+          <span className="font-mono font-bold text-black">: {receiptNo}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Father&apos;s Name</span>
+          <span className="font-semibold uppercase text-black">: {fatherName}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Date</span>
+          <span className="font-semibold text-black">: {dateFormatted}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Admission No.</span>
+          <span className="font-mono font-semibold text-black">: {admissionNo}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Roll No</span>
+          <span className="font-semibold text-black">: {rollNo}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Class</span>
+          <span className="font-bold text-[#054038]">: {courseName}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-semibold text-gray-800">Section</span>
+          <span className="font-semibold text-black">: {section}</span>
+        </div>
+      </div>
+
+      {/* Table */}
+      <table className="mt-2 w-full border-collapse border border-black text-[12.5px]">
+        <thead>
+          <tr className="border-b border-black bg-[#F0F5F3] font-bold text-center">
+            <th className="w-12 border-r border-black px-3 py-1.5">Sl</th>
+            <th className="border-r border-black px-3 py-1.5 text-left">Particulars</th>
+            <th className="w-36 border-r border-black px-3 py-1.5 text-right">Payable</th>
+            <th className="w-36 px-3 py-1.5 text-right">Paid</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr className="border-b border-black">
+            <td className="border-r border-black px-3 py-2 text-center">1</td>
+            <td className="border-r border-black px-3 py-2 font-semibold text-black">
+              {courseName}
+            </td>
+            <td className="border-r border-black px-3 py-2 text-right tabular-nums">
+              ₹ {payable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
+            <td className="px-3 py-2 text-right tabular-nums font-bold">
+              ₹ {paid.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
+          </tr>
+          <tr className="border-b border-black bg-[#F8FAF9] font-bold">
+            <td colSpan={2} className="border-r border-black px-3 py-1.5 text-left">
+              TOTAL
+            </td>
+            <td className="border-r border-black px-3 py-1.5 text-right tabular-nums">
+              ₹ {payable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
+            <td className="px-3 py-1.5 text-right tabular-nums">
+              ₹ {paid.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
+          </tr>
+          <tr className="border-b border-black font-bold">
+            <td colSpan={3} className="border-r border-black px-3 py-1.5 text-left">
+              Dues
+            </td>
+            <td className="px-3 py-1.5 text-right tabular-nums">
+              ₹ {dues.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* Amount in words */}
+      <div className="mt-1 border-b border-black py-2 text-[12px] font-bold text-black">
+        Received Amount In Words :- Rupees {numberToWords(paid).toUpperCase()} Only
+      </div>
+
+      {/* Remarks box */}
+      <div className="mt-2 border border-black p-2.5 text-[12px] leading-relaxed">
+        <div className="font-semibold text-black">Remarks:-</div>
+        <div className="mt-0.5 font-semibold text-[#054038]">
+          Pay Mode : {payMode} {p.ref && p.ref !== "—" ? `(Ref: ${p.ref})` : ""}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="mt-4 text-center text-[10.5px] font-medium tracking-wide text-gray-700">
+        **This is a computer generated receipt, hence, no signature is required**
       </div>
     </div>
   );

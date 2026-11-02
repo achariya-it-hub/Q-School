@@ -302,6 +302,17 @@ button:disabled{opacity:.6;pointer-events:none}
       </label>
 
       <label class="w">
+        Program / Class <i>*</i> <span class="hint" id="progHint" style="color:var(--teal);font-weight:600">(Auto-mapped from Age: 6-8 Yoga, 9-10 Mantra, 11-12 Mudra, 13-14 Tratak)</span>
+        <select name="grade" id="grade" required>
+          <option value="">Select program</option>
+          <option value="Divya Yoga">Divya Yoga (Age 6 – 8)</option>
+          <option value="Divya Mantra">Divya Mantra (Age 9 – 10)</option>
+          <option value="Divya Mudra">Divya Mudra (Age 11 – 12)</option>
+          <option value="Divya Tratak">Divya Tratak (Age 13 – 14)</option>
+        </select>
+      </label>
+
+      <label class="w">
         Recent Photo <i>*</i>
         <span class="photo-zone" id="drop">
           <span class="pv" id="pv">📷</span>
@@ -533,7 +544,28 @@ if (pre) document.getElementById("centre").value = pre;
 const today = new Date().toISOString().split("T")[0];
 document.getElementById("dob").max = today;
 
-// Auto calculate age from DOB
+function syncProgramFromAge(age) {
+  const gradeEl = document.getElementById("grade");
+  const hintEl = document.getElementById("progHint");
+  if (!gradeEl) return;
+  const n = parseInt(age, 10);
+  if (isNaN(n) || n <= 0) return;
+  if (n >= 6 && n <= 8) {
+    gradeEl.value = "Divya Yoga";
+    if (hintEl) hintEl.textContent = `(✓ Selected Divya Yoga for Age ${n})`;
+  } else if (n >= 9 && n <= 10) {
+    gradeEl.value = "Divya Mantra";
+    if (hintEl) hintEl.textContent = `(✓ Selected Divya Mantra for Age ${n})`;
+  } else if (n >= 11 && n <= 12) {
+    gradeEl.value = "Divya Mudra";
+    if (hintEl) hintEl.textContent = `(✓ Selected Divya Mudra for Age ${n})`;
+  } else if (n >= 13 && n <= 14) {
+    gradeEl.value = "Divya Tratak";
+    if (hintEl) hintEl.textContent = `(✓ Selected Divya Tratak for Age ${n})`;
+  }
+}
+
+// Auto calculate age from DOB and auto-map Divya Program
 document.getElementById("dob").addEventListener("change", function(){
   if (!this.value) return;
   const birth = new Date(this.value);
@@ -545,7 +577,12 @@ document.getElementById("dob").addEventListener("change", function(){
   }
   if (years >= 0 && years < 60) {
     document.getElementById("age").value = years;
+    syncProgramFromAge(years);
   }
+});
+
+document.getElementById("age").addEventListener("input", function(){
+  syncProgramFromAge(this.value);
 });
 
 // Auto prefill confirmation name if still empty

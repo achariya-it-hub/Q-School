@@ -298,7 +298,16 @@ function Ledger({ a, onCollect }: { a: FeeAccount; onCollect: () => void }) {
 }
 
 function NewPlanModal({ open, onClose, onDone }: { open: boolean; onClose: () => void; onDone: (m: string) => void }) {
-  const [form, setForm] = useState({ student: "", phone: "", course: "Coding for Beginners", batch: "CB-Batch C", centre: "Online", total: 3999, parts: 1, firstDue: "2026-10-15" });
+  const [form, setForm] = useState({
+    student: "",
+    phone: "",
+    course: "Divya Yoga",
+    batch: "Section A",
+    centre: "Moolakulam, Puducherry",
+    total: 45000,
+    parts: 1,
+    firstDue: TODAY_ISO,
+  });
   const up = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: k === "total" || k === "parts" ? Number(e.target.value) : e.target.value }));
   return (
@@ -309,13 +318,13 @@ function NewPlanModal({ open, onClose, onDone }: { open: boolean; onClose: () =>
           e.preventDefault();
           if (!form.student.trim()) return;
           addFeeAccount(form);
-          onDone(`Fee plan created for ${form.student} — ${form.parts} installment${form.parts > 1 ? "s" : ""}`);
+          onDone(`Fee plan created for ${form.student} — ${form.course} (${form.parts} installment${form.parts > 1 ? "s" : ""})`);
           setForm((f) => ({ ...f, student: "", phone: "" }));
         }}
       >
         <div className="col-span-2">
           <Field label="Student name">
-            <input required className={inputCls} value={form.student} onChange={up("student")} />
+            <input required className={inputCls} value={form.student} onChange={up("student")} placeholder="Full student name" />
           </Field>
         </div>
         <Field label="Phone">
@@ -323,18 +332,26 @@ function NewPlanModal({ open, onClose, onDone }: { open: boolean; onClose: () =>
         </Field>
         <Field label="Centre">
           <select className={inputCls} value={form.centre} onChange={up("centre")}>
-            {["Online", ...ADMISSION_CENTRES.map((b) => b.name)].map((c) => (
-              <option key={c}>{c}</option>
+            {ADMISSION_CENTRES.map((b) => (
+              <option key={b.name} value={b.name}>
+                {b.name}
+              </option>
             ))}
+            <option value="Online">Online</option>
           </select>
         </Field>
         <div className="col-span-2">
-          <Field label="Course">
-            <input className={inputCls} value={form.course} onChange={up("course")} />
+          <Field label="Class / Course Program">
+            <select className={inputCls} value={form.course} onChange={up("course")}>
+              <option value="Divya Yoga">Divya Yoga (Age 6 – 8)</option>
+              <option value="Divya Mantra">Divya Mantra (Age 9 – 10)</option>
+              <option value="Divya Mudra">Divya Mudra (Age 11 – 12)</option>
+              <option value="Divya Tratak">Divya Tratak (Age 13 – 14)</option>
+            </select>
           </Field>
         </div>
-        <Field label="Batch">
-          <input className={inputCls} value={form.batch} onChange={up("batch")} />
+        <Field label="Section / Batch">
+          <input className={inputCls} value={form.batch} onChange={up("batch")} placeholder="e.g. Section A" />
         </Field>
         <Field label="Total fee (₹, incl. GST)">
           <input type="number" min={1} className={inputCls} value={form.total} onChange={up("total")} />
@@ -343,7 +360,7 @@ function NewPlanModal({ open, onClose, onDone }: { open: boolean; onClose: () =>
           <select className={inputCls} value={form.parts} onChange={up("parts")}>
             {[1, 2, 3, 4, 6].map((n) => (
               <option key={n} value={n}>
-                {n === 1 ? "One-time" : `${n} monthly`}
+                {n === 1 ? "One-time (Full ₹45,000)" : `${n} monthly installments`}
               </option>
             ))}
           </select>

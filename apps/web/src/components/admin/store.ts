@@ -35,7 +35,7 @@ interface State {
 }
 
 let state: State = {
-  accounts: [],
+  accounts: [...FEE_ACCOUNTS],
   leads: [],
   expenses: [],
   leaves: [],

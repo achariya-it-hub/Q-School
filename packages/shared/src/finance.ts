@@ -22,6 +22,10 @@ export interface Installment {
 export interface FeeAccount {
   id: string;
   student: string;
+  fatherName?: string;
+  admissionNo?: string;
+  rollNo?: string | number;
+  section?: string;
   phone: string;
   email: string;
   course: string;
@@ -30,26 +34,105 @@ export interface FeeAccount {
   installments: Installment[];
 }
 
-const A = (
-  id: string,
-  student: string,
-  phone: string,
-  course: string,
-  batch: string,
-  centre: string,
-  installments: Installment[],
-): FeeAccount => ({
-  id,
-  student,
-  phone,
-  email: `${student.split(" ")[0].toLowerCase()}@example.com`,
-  course,
-  batch,
-  centre,
-  installments,
-});
-
-export const FEE_ACCOUNTS: FeeAccount[] = [];
+export const FEE_ACCOUNTS: FeeAccount[] = [
+  {
+    id: "FA-000001",
+    student: "Q SCHOOL TEST ID TEST",
+    fatherName: "PARENT",
+    admissionNo: "000001",
+    rollNo: 0,
+    section: "A",
+    phone: "9876543210",
+    email: "test@theqschool.com",
+    course: "Divya Yoga",
+    batch: "Section A",
+    centre: "Moolakulam, Puducherry",
+    installments: [
+      {
+        no: 1,
+        due: "2026-08-18",
+        amount: 45000,
+        paidOn: "2026-08-18",
+        method: "UPI",
+        ref: "REC-00000007",
+      },
+    ],
+  },
+  {
+    id: "FA-000002",
+    student: "Aarav Sharma",
+    fatherName: "Rajesh Sharma",
+    admissionNo: "000002",
+    rollNo: 1,
+    section: "A",
+    phone: "9840112233",
+    email: "aarav@example.com",
+    course: "Divya Mantra",
+    batch: "Section A",
+    centre: "Adyar, Chennai",
+    installments: [
+      {
+        no: 1,
+        due: "2026-09-01",
+        amount: 45000,
+        paidOn: "2026-09-01",
+        method: "UPI",
+        ref: "REC-00000008",
+      },
+    ],
+  },
+  {
+    id: "FA-000003",
+    student: "Meera Krishnan",
+    fatherName: "Krishnan S",
+    admissionNo: "000003",
+    rollNo: 2,
+    section: "A",
+    phone: "9841234567",
+    email: "meera@example.com",
+    course: "Divya Mudra",
+    batch: "Section A",
+    centre: "Saibaba Colony, Coimbatore",
+    installments: [
+      {
+        no: 1,
+        due: "2026-09-10",
+        amount: 22500,
+        paidOn: "2026-09-10",
+        method: "Card",
+        ref: "REC-00000009",
+      },
+      {
+        no: 2,
+        due: "2026-10-10",
+        amount: 22500,
+      },
+    ],
+  },
+  {
+    id: "FA-000004",
+    student: "Rohan Varma",
+    fatherName: "Siddharth Varma",
+    admissionNo: "000004",
+    rollNo: 3,
+    section: "A",
+    phone: "9884567890",
+    email: "rohan@example.com",
+    course: "Divya Tratak",
+    batch: "Section A",
+    centre: "Whitefield, Bengaluru",
+    installments: [
+      {
+        no: 1,
+        due: "2026-09-15",
+        amount: 45000,
+        paidOn: "2026-09-15",
+        method: "Net Banking",
+        ref: "REC-00000010",
+      },
+    ],
+  },
+];
 
 /* ───────────── helpers ───────────── */
 
@@ -60,6 +143,12 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 export function fmtDate(iso: string) {
   const [y, m, d] = iso.slice(0, 10).split("-");
   return `${d} ${MONTHS[Number(m) - 1]} ${y}`;
+}
+
+export function fmtDateIN(iso: string) {
+  if (!iso) return "—";
+  const [y, m, d] = iso.slice(0, 10).split("-");
+  return `${d}/${m}/${y}`;
 }
 
 export function gstSplit(amount: number) {
@@ -185,7 +274,10 @@ export function derivePayments(accounts: FeeAccount[]): PaymentTxn[] {
         });
   // receipts are numbered in payment order
   ok.sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : x.accountId < y.accountId ? -1 : 1));
-  const withReceipts = ok.map((p, k) => ({ ...p, receiptNo: `RCT-2026-${String(401 + k).padStart(4, "0")}` }));
+  const withReceipts = ok.map((p, k) => ({
+    ...p,
+    receiptNo: p.ref?.startsWith("REC-") ? p.ref : `REC-${String(7 + k).padStart(8, "0")}`,
+  }));
   const all = [...withReceipts, ...FAILED_ATTEMPTS];
   all.sort((x, y) => (x.date < y.date ? 1 : x.date > y.date ? -1 : 0));
   return all.map((p, k) => ({ ...p, id: `TXN-${String(90500 - k)}` }));
