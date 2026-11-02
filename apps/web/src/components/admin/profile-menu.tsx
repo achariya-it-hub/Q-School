@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/dashboard/art";
 import { Btn, Field, Modal, Toast, inputCls, useToast } from "@/components/admin/ui";
 import { Icon } from "@/components/icons";
+import { useAdminRole } from "@/lib/centre-head";
 
 interface Me {
   name: string;
@@ -43,7 +44,8 @@ function Face({ me, size, bust }: { me: Me; size: number; bust: number }) {
 /** Header profile chip: opens a menu with Edit profile, Change password and Sign out. */
 export function ProfileMenu() {
   const router = useRouter();
-  const [me, setMe] = useState<Me>({ name: "Admin", email: "", role: "Super Admin", hasPhoto: false });
+  const { role: activeRole, setRole: setActiveRole, isHead } = useAdminRole();
+  const [me, setMe] = useState<Me>({ name: "Admin", email: "", role: activeRole || "Super Admin", hasPhoto: false });
   const [bust, setBust] = useState(0);
   const [menu, setMenu] = useState(false);
   const [edit, setEdit] = useState(false);
@@ -54,10 +56,20 @@ export function ProfileMenu() {
   const load = useCallback(() => {
     fetch("/api/admin/profile", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((j) => j && setMe(j))
+      .then((j) => {
+        if (j) {
+          setMe({ ...j, role: activeRole || j.role });
+        }
+      })
       .catch(() => {});
-  }, []);
+  }, [activeRole]);
   useEffect(load, [load]);
+
+  useEffect(() => {
+    if (activeRole) {
+      setMe((prev) => ({ ...prev, role: activeRole }));
+    }
+  }, [activeRole]);
 
   useEffect(() => {
     if (!menu) return;
@@ -69,6 +81,7 @@ export function ProfileMenu() {
   const logout = () => {
     try {
       localStorage.removeItem("qschool_admin_session");
+      localStorage.removeItem("qs_active_role");
     } catch {}
     fetch("/api/admin/session", { method: "DELETE" }).finally(() => router.push("/admin/login"));
   };
@@ -81,21 +94,36 @@ export function ProfileMenu() {
         <Face me={me} size={40} bust={bust} />
         <span className="hidden text-left leading-tight sm:block">
           <span className="block text-[14px] font-semibold text-brand-ink">{me.name}</span>
-          <span className="block text-xs text-[#6b807b]">{me.role}</span>
+          <span className={`block text-xs font-semibold ${isHead ? "text-amber-700 font-bold" : "text-[#6b807b]"}`}>{me.role}</span>
         </span>
         <Icon name="chevronDown" size={16} />
       </button>
 
       {menu && (
-        <div role="menu" className="absolute right-0 top-[calc(100%+8px)] z-50 w-[240px] rounded-2xl border border-[#E2ECE9] bg-white p-2 shadow-xl">
+        <div role="menu" className="absolute right-0 top-[calc(100%+8px)] z-50 w-[260px] rounded-2xl border border-[#E2ECE9] bg-white p-2 shadow-xl">
           <div className="flex items-center gap-3 border-b border-[#EEF3F1] px-3 pb-3 pt-2">
             <Face me={me} size={40} bust={bust} />
             <div className="min-w-0 text-[12px] leading-tight">
               <p className="truncate text-[13.5px] font-semibold text-brand-ink">{me.name}</p>
               <p className="truncate text-[#6b807b]">{me.email}</p>
+              <span className={`inline-block mt-1 text-[10.5px] font-bold px-2 py-0.5 rounded ${isHead ? "bg-amber-100 text-amber-900" : "bg-[#E3F4F0] text-brand-deep"}`}>
+                {isHead ? "🏫 Centre Head Mode" : "👑 Super Admin Mode"}
+              </span>
             </div>
           </div>
           <div className="pt-1.5">
+            <button
+              className={`${item} ${isHead ? "text-amber-900 font-bold bg-amber-50" : "text-brand-deep font-semibold"}`}
+              onClick={() => {
+                const next = isHead ? "Super Admin" : "Centre Head";
+                setActiveRole(next);
+                setMenu(false);
+                show(`Switched view to ${next}`);
+              }}
+            >
+              <Icon name="switch" size={16} />
+              <span>{isHead ? "Switch to Super Admin View (All)" : "Switch to Centre Head View (7 Hidden)"}</span>
+            </button>
             <button className={item} onClick={() => { setMenu(false); setEdit(true); }}><Icon name="user" size={16} /> Edit profile</button>
             <button className={item} onClick={() => { setMenu(false); setPw(true); }}><Icon name="shield" size={16} /> Change password</button>
             <button className={item + " text-[#B42E2E]"} onClick={logout}><Icon name="logout" size={16} /> Sign out</button>

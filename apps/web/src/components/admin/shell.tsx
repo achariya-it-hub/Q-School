@@ -6,7 +6,12 @@ import { useEffect, useState } from "react";
 import { Icon, type IconName } from "@/components/icons";
 import { ProfileMenu } from "@/components/admin/profile-menu";
 import { NotificationsMenu } from "@/components/notifications-menu";
-import { RESTRICTED_CENTRE_HEAD_HREFS, isCentreHeadRole } from "@/lib/centre-head";
+import {
+  RESTRICTED_CENTRE_HEAD_HREFS,
+  isCentreHeadRole,
+  isRestrictedForCentreHead,
+  useAdminRole,
+} from "@/lib/centre-head";
 
 const GROUPS: { title: string; items: { label: string; icon: IconName; href: string }[] }[] = [
   { title: "Overview", items: [{ label: "Dashboard", icon: "grid", href: "/admin/dashboard" }] },
@@ -61,7 +66,15 @@ const GROUPS: { title: string; items: { label: string; icon: IconName; href: str
   },
 ];
 
-function Sidebar({ userRole, onNavigate }: { userRole?: string; onNavigate?: () => void }) {
+function Sidebar({
+  userRole,
+  onRoleChange,
+  onNavigate,
+}: {
+  userRole?: string;
+  onRoleChange?: (r: string) => void;
+  onNavigate?: () => void;
+}) {
   const path = usePathname();
   const router = useRouter();
   const isHead = isCentreHeadRole(userRole);
@@ -69,6 +82,7 @@ function Sidebar({ userRole, onNavigate }: { userRole?: string; onNavigate?: () 
   const logout = () => {
     try {
       localStorage.removeItem("qschool_admin_session");
+      localStorage.removeItem("qs_active_role");
     } catch {}
     fetch("/api/admin/session", { method: "DELETE" }).finally(() => router.push("/admin/login"));
   };
@@ -79,9 +93,50 @@ function Sidebar({ userRole, onNavigate }: { userRole?: string; onNavigate?: () 
   })).filter((g) => g.items.length > 0);
 
   return (
-    <div className="flex h-full flex-col px-3 pb-5 pt-4">
+    <div className="flex h-full flex-col px-3 pb-5 pt-3">
+      {/* Active Role Selector in Sidebar */}
+      <div className="mx-1 mb-3 rounded-xl bg-black/35 border border-white/10 p-2 text-white">
+        <div className="flex items-center justify-between text-[11px] font-semibold text-white/70 mb-1.5">
+          <span>Console View:</span>
+          <span
+            className={`font-bold px-1.5 py-0.5 rounded text-[10.5px] ${
+              isHead ? "bg-amber-400 text-amber-950" : "bg-[#2BD6B4] text-[#054038]"
+            }`}
+          >
+            {isHead ? "Centre Head" : "Super Admin"}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-1 rounded-lg bg-black/40 p-1 text-[11px] font-bold">
+          <button
+            type="button"
+            onClick={() => onRoleChange?.("Super Admin")}
+            className={`rounded-md py-1 transition text-center ${
+              !isHead
+                ? "bg-gradient-to-r from-[#0E937E] to-[#13a88f] text-white shadow"
+                : "text-white/60 hover:text-white"
+            }`}
+          >
+            Super Admin
+          </button>
+          <button
+            type="button"
+            onClick={() => onRoleChange?.("Centre Head")}
+            className={`rounded-md py-1 transition text-center ${
+              isHead ? "bg-amber-600 text-white shadow" : "text-white/60 hover:text-white"
+            }`}
+          >
+            Centre Head
+          </button>
+        </div>
+        {isHead && (
+          <div className="mt-2 text-[10.5px] text-amber-200 bg-amber-950/60 border border-amber-500/40 rounded-lg px-2 py-1 leading-snug">
+            🔒 <b>Centre Head Mode:</b> 7 restricted modules hidden (Campaigns, Lead Sources, WhatsApp, Staff Tasks, Payroll, Audit &amp; Settings).
+          </div>
+        )}
+      </div>
+
       {visibleGroups.map((g, gi) => (
-        <div key={g.title} className={gi ? "mt-4" : ""}>
+        <div key={g.title} className={gi ? "mt-3" : ""}>
           <p className="mb-1 px-3 text-[10.5px] font-semibold uppercase tracking-wider text-white/45">{g.title}</p>
           <nav className="space-y-0.5">
             {g.items.map((n) => {
@@ -129,32 +184,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
-  const [userRole, setUserRole] = useState<string>("");
+  const { role: userRole, setRole: setUserRole, isHead } = useAdminRole();
   const [sbw, setSbw] = useState(220); // desktop sidebar width, drag the right edge to resize
   const [drag, setDrag] = useState(false);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("qschool_admin_session");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.role) setUserRole(parsed.role);
-      }
-    } catch {}
-    fetch("/api/admin/profile")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((p) => {
-        if (p?.role) setUserRole(p.role);
-      })
-      .catch(() => {});
-  }, []);
-
   // Redirect centre heads away from restricted administration paths
   useEffect(() => {
-    if (isCentreHeadRole(userRole) && RESTRICTED_CENTRE_HEAD_HREFS.has(path)) {
+    if (isHead && isRestrictedForCentreHead(path)) {
       router.replace("/admin/dashboard");
     }
-  }, [userRole, path, router]);
+  }, [isHead, path, router]);
 
   useEffect(() => {
     const v = Number(localStorage.getItem("qs-sidebar-w"));
@@ -210,6 +249,24 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </label>
 
         <div className="ml-auto flex items-center gap-2 sm:gap-4">
+          {/* Quick Role Switcher Pill in Top Bar */}
+          <button
+            type="button"
+            onClick={() => setUserRole(isHead ? "Super Admin" : "Centre Head")}
+            className={`hidden sm:inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold transition shadow-sm ${
+              isHead
+                ? "border-amber-400 bg-amber-50 text-amber-950 hover:bg-amber-100 ring-2 ring-amber-300/40"
+                : "border-[#B5D8CE] bg-[#EEF8F5] text-brand-deep hover:bg-[#E2F2ED]"
+            }`}
+            title="Click to toggle between Super Admin and Centre Head views"
+          >
+            <span className={`inline-block h-2 w-2 rounded-full ${isHead ? "bg-amber-500 animate-pulse" : "bg-brand-teal"}`} />
+            <span>{isHead ? "🏫 Centre Head View (7 Hidden)" : "👑 Super Admin View (All)"}</span>
+            <span className="text-[10px] uppercase tracking-wide font-extrabold text-brand-teal bg-white px-1.5 py-0.5 rounded-full border border-black/5 shadow-2xs">
+              Toggle ⇄
+            </span>
+          </button>
+
           <NotificationsMenu variant="admin" />
           <ProfileMenu />
         </div>
@@ -218,7 +275,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <div className="flex">
         <div className="relative hidden shrink-0 lg:block" style={{ width: sbw }}>
           <aside className="sticky top-[72px] h-[calc(100vh-72px)] w-full overflow-y-auto bg-gradient-to-b from-[#06463D] to-[#043530]">
-            <Sidebar userRole={userRole} />
+            <Sidebar userRole={userRole} onRoleChange={setUserRole} />
           </aside>
           <div
             role="separator"
@@ -245,7 +302,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   <Icon name="x" size={20} />
                 </button>
               </div>
-              <Sidebar userRole={userRole} onNavigate={() => setOpen(false)} />
+              <Sidebar userRole={userRole} onRoleChange={setUserRole} onNavigate={() => setOpen(false)} />
             </aside>
           </div>
         )}

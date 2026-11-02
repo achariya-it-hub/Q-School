@@ -9,6 +9,7 @@ import { useCrmLeads, type CrmLead } from "@/components/admin/crm";
 import { Icon } from "@/components/icons";
 import { WaChat } from "@/components/admin/whatsapp";
 import { downloadCsvFile, parseCsvRows } from "@/lib/csv-helper";
+import { useAdminRole } from "@/lib/centre-head";
 
 const SOURCE_FILTERS = [
   { key: "all", label: "All sources" },
@@ -110,6 +111,7 @@ const STAGE_THEME: Record<Stage, StageTheme> = {
 };
 
 export default function LeadsPage() {
+  const { isHead } = useAdminRole();
   const { leads, loading, fresh, clearFresh, patch, create, reload } = useCrmLeads();
   const [q, setQ] = useState("");
   const [owner, setOwner] = useState("All");
@@ -224,12 +226,14 @@ export default function LeadsPage() {
         title="Leads & Pipeline"
         sub={`${shown.length} leads · open pipeline ${inr(pipelineValue)} · new leads from ads arrive automatically`}
       >
-        <Link
-          href="/admin/lead-sources"
-          className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#D9E6E2] bg-white px-4 text-[13px] font-semibold text-brand-deep hover:border-brand-teal"
-        >
-          <Icon name="globe" size={16} /> Lead sources
-        </Link>
+        {!isHead && (
+          <Link
+            href="/admin/lead-sources"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#D9E6E2] bg-white px-4 text-[13px] font-semibold text-brand-deep hover:border-brand-teal"
+          >
+            <Icon name="globe" size={16} /> Lead sources
+          </Link>
+        )}
         <Btn variant="ghost" icon="upload" onClick={() => setBulkOpen(true)}>
           Bulk upload
         </Btn>

@@ -9,12 +9,14 @@ import { Btn, Card, DataGrid, Figure, PageHeader, SearchInput, Segmented, Status
 import { HBars, ViewToggle } from "@/components/admin/charts";
 import { setLeave, useConsole } from "@/components/admin/store";
 import { useStaffMaster } from "@/components/admin/use-staff";
+import { useAdminRole } from "@/lib/centre-head";
 
 const ATT_TONE: Record<Staff["today"], Tone> = { Present: "good", WFH: "info", "On leave": "warning", Absent: "critical" };
 type Dept = "All" | Staff["dept"];
 
 export default function StaffPage() {
   const router = useRouter();
+  const { isHead } = useAdminRole();
   const leaves = useConsole((s) => s.leaves);
   const { active: STAFF } = useStaffMaster(); // employed staff from the staff master (edited in Payroll)
   const [q, setQ] = useState("");
@@ -44,19 +46,32 @@ export default function StaffPage() {
 
   return (
     <AdminShell>
-      <PageHeader title="HR & Staff" sub="Team directory, today's attendance and leave approvals · payroll & biometric attendance in Payroll">
-        <Btn icon="checkCircle" onClick={() => router.push("/admin/staff/tasks")}>
-          Staff tasks
-        </Btn>
-        <Btn variant="ghost" icon="rupee" onClick={() => router.push("/admin/payroll")}>
-          Open payroll
-        </Btn>
+      <PageHeader
+        title="HR & Staff"
+        sub={
+          isHead
+            ? "Team directory, today's attendance and leave approvals for learning centres"
+            : "Team directory, today's attendance and leave approvals · payroll & biometric attendance in Payroll"
+        }
+      >
+        {!isHead && (
+          <>
+            <Btn icon="checkCircle" onClick={() => router.push("/admin/staff/tasks")}>
+              Staff tasks
+            </Btn>
+            <Btn variant="ghost" icon="rupee" onClick={() => router.push("/admin/payroll")}>
+              Open payroll
+            </Btn>
+          </>
+        )}
       </PageHeader>
 
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className={`grid grid-cols-1 gap-3 sm:grid-cols-2 ${isHead ? "xl:grid-cols-3" : "xl:grid-cols-4"}`}>
         <Figure label="Headcount" value={String(STAFF.length)} sub={`${STAFF.filter((s) => s.dept === "Academics").length} faculty`} icon="users" />
         <Figure label="Attendance today" value={`${present}/${STAFF.length}`} meter={(present / STAFF.length) * 100} sub="Present + WFH" icon="checkCircle" />
-        <Figure label="Monthly payroll" value={inr(payroll, true)} sub="CTC, before deductions" icon="rupee" />
+        {!isHead && (
+          <Figure label="Monthly payroll" value={inr(payroll, true)} sub="CTC, before deductions" icon="rupee" />
+        )}
         <Figure label="Leave requests" value={String(pending.length)} sub="Awaiting approval" icon="calendar" />
       </section>
 

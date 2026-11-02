@@ -11,6 +11,7 @@ import { useStaffMaster } from "@/components/admin/use-staff";
 import { AreaTrend, HBars, ViewToggle } from "@/components/admin/charts";
 import { PendingStudentsCard } from "@/components/admin/students-view";
 import { Icon } from "@/components/icons";
+import { useAdminRole } from "@/lib/centre-head";
 
 export type DashModule = "overview" | "crm" | "finance" | "academics" | "hr" | "purchase";
 export const DASH_MODULES: { value: DashModule; label: string }[] = [
@@ -149,6 +150,7 @@ export function AcademicsDashboard() {
 }
 
 export function HrDashboard() {
+  const { isHead } = useAdminRole();
   const { active } = useStaffMaster();
   const leaves = useConsole((s) => s.leaves);
   const [t, setT] = useState(false);
@@ -158,9 +160,11 @@ export function HrDashboard() {
   const pending = leaves.filter((l) => l.status === "Pending");
   return (
     <>
-      <section className={grid4}>
+      <section className={isHead ? "grid grid-cols-1 gap-3 sm:grid-cols-3" : grid4}>
         <Figure label="Headcount" value={String(active.length)} sub={`${active.filter((s) => s.dept === "Academics").length} faculty`} icon="users" />
-        <Figure label="Monthly payroll (gross)" value={inr(gross, true)} sub="Before deductions" icon="rupee" />
+        {!isHead && (
+          <Figure label="Monthly payroll (gross)" value={inr(gross, true)} sub="Before deductions" icon="rupee" />
+        )}
         <Figure label="Leave requests" value={String(pending.length)} sub="Awaiting approval" icon="calendar" />
         <Figure label="Branches staffed" value={String(new Set(active.map((s) => s.centre)).size)} icon="building" />
       </section>
@@ -179,10 +183,12 @@ export function HrDashboard() {
           </ul>
         </Card>
       </div>
-      <div className="mt-4 flex flex-wrap gap-4">
-        <More href="/admin/payroll">Payroll &amp; attendance</More>
-        <More href="/admin/staff/tasks">Staff tasks</More>
-      </div>
+      {!isHead && (
+        <div className="mt-4 flex flex-wrap gap-4">
+          <More href="/admin/payroll">Payroll &amp; attendance</More>
+          <More href="/admin/staff/tasks">Staff tasks</More>
+        </div>
+      )}
     </>
   );
 }
