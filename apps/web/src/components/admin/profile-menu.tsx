@@ -44,7 +44,7 @@ function Face({ me, size, bust }: { me: Me; size: number; bust: number }) {
 /** Header profile chip: opens a menu with Edit profile, Change password and Sign out. */
 export function ProfileMenu() {
   const router = useRouter();
-  const { role: activeRole, setRole: setActiveRole, isHead } = useAdminRole();
+  const { role: activeRole, isHead } = useAdminRole();
   const [me, setMe] = useState<Me>({ name: "Admin", email: "", role: activeRole || "Super Admin", hasPhoto: false });
   const [bust, setBust] = useState(0);
   const [menu, setMenu] = useState(false);
@@ -107,23 +107,11 @@ export function ProfileMenu() {
               <p className="truncate text-[13.5px] font-semibold text-brand-ink">{me.name}</p>
               <p className="truncate text-[#6b807b]">{me.email}</p>
               <span className={`inline-block mt-1 text-[10.5px] font-bold px-2 py-0.5 rounded ${isHead ? "bg-amber-100 text-amber-900" : "bg-[#E3F4F0] text-brand-deep"}`}>
-                {isHead ? "🏫 Centre Head Mode" : "👑 Super Admin Mode"}
+                {me.role}
               </span>
             </div>
           </div>
           <div className="pt-1.5">
-            <button
-              className={`${item} ${isHead ? "text-amber-900 font-bold bg-amber-50" : "text-brand-deep font-semibold"}`}
-              onClick={() => {
-                const next = isHead ? "Super Admin" : "Centre Head";
-                setActiveRole(next);
-                setMenu(false);
-                show(`Switched view to ${next}`);
-              }}
-            >
-              <Icon name="switch" size={16} />
-              <span>{isHead ? "Switch to Super Admin View (All)" : "Switch to Centre Head View (7 Hidden)"}</span>
-            </button>
             <button className={item} onClick={() => { setMenu(false); setEdit(true); }}><Icon name="user" size={16} /> Edit profile</button>
             <button className={item} onClick={() => { setMenu(false); setPw(true); }}><Icon name="shield" size={16} /> Change password</button>
             <button className={item + " text-[#B42E2E]"} onClick={logout}><Icon name="logout" size={16} /> Sign out</button>

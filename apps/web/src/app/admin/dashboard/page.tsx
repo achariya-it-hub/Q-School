@@ -27,6 +27,40 @@ export default function AdminHome() {
   const [funnelTable, setFunnelTable] = useState(false);
   const [srcTable, setSrcTable] = useState(false);
   const [mod, setMod] = useState<DashModule>("overview");
+  const [userName, setUserName] = useState("Admin");
+  const [greeting, setGreeting] = useState("Good afternoon");
+  const [dateStr, setDateStr] = useState("Thursday, 1 October 2026");
+
+  useEffect(() => {
+    const hr = new Date().getHours();
+    setGreeting(hr < 12 ? "Good morning" : hr < 17 ? "Good afternoon" : "Good evening");
+    try {
+      setDateStr(
+        new Intl.DateTimeFormat("en-IN", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(new Date())
+      );
+    } catch {}
+
+    try {
+      const raw = localStorage.getItem("qschool_admin_session");
+      if (raw) {
+        const u = JSON.parse(raw);
+        if (u.name) setUserName(u.name);
+      }
+    } catch {}
+
+    fetch("/api/admin/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (j?.name) setUserName(j.name);
+      })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     const m = localStorage.getItem("qs-dash-module") as DashModule | null;
     if (m && DASH_MODULES.some((x) => x.value === m)) setMod(m);
@@ -46,7 +80,7 @@ export default function AdminHome() {
 
   return (
     <AdminShell>
-      <PageHeader title="Good afternoon, Bala" sub="Here's how Q-School is doing · Thursday, 1 October 2026">
+      <PageHeader title={`${greeting}, ${userName}`} sub={`Here's how Q-School is doing · ${dateStr}`}>
         <select
           aria-label="Dashboard module"
           value={mod}

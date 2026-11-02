@@ -26,6 +26,7 @@ export default function AdminLoginPage() {
         try {
           const userObj = data.user || { email: email.trim().toLowerCase(), name: "Faculty", role: "Faculty" };
           localStorage.setItem("qschool_admin_session", JSON.stringify(userObj));
+          localStorage.removeItem("qs_active_role");
         } catch {}
         router.push("/admin/dashboard");
       })

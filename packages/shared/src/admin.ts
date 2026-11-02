@@ -3,7 +3,7 @@
  * Money is in INR (rupees).
  */
 
-export const ADMIN_USER = { name: "Bala", role: "Super Admin", email: "admin@qschool.com" };
+export const ADMIN_USER = { name: "Admin", role: "Super Admin", email: "admin@qschool.com" };
 
 export type Range = "6M" | "12M";
 
