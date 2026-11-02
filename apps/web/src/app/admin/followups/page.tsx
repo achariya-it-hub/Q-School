@@ -45,9 +45,9 @@ export default function FollowupsPage() {
           l.stage === "Enquiry"
             ? `First call — ${l.interest}`
             : l.stage === "Contacted"
-              ? "Book a demo class"
-              : l.stage === "Demo"
-                ? "Post-demo call, share fee options"
+              ? "Book BMIT assessment"
+              : l.stage === "BMIT" || (l.stage as string) === "Demo"
+                ? "Post-BMIT call, share fee options"
                 : "Close: confirm batch and send payment link",
         due: l.slaBreached ? "Overdue" : l.stage === "Enquiry" ? "Today" : "Tomorrow",
         tone: l.slaBreached ? "critical" : "warning",

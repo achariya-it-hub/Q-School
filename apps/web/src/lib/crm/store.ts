@@ -103,7 +103,19 @@ async function writeJson(file: string, data: unknown) {
 
 async function readLeads(): Promise<CrmLead[]> {
   const leads = await readJson<CrmLead[] | null>(LEADS_FILE, null);
-  if (leads && Array.isArray(leads)) return leads;
+  if (leads && Array.isArray(leads)) {
+    let migrated = false;
+    for (const l of leads) {
+      if ((l.stage as string) === "Demo") {
+        l.stage = "BMIT";
+        migrated = true;
+      }
+    }
+    if (migrated) {
+      await writeJson(LEADS_FILE, leads).catch(() => {});
+    }
+    return leads;
+  }
   await writeJson(LEADS_FILE, []);
   return [];
 }

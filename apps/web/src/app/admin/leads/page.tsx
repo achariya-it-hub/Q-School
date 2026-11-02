@@ -60,8 +60,8 @@ const STAGE_THEME: Record<Stage, StageTheme> = {
     cardBorderLeft: "border-l-amber-500",
     barColor: "#F59E0B",
   },
-  Demo: {
-    name: "Demo",
+  BMIT: {
+    name: "BMIT",
     dotBg: "bg-purple-500",
     badgeBg: "bg-purple-100",
     badgeText: "text-purple-800",
@@ -806,8 +806,8 @@ function LeadDetail({
           >
             <Icon name="message" size={15} /> WhatsApp
           </a>
-          <Btn variant="ghost" icon="calendar" onClick={() => act("Demo class booked")}>
-            Demo
+          <Btn variant="ghost" icon="calendar" onClick={() => act("BMIT assessment booked")}>
+            BMIT
           </Btn>
         </div>
       </div>
@@ -983,7 +983,7 @@ function BulkUploadLeadsModal({
     source: r.source || r.leadsource || r.channel || "Bulk Upload",
     interest: r.interest || r.course || r.program || r.interestedin || "General enquiry",
     owner: r.owner || r.assignedto || r.counselor || "",
-    stage: (r.stage || r.status || "Enquiry") as Stage,
+    stage: ((r.stage || r.status || "Enquiry") === "Demo" ? "BMIT" : (r.stage || r.status || "Enquiry")) as Stage,
     value: Number(r.value || r.fee || r.amount || 0) || 0,
   }));
 

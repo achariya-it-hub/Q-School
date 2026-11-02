@@ -46,7 +46,7 @@ export const KPIS: Kpi[] = [
 export const FUNNEL: { stage: string; value: number }[] = [
   { stage: "Enquiries", value: 0 },
   { stage: "Contacted", value: 0 },
-  { stage: "Demo attended", value: 0 },
+  { stage: "BMIT", value: 0 },
   { stage: "Negotiation", value: 0 },
   { stage: "Admitted", value: 0 },
 ];
@@ -62,7 +62,7 @@ export const LEAD_SOURCES: { source: string; value: number }[] = [
 
 /* ───────────── CRM pipeline ───────────── */
 
-export const STAGES = ["Enquiry", "Contacted", "Demo", "Negotiation", "Admitted", "Dropped"] as const;
+export const STAGES = ["Enquiry", "Contacted", "BMIT", "Negotiation", "Admitted", "Dropped"] as const;
 export type Stage = (typeof STAGES)[number];
 
 export interface PipelineLead {

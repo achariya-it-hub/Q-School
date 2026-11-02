@@ -27,7 +27,10 @@ export function useCrmLeads(pollMs = 20000) {
       return;
     }
     const d = await r.json();
-    const list: CrmLead[] = d.leads ?? [];
+    const list: CrmLead[] = (d.leads ?? []).map((l: CrmLead) => ({
+      ...l,
+      stage: (l.stage as string) === "Demo" ? "BMIT" : l.stage,
+    }));
     if (known.current) {
       const added = list.filter((l) => !known.current!.has(l.id)).map((l) => l.id);
       if (added.length) setFresh((f) => [...added, ...f]);
