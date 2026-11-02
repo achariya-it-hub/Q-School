@@ -13,11 +13,7 @@ class PartnerApiService {
   String _baseUrl = defaultBaseUrl();
 
   static String defaultBaseUrl() {
-    if (kIsWeb) return 'http://localhost:3100';
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:3100'; // Standard Android emulator loopback
-    }
-    return 'http://localhost:3100';
+    return 'https://erp.theqschool.com';
   }
 
   String get baseUrl => _baseUrl;

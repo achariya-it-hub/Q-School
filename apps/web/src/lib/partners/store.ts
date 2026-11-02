@@ -52,22 +52,32 @@ async function writeJson(file: string, data: unknown) {
 
 export async function listPartners(): Promise<Partner[]> {
   const partners = await readJson<Partner[] | null>(PARTNERS_FILE, null);
-  if (partners && Array.isArray(partners)) {
+  if (partners && Array.isArray(partners) && partners.length > 0) {
+    const missing = INITIAL_PARTNERS.filter((i) => !partners.some((p) => p.code.toUpperCase() === i.code.toUpperCase()));
+    if (missing.length) {
+      const merged = [...partners, ...missing];
+      await writeJson(PARTNERS_FILE, merged);
+      return merged;
+    }
     return partners;
   }
-  await writeJson(PARTNERS_FILE, []);
-  return [];
+  await writeJson(PARTNERS_FILE, INITIAL_PARTNERS);
+  return INITIAL_PARTNERS;
 }
 
 export async function getPartnerById(id: string): Promise<Partner | null> {
   const partners = await listPartners();
-  return partners.find((p) => p.id.toLowerCase() === id.toLowerCase()) || null;
+  const found = partners.find((p) => p.id.toLowerCase() === id.toLowerCase());
+  if (found) return found;
+  return INITIAL_PARTNERS.find((p) => p.id.toLowerCase() === id.toLowerCase()) || null;
 }
 
 export async function getPartnerByCode(code: string): Promise<Partner | null> {
   const partners = await listPartners();
   const cleanCode = code.trim().toUpperCase();
-  return partners.find((p) => p.code.toUpperCase() === cleanCode) || null;
+  const found = partners.find((p) => p.code.toUpperCase() === cleanCode);
+  if (found) return found;
+  return INITIAL_PARTNERS.find((p) => p.code.toUpperCase() === cleanCode) || null;
 }
 
 function generatePartnerCode(name: string, existing: Partner[]): string {

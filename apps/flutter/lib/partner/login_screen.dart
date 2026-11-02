@@ -339,7 +339,7 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
               const SizedBox(height: 30),
               Center(
                 child: Text(
-                  'Connected to Q-School ERP &bull; Port 3100',
+                  'Connected to Q-School Cloud ERP &bull; erp.theqschool.com',
                   style: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 11),
                 ),
               ),
