@@ -673,12 +673,17 @@ function LeadCard({
   return (
     <article
       draggable
-      onDragStart={onDragStart}
+      onDragStart={(e) => {
+        try {
+          e.dataTransfer.setData("text/plain", l.id);
+        } catch {}
+        onDragStart();
+      }}
       onDragEnd={onDragEnd}
       onClick={onOpen}
       onKeyDown={(e) => e.key === "Enter" && onOpen()}
       tabIndex={0}
-      className={`cursor-grab rounded-xl border border-[#E6EEEB] border-l-4 ${theme.cardBorderLeft} bg-white p-3 shadow-[0_2px_4px_rgba(5,64,56,.05)] transition hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing ${
+      className={`cursor-pointer rounded-xl border border-[#E6EEEB] border-l-4 ${theme.cardBorderLeft} bg-white p-3 shadow-[0_2px_4px_rgba(5,64,56,.05)] transition hover:-translate-y-0.5 hover:shadow-md active:cursor-grabbing ${
         dragging ? "opacity-50" : ""
       } ${isNew ? "ring-2 ring-brand-teal" : l.slaBreached ? "border-r-[#F2C9B6] border-r-2" : ""}`}
     >
@@ -741,24 +746,30 @@ function LeadDetail({
     onPatch({ activity: what });
     onToast(what);
   };
-  const wa = lead.phone.replace(/\D/g, "");
+  const wa = lead.phone ? lead.phone.replace(/\D/g, "") : "";
+  const timeline = Array.isArray(lead.timeline) ? lead.timeline : [];
+  const extraEntries = Object.entries(lead.extra ?? {}).map(([k, v]) => [
+    k.replace(/_/g, " "),
+    typeof v === "object" ? JSON.stringify(v) : String(v ?? "—"),
+  ]);
+
   return (
     <div className="space-y-5 text-[13px]">
       <div className="flex flex-wrap gap-2">
-        <StatusBadge tone="info">{lead.stage}</StatusBadge>
+        <StatusBadge tone="info">{lead.stage || "Enquiry"}</StatusBadge>
         {lead.slaBreached && <StatusBadge tone="serious">SLA breached</StatusBadge>}
         {lead.isTest && <StatusBadge tone="warning">Test lead</StatusBadge>}
       </div>
       <dl className="grid grid-cols-2 gap-3">
         {[
-          ["Phone", lead.phone],
+          ["Phone", lead.phone || "—"],
           ["Email", lead.email || "—"],
           ["Location / Branch", lead.location || "—"],
-          ["Source", lead.source],
-          ["Interested in", lead.interest],
+          ["Source", lead.source || "Walk-in"],
+          ["Interested in", lead.interest || "General enquiry"],
           ["Campaign", lead.campaign || "—"],
           ["Form", lead.formName || "—"],
-          ...Object.entries(lead.extra ?? {}).map(([k, v]) => [k.replace(/_/g, " "), v]),
+          ...extraEntries,
           ["Lead ID", lead.id],
         ].map(([k, v]) => (
           <div key={k} className="min-w-0">
@@ -832,13 +843,18 @@ function LeadDetail({
       <div>
         <p className="mb-2 text-[12px] font-semibold text-[#41564f]">Activity</p>
         <ol className="relative space-y-3 border-l border-[#D7E6E1] pl-4">
-          {[...lead.timeline].reverse().map((t, i) => (
+          {[...timeline].reverse().map((t, i) => (
             <li key={i} className="relative">
               <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-brand-teal" />
-              <p className="text-brand-ink">{t.what}</p>
-              <p className="text-[11px] text-[#7B8E89]">{t.when}</p>
+              <p className="text-brand-ink">{t?.what || "Activity updated"}</p>
+              <p className="text-[11px] text-[#7B8E89]">{t?.when || "Recently"}</p>
             </li>
           ))}
+          {timeline.length === 0 && (
+            <li className="relative">
+              <p className="text-[11.5px] text-[#7B8E89]">No activity recorded yet.</p>
+            </li>
+          )}
         </ol>
       </div>
       <form

@@ -11,6 +11,7 @@ import path from "path";
 import { DATA_DIR, dataFile } from "@/lib/data-dir";
 import { recordAuditLog } from "@/lib/audit/store";
 import { AGENTS, PIPELINE, STAGES, type PipelineLead, type Stage } from "@qschool/shared";
+import { isDbConfigured, getDbLeads, saveDbLead, saveDbLeadsBulk } from "@/lib/db";
 
 const LEADS_FILE = dataFile("crm-leads.json");
 const LOG_FILE = dataFile("crm-ingest-log.json");
@@ -109,6 +110,28 @@ async function writeJson(file: string, data: unknown) {
 }
 
 async function readLeads(): Promise<CrmLead[]> {
+  if (isDbConfigured()) {
+    try {
+      const dbLeads = await getDbLeads();
+      if (dbLeads && Array.isArray(dbLeads) && dbLeads.length > 0) {
+        let migrated = false;
+        for (const l of dbLeads) {
+          if ((l.stage as string) === "Demo") {
+            l.stage = "BMIT";
+            migrated = true;
+          }
+        }
+        if (migrated) {
+          void saveDbLeadsBulk(dbLeads);
+        }
+        await writeJson(LEADS_FILE, dbLeads).catch(() => {});
+        return dbLeads;
+      }
+    } catch (e) {
+      console.warn("[crm] failed to read from db, falling back to file:", e);
+    }
+  }
+
   let leads = await readJson<CrmLead[] | null>(LEADS_FILE, null);
   if (!leads || !Array.isArray(leads) || leads.length === 0) {
     const candidates = [
@@ -140,6 +163,9 @@ async function readLeads(): Promise<CrmLead[]> {
     }
     if (migrated) {
       await writeJson(LEADS_FILE, leads).catch(() => {});
+    }
+    if (isDbConfigured() && leads.length > 0) {
+      void saveDbLeadsBulk(leads);
     }
     return leads;
   }
@@ -241,6 +267,9 @@ export async function ingestLead(input: IncomingLead): Promise<{ result: "create
         dup.lastActivity = "Just now";
         if (["Dropped"].includes(dup.stage)) dup.stage = "Enquiry";
         await writeJson(LEADS_FILE, leads);
+        if (isDbConfigured()) {
+          void saveDbLead(dup);
+        }
       }
       await log({ at: new Date().toISOString(), sourceKey: input.sourceKey, source, result: "duplicate", leadId: dup.id, name: dup.name });
       return { result: "duplicate" as const, lead: dup };
@@ -281,6 +310,9 @@ export async function ingestLead(input: IncomingLead): Promise<{ result: "create
     st.counts[input.sourceKey] = (st.counts[input.sourceKey] ?? 0) + 1;
     st.last[input.sourceKey] = new Date().toISOString();
     await writeJson(LEADS_FILE, leads);
+    if (isDbConfigured()) {
+      void saveDbLead(lead);
+    }
     await writeJson(STATE_FILE, st);
     await log({ at: new Date().toISOString(), sourceKey: input.sourceKey, source, result: "created", leadId: lead.id, name: lead.name });
     // WhatsApp welcome (loaded lazily: the WhatsApp module isn't needed for ingestion itself)
@@ -311,6 +343,9 @@ export async function updateLead(
     l.slaBreached = false;
     l.lastActivity = "Just now";
     await writeJson(LEADS_FILE, leads);
+    if (isDbConfigured()) {
+      void saveDbLead(l);
+    }
     return l;
   });
 }
@@ -405,6 +440,9 @@ export async function bulkIngestLeads(
     }
 
     await writeJson(LEADS_FILE, leads);
+    if (isDbConfigured()) {
+      void saveDbLeadsBulk(leads);
+    }
     await writeJson(STATE_FILE, st);
 
     await recordAuditLog({

@@ -61,6 +61,15 @@ export async function ensureTables(): Promise<boolean> {
           );
         `;
 
+        await sql`
+          CREATE TABLE IF NOT EXISTS qs_crm_leads (
+            id VARCHAR(64) PRIMARY KEY,
+            data JSONB NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          );
+        `;
+
         // Check if qs_users is empty, seed if so
         const userCount = await sql`SELECT COUNT(*)::int as count FROM qs_users;`;
         if (userCount[0]?.count === 0) {
@@ -288,6 +297,61 @@ export async function saveDbStaffLogin(login: StaffLogin): Promise<boolean> {
     return true;
   } catch (err) {
     console.error("[db] saveDbStaffLogin error:", err);
+    return false;
+  }
+}
+
+/* ─────────── CRM Leads Operations ─────────── */
+
+export async function getDbLeads(): Promise<any[] | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  await ensureTables();
+  try {
+    const rows = await sql`SELECT data FROM qs_crm_leads ORDER BY updated_at DESC;`;
+    return rows.map((r: any) => r.data);
+  } catch (err) {
+    console.error("[db] getDbLeads error:", err);
+    return null;
+  }
+}
+
+export async function saveDbLead(lead: any): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) return false;
+  await ensureTables();
+  try {
+    await sql`
+      INSERT INTO qs_crm_leads (id, data, updated_at)
+      VALUES (${lead.id}, ${JSON.stringify(lead)}::jsonb, NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        data = EXCLUDED.data,
+        updated_at = NOW();
+    `;
+    return true;
+  } catch (err) {
+    console.error("[db] saveDbLead error:", err);
+    return false;
+  }
+}
+
+export async function saveDbLeadsBulk(leads: any[]): Promise<boolean> {
+  const sql = getSql();
+  if (!sql || !leads.length) return false;
+  await ensureTables();
+  try {
+    for (const lead of leads) {
+      await sql`
+        INSERT INTO qs_crm_leads (id, data, updated_at)
+        VALUES (${lead.id}, ${JSON.stringify(lead)}::jsonb, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          data = EXCLUDED.data,
+          updated_at = NOW();
+      `;
+    }
+    return true;
+  } catch (err) {
+    console.error("[db] saveDbLeadsBulk error:", err);
     return false;
   }
 }

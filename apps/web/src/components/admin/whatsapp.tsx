@@ -140,11 +140,17 @@ export function WaChat({ phone, name, leadId, onSent }: { phone: string; name: s
   const [err, setErr] = useState("");
   const { templates } = useTemplates();
   const end = useRef<HTMLDivElement>(null);
-  const first = name.split(/\s+/)[0] ?? "";
+  const first = (name || "").split(/\s+/)[0] ?? "";
 
   const load = useCallback(async () => {
-    const d = await fetch(`/api/admin/whatsapp/messages?phone=${encodeURIComponent(phone)}`, { cache: "no-store" }).then((r) => r.json());
-    if (d.messages) setC(d);
+    try {
+      if (!phone) return;
+      const res = await fetch(`/api/admin/whatsapp/messages?phone=${encodeURIComponent(phone)}`, { cache: "no-store" });
+      if (res.ok) {
+        const d = await res.json().catch(() => null);
+        if (d && d.messages) setC(d);
+      }
+    } catch {}
   }, [phone]);
 
   useEffect(() => {

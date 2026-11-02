@@ -22,10 +22,11 @@ function getCachedLeads(): CrmLead[] {
     const raw = localStorage.getItem(CRM_CACHE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed.map((l: CrmLead) => ({
           ...l,
           stage: (l.stage as string) === "Demo" ? "BMIT" : l.stage,
+          timeline: Array.isArray(l.timeline) ? l.timeline : [],
         }));
       }
     }
@@ -70,6 +71,7 @@ export function useCrmLeads(pollMs = 20000) {
       const list: CrmLead[] = d.leads.map((l: CrmLead) => ({
         ...l,
         stage: (l.stage as string) === "Demo" ? "BMIT" : l.stage,
+        timeline: Array.isArray(l.timeline) ? l.timeline : [],
       }));
 
       if (known.current) {
@@ -79,13 +81,21 @@ export function useCrmLeads(pollMs = 20000) {
       known.current = new Set(list.map((l) => l.id));
 
       setLeads((prev) => {
-        // If server returns empty list but local state has recently created leads, preserve them
-        if (list.length === 0 && prev.length > 0) {
-          saveCachedLeads(prev);
+        if (!list || list.length === 0) {
+          // Keep existing leads in memory and cache if server has 0 leads
           return prev;
         }
-        saveCachedLeads(list);
-        return list;
+        // Merge strategy: map by ID so neither server nor client leads are dropped
+        const map = new Map<string, CrmLead>();
+        for (const l of prev) {
+          map.set(l.id, l);
+        }
+        for (const l of list) {
+          map.set(l.id, l);
+        }
+        const merged = Array.from(map.values());
+        saveCachedLeads(merged);
+        return merged;
       });
       setLoading(false);
     } catch (err) {
@@ -132,6 +142,7 @@ export function useCrmLeads(pollMs = 20000) {
             const formatted: CrmLead = {
               ...lead,
               stage: (lead.stage as string) === "Demo" ? "BMIT" : lead.stage,
+              timeline: Array.isArray(lead.timeline) ? lead.timeline : [],
             };
             setLeads((ls) => {
               const updated = ls.map((l) => (l.id === id ? formatted : l));
@@ -139,14 +150,12 @@ export function useCrmLeads(pollMs = 20000) {
               return updated;
             });
           }
-        } else {
-          load();
         }
-      } catch {
-        load();
+      } catch (e) {
+        console.warn("[crm] patch failed, keeping optimistic state:", e);
       }
     },
-    [load],
+    [],
   );
 
   const create = useCallback(
@@ -162,6 +171,7 @@ export function useCrmLeads(pollMs = 20000) {
           const newLead: CrmLead = {
             ...d.lead,
             stage: (d.lead.stage as string) === "Demo" ? "BMIT" : d.lead.stage,
+            timeline: Array.isArray(d.lead.timeline) ? d.lead.timeline : [],
           };
           setLeads((prev) => {
             const exists = prev.some((l) => l.id === newLead.id);
