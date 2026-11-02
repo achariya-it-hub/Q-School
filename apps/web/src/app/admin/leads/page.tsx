@@ -1355,9 +1355,9 @@ function NewLead({
 }: {
   open: boolean;
   onClose: () => void;
-  onCreate: (b: { name: string; phone: string; interest: string; source: string; owner: string; value: number; location?: string; centreId?: string }) => void;
+  onCreate: (b: { name: string; phone: string; interest: string; source: string; owner?: string; value?: number; location?: string; centreId?: string }) => void;
 }) {
-  const [f, setF] = useState({ name: "", phone: "", interest: "", source: "Walk-in", location: ADMISSION_CENTRES[0].name, centreId: ADMISSION_CENTRES[0].id, owner: AGENTS[0], value: 0 });
+  const [f, setF] = useState({ name: "", phone: "", interest: "", source: "Walk-in", location: ADMISSION_CENTRES[0].name, centreId: ADMISSION_CENTRES[0].id });
   return (
     <Modal open={open} title="New lead" onClose={onClose}>
       <form
@@ -1365,8 +1365,8 @@ function NewLead({
         onSubmit={(e) => {
           e.preventDefault();
           if (!f.name.trim() || !f.phone.trim()) return;
-          onCreate({ ...f, interest: f.interest || "General enquiry" });
-          setF({ ...f, name: "", phone: "", interest: "", value: 0 });
+          onCreate({ ...f, interest: f.interest || "General enquiry", owner: AGENTS[0], value: 0 });
+          setF({ name: "", phone: "", interest: "", source: "Walk-in", location: ADMISSION_CENTRES[0].name, centreId: ADMISSION_CENTRES[0].id });
         }}
       >
         <div className="col-span-2">
@@ -1405,16 +1405,6 @@ function NewLead({
             <input className={inputCls} value={f.interest} onChange={(e) => setF({ ...f, interest: e.target.value })} placeholder="Course / workshop" />
           </Field>
         </div>
-        <Field label="Owner">
-          <select className={inputCls} value={f.owner} onChange={(e) => setF({ ...f, owner: e.target.value })}>
-            {AGENTS.map((a) => (
-              <option key={a}>{a}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Expected fee (₹)">
-          <input type="number" min={0} className={inputCls} value={f.value || ""} onChange={(e) => setF({ ...f, value: Number(e.target.value) })} />
-        </Field>
         <div className="col-span-2 flex justify-end gap-2 pt-1">
           <Btn variant="ghost" onClick={onClose}>
             Cancel
