@@ -161,7 +161,7 @@ export function Modal({
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-[#021c18]/50 backdrop-blur-[2px]" onClick={onClose} />
       <div
         role="dialog"
@@ -258,7 +258,7 @@ export function SearchInput({
 export function Toast({ msg }: { msg: string }) {
   if (!msg) return null;
   return (
-    <div className="fixed bottom-6 left-1/2 z-[70] -translate-x-1/2 rounded-xl bg-brand-deep px-4 py-3 text-sm font-medium text-white shadow-xl">
+    <div className="fixed bottom-6 left-1/2 z-[80] -translate-x-1/2 rounded-xl bg-brand-deep px-4 py-3 text-sm font-medium text-white shadow-xl">
       {msg}
     </div>
   );

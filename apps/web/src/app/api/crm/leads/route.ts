@@ -78,6 +78,12 @@ export async function PATCH(req: Request) {
   if (!isAdmin()) return deny();
   const b = await req.json().catch(() => ({}));
   if (!b.id) return NextResponse.json({ error: "id required" }, { status: 400 });
-  const lead = await updateLead(String(b.id), { stage: b.stage as Stage | undefined, owner: b.owner, value: b.value, activity: b.activity });
+  const lead = await updateLead(String(b.id), {
+    stage: b.stage as Stage | undefined,
+    owner: b.owner,
+    value: b.value,
+    activity: b.activity,
+    extra: b.extra,
+  });
   return lead ? NextResponse.json({ ok: true, lead }) : NextResponse.json({ error: "Not found" }, { status: 404 });
 }

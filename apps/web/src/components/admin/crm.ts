@@ -111,7 +111,16 @@ export function useCrmLeads(pollMs = 20000) {
   }, [load, pollMs]);
 
   const patch = useCallback(
-    async (id: string, p: { stage?: Stage; owner?: string; value?: number; activity?: string }) => {
+    async (
+      id: string,
+      p: {
+        stage?: Stage;
+        owner?: string;
+        value?: number;
+        activity?: string;
+        extra?: Record<string, any>;
+      },
+    ) => {
       // optimistic update
       setLeads((ls) => {
         const updated = ls.map((l) =>
@@ -121,6 +130,21 @@ export function useCrmLeads(pollMs = 20000) {
                 ...(p.stage ? { stage: p.stage } : {}),
                 ...(p.owner ? { owner: p.owner } : {}),
                 ...(p.value !== undefined ? { value: p.value } : {}),
+                ...(p.extra ? { extra: { ...(l.extra || {}), ...p.extra } } : {}),
+                ...(p.activity
+                  ? {
+                      timeline: [
+                        ...(Array.isArray(l.timeline) ? l.timeline : []),
+                        {
+                          when: new Date().toLocaleTimeString("en-IN", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }),
+                          what: p.activity,
+                        },
+                      ],
+                    }
+                  : {}),
                 lastActivity: "Just now",
                 slaBreached: false,
               }

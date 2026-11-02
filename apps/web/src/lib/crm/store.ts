@@ -323,7 +323,7 @@ export async function ingestLead(input: IncomingLead): Promise<{ result: "create
 
 export async function updateLead(
   id: string,
-  patch: { stage?: Stage; owner?: string; value?: number; activity?: string },
+  patch: { stage?: Stage; owner?: string; value?: number; activity?: string; extra?: Record<string, any> },
 ): Promise<CrmLead | null> {
   return serial(async () => {
     const leads = await readLeads();
@@ -339,6 +339,9 @@ export async function updateLead(
       l.timeline.push({ when, what: `Reassigned to ${l.owner}` });
     }
     if (typeof patch.value === "number" && patch.value >= 0) l.value = patch.value;
+    if (patch.extra && typeof patch.extra === "object") {
+      l.extra = { ...(l.extra || {}), ...patch.extra };
+    }
     if (patch.activity) l.timeline.push({ when, what: clip(patch.activity, 300) });
     l.slaBreached = false;
     l.lastActivity = "Just now";

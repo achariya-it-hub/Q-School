@@ -436,6 +436,9 @@ export default function LeadsPage() {
                             const newStage = e.target.value as Stage;
                             patch(l.id, { stage: newStage });
                             show(`${l.name} moved to ${newStage}`);
+                            if (newStage === "BMIT" && !l.extra?.["BMIT Test Date"]) {
+                              setOpen(l.id);
+                            }
                           }}
                           className={`rounded-lg px-2.5 py-1 text-[11px] font-bold border ${theme.colBorder} ${theme.badgeBg} ${theme.badgeText} outline-none cursor-pointer`}
                         >
@@ -445,6 +448,11 @@ export default function LeadsPage() {
                             </option>
                           ))}
                         </select>
+                        {l.extra?.["BMIT Test Date"] && (
+                          <div className="mt-1 flex items-center gap-1 text-[10px] font-bold text-purple-800">
+                            <span>📅 {l.extra["BMIT Test Date Formatted"] || l.extra["BMIT Test Date"]}</span>
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-right font-bold text-brand-ink">{inr(l.value)}</td>
                       <td className="py-3 px-4 text-right">
@@ -564,6 +572,11 @@ export default function LeadsPage() {
                             {l.name}
                           </p>
                           <p className="text-[11px] text-[#6b807b]">{l.location ? `📍 ${l.location} • ` : ""}{l.interest} • {l.phone}</p>
+                          {l.extra?.["BMIT Test Date"] && (
+                            <p className="text-[10.5px] font-bold text-purple-700">
+                              📅 BMIT Test: {l.extra["BMIT Test Date Formatted"] || l.extra["BMIT Test Date"]}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -718,6 +731,12 @@ function LeadCard({
             📍 {l.location}
           </span>
         )}
+        {l.extra?.["BMIT Test Date"] && (
+          <span className="rounded-md bg-purple-100 text-purple-900 border border-purple-200 px-1.5 py-0.5 text-[10.5px] font-bold flex items-center gap-1 shadow-xs" title={`BMIT Test: ${l.extra["BMIT Test Date Formatted"] || l.extra["BMIT Test Date"]}`}>
+            <Icon name="calendar" size={11} className="text-purple-700" />
+            <span>BMIT: {l.extra["BMIT Test Date Formatted"] || l.extra["BMIT Test Date"]}</span>
+          </span>
+        )}
         {l.isTest && <span className="rounded-md bg-[#FFF6E0] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#8A5A00]">Test</span>}
         {l.value > 0 && <span className="text-[11px] font-bold text-brand-ink">{inr(l.value)}</span>}
       </div>
@@ -729,6 +748,320 @@ function LeadCard({
   );
 }
 
+function getIsoDateOffset(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function getNextDayOfWeek(dayOfWeek: number): string {
+  const d = new Date();
+  const currentDay = d.getDay();
+  let diff = dayOfWeek - currentDay;
+  if (diff <= 0) diff += 7;
+  d.setDate(d.getDate() + diff);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function formatFriendlyDate(dateStr?: string): string {
+  if (!dateStr) return "";
+  try {
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      return d.toLocaleDateString("en-IN", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    }
+  } catch {}
+  return dateStr;
+}
+
+function BmitScheduleModal({
+  open,
+  lead,
+  onClose,
+  onSchedule,
+  onClear,
+}: {
+  open: boolean;
+  lead: CrmLead;
+  onClose: () => void;
+  onSchedule: (data: {
+    testDate: string;
+    testSlot: string;
+    testCentre: string;
+    testEvaluator: string;
+    testNotes?: string;
+  }) => void;
+  onClear?: () => void;
+}) {
+  const tomorrow = getIsoDateOffset(1);
+  const today = getIsoDateOffset(0);
+  const sat = getNextDayOfWeek(6);
+  const sun = getNextDayOfWeek(0);
+
+  const [date, setDate] = useState(lead.extra?.["BMIT Test Date"] || tomorrow);
+  const [slot, setSlot] = useState(lead.extra?.["BMIT Test Slot"] || "10:00 AM - 11:30 AM");
+  const [centre, setCentre] = useState(lead.extra?.["BMIT Location"] || lead.location || ADMISSION_CENTRES[0]?.name || "Moolakulam, Puducherry");
+  const [evaluator, setEvaluator] = useState(lead.extra?.["BMIT Evaluator"] || lead.owner || AGENTS[0]);
+  const [notes, setNotes] = useState(lead.extra?.["BMIT Notes"] || "");
+  const [customSlot, setCustomSlot] = useState("");
+  const [isCustomSlot, setIsCustomSlot] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setDate(lead.extra?.["BMIT Test Date"] || tomorrow);
+      const existingSlot = lead.extra?.["BMIT Test Slot"] || "10:00 AM - 11:30 AM";
+      const presetSlots = [
+        "10:00 AM - 11:30 AM",
+        "11:30 AM - 01:00 PM",
+        "02:00 PM - 03:30 PM",
+        "04:00 PM - 05:30 PM",
+      ];
+      if (presetSlots.includes(existingSlot)) {
+        setSlot(existingSlot);
+        setIsCustomSlot(false);
+      } else {
+        setIsCustomSlot(true);
+        setCustomSlot(existingSlot);
+      }
+      setCentre(lead.extra?.["BMIT Location"] || lead.location || ADMISSION_CENTRES[0]?.name || "Moolakulam, Puducherry");
+      setEvaluator(lead.extra?.["BMIT Evaluator"] || lead.owner || AGENTS[0]);
+      setNotes(lead.extra?.["BMIT Notes"] || "");
+    }
+  }, [open, lead, tomorrow]);
+
+  const existingDate = lead.extra?.["BMIT Test Date"];
+  const isReschedule = Boolean(existingDate);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!date) return;
+    const finalSlot = isCustomSlot ? (customSlot.trim() || slot) : slot;
+    onSchedule({
+      testDate: date,
+      testSlot: finalSlot,
+      testCentre: centre,
+      testEvaluator: evaluator,
+      testNotes: notes.trim() || undefined,
+    });
+  };
+
+  const friendlySelectedDate = formatFriendlyDate(date);
+
+  return (
+    <Modal open={open} title={isReschedule ? "Reschedule BMIT Assessment Test" : "Schedule BMIT Assessment Test"} onClose={onClose}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Lead summary card */}
+        <div className="rounded-xl border border-purple-100 bg-[#FAF7FD] p-3 text-xs flex items-center justify-between">
+          <div>
+            <p className="font-extrabold text-brand-ink">{lead.name}</p>
+            <p className="text-[#697E78]">{lead.phone} • {lead.interest || "General enquiry"}</p>
+          </div>
+          <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-[11px] font-bold text-purple-900 border border-purple-200">
+            BMIT Diagnostic
+          </span>
+        </div>
+
+        {/* Date Selection */}
+        <div>
+          <label className="block mb-1 text-[12px] font-bold text-[#324540]">
+            1. Select Test Date <span className="text-red-500">*</span>
+          </label>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {[
+              { label: "Today", val: today },
+              { label: "Tomorrow", val: tomorrow },
+              { label: "This Saturday", val: sat },
+              { label: "This Sunday", val: sun },
+            ].map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => setDate(p.val)}
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition ${
+                  date === p.val
+                    ? "bg-purple-700 text-white font-bold shadow-xs"
+                    : "border border-purple-200 bg-purple-50 text-purple-900 hover:bg-purple-100"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative">
+            <input
+              type="date"
+              required
+              min={today}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="h-11 w-full rounded-xl border border-[#D0DFDB] bg-white px-3.5 text-sm font-semibold text-brand-ink outline-none transition focus:border-purple-600 focus:ring-1 focus:ring-purple-600 cursor-pointer"
+            />
+          </div>
+
+          {friendlySelectedDate && (
+            <p className="mt-1.5 flex items-center gap-1.5 text-[11.5px] font-semibold text-purple-800">
+              <Icon name="calendar" size={13} className="text-purple-600" />
+              <span>Selected: <strong>{friendlySelectedDate}</strong></span>
+            </p>
+          )}
+        </div>
+
+        {/* Time Slot Selection */}
+        <div>
+          <label className="block mb-1 text-[12px] font-bold text-[#324540]">
+            2. Assessment Time Slot <span className="text-red-500">*</span>
+          </label>
+          <div className="grid grid-cols-2 gap-1.5 mb-2">
+            {[
+              { label: "10:00 AM - 11:30 AM", time: "Morning" },
+              { label: "11:30 AM - 01:00 PM", time: "Midday" },
+              { label: "02:00 PM - 03:30 PM", time: "Afternoon" },
+              { label: "04:00 PM - 05:30 PM", time: "Evening" },
+            ].map((s) => (
+              <button
+                key={s.label}
+                type="button"
+                onClick={() => {
+                  setSlot(s.label);
+                  setIsCustomSlot(false);
+                }}
+                className={`rounded-xl border p-2 text-left transition ${
+                  !isCustomSlot && slot === s.label
+                    ? "border-purple-600 bg-purple-50 ring-1 ring-purple-600 shadow-xs"
+                    : "border-gray-200 bg-white hover:border-purple-300"
+                }`}
+              >
+                <div className="text-[11.5px] font-bold text-brand-ink">{s.label}</div>
+                <div className="text-[10px] text-[#7B8E89]">{s.time}</div>
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsCustomSlot(!isCustomSlot)}
+              className="text-[11px] font-semibold text-purple-700 underline hover:text-purple-900"
+            >
+              {isCustomSlot ? "Pick from preset slots" : "+ Custom slot / time"}
+            </button>
+          </div>
+
+          {isCustomSlot && (
+            <div className="mt-2">
+              <input
+                type="text"
+                placeholder="e.g. 03:00 PM - 04:30 PM"
+                value={customSlot}
+                onChange={(e) => setCustomSlot(e.target.value)}
+                className={inputCls}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Centre / Location Selection */}
+        <div>
+          <label className="block mb-1 text-[12px] font-bold text-[#324540]">
+            3. Test Centre / Campus
+          </label>
+          <select
+            value={centre}
+            onChange={(e) => setCentre(e.target.value)}
+            className={inputCls}
+          >
+            {ADMISSION_CENTRES.map((c) => (
+              <option key={c.id} value={c.name}>
+                📍 {c.name} ({c.city})
+              </option>
+            ))}
+            <option value="Online Assessment (Google Meet / Video Call)">
+              🌐 Online Assessment (Google Meet / Video Call)
+            </option>
+          </select>
+        </div>
+
+        {/* Evaluator Selection */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block mb-1 text-[12px] font-bold text-[#324540]">
+              Assigned Evaluator
+            </label>
+            <select
+              value={evaluator}
+              onChange={(e) => setEvaluator(e.target.value)}
+              className={inputCls}
+            >
+              {AGENTS.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block mb-1 text-[12px] font-bold text-[#324540]">
+              Candidate Grade / Notes
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Grade 4, Math assessment"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className={inputCls}
+            />
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between border-t border-gray-100 pt-4 mt-2">
+          {isReschedule && onClear ? (
+            <button
+              type="button"
+              onClick={onClear}
+              className="text-xs font-semibold text-rose-600 hover:text-rose-800 transition"
+            >
+              Cancel appointment
+            </button>
+          ) : (
+            <span />
+          )}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-bold text-[#5C716C] hover:bg-gray-50 transition"
+            >
+              Close
+            </button>
+            <button
+              type="submit"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-purple-700 px-4 py-2 text-xs font-bold text-white hover:bg-purple-800 transition shadow-sm"
+            >
+              <Icon name="calendar" size={14} />
+              {isReschedule ? "Update BMIT Schedule" : "Confirm & Schedule BMIT"}
+            </button>
+          </div>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 function LeadDetail({
   lead,
   onPatch,
@@ -736,12 +1069,14 @@ function LeadDetail({
   onCall,
 }: {
   lead: CrmLead;
-  onPatch: (p: { stage?: Stage; owner?: string; value?: number; activity?: string }) => void;
+  onPatch: (p: { stage?: Stage; owner?: string; value?: number; activity?: string; extra?: Record<string, any> }) => void;
   onToast: (m: string) => void;
   onCall: (l: { id: string; name: string; phone: string }, channelOverride?: string) => void;
 }) {
   const [selectedRoute, setSelectedRoute] = useState("auto");
   const [note, setNote] = useState("");
+  const [bmitModalOpen, setBmitModalOpen] = useState(false);
+
   const act = (what: string) => {
     onPatch({ activity: what });
     onToast(what);
@@ -753,6 +1088,53 @@ function LeadDetail({
     typeof v === "object" ? JSON.stringify(v) : String(v ?? "—"),
   ]);
 
+  const bmitDate = lead.extra?.["BMIT Test Date"];
+  const bmitDateFormatted = lead.extra?.["BMIT Test Date Formatted"] || formatFriendlyDate(bmitDate);
+  const bmitSlot = lead.extra?.["BMIT Test Slot"] || "10:00 AM - 11:30 AM";
+  const bmitCentre = lead.extra?.["BMIT Location"] || lead.location || "Q-School Centre";
+  const isBmitScheduled = Boolean(bmitDate);
+
+  const handleScheduleBmit = (data: {
+    testDate: string;
+    testSlot: string;
+    testCentre: string;
+    testEvaluator: string;
+    testNotes?: string;
+  }) => {
+    const formatted = formatFriendlyDate(data.testDate);
+    const actMsg = `📅 BMIT Assessment Test scheduled for ${formatted} (${data.testSlot}) at ${data.testCentre}`;
+    onPatch({
+      stage: "BMIT",
+      activity: actMsg,
+      extra: {
+        "BMIT Test Date": data.testDate,
+        "BMIT Test Date Formatted": formatted,
+        "BMIT Test Slot": data.testSlot,
+        "BMIT Location": data.testCentre,
+        "BMIT Evaluator": data.testEvaluator,
+        ...(data.testNotes ? { "BMIT Notes": data.testNotes } : {}),
+      },
+    });
+    onToast(`BMIT Test scheduled for ${lead.name} on ${formatted}`);
+    setBmitModalOpen(false);
+  };
+
+  const handleClearBmit = () => {
+    onPatch({
+      activity: `BMIT Assessment appointment cancelled for ${lead.name}`,
+      extra: {
+        "BMIT Test Date": "",
+        "BMIT Test Date Formatted": "",
+        "BMIT Test Slot": "",
+        "BMIT Location": "",
+        "BMIT Evaluator": "",
+        "BMIT Notes": "",
+      },
+    });
+    onToast(`BMIT schedule cleared for ${lead.name}`);
+    setBmitModalOpen(false);
+  };
+
   return (
     <div className="space-y-5 text-[13px]">
       <div className="flex flex-wrap gap-2">
@@ -760,6 +1142,69 @@ function LeadDetail({
         {lead.slaBreached && <StatusBadge tone="serious">SLA breached</StatusBadge>}
         {lead.isTest && <StatusBadge tone="warning">Test lead</StatusBadge>}
       </div>
+
+      {/* Active BMIT Test Appointment Card */}
+      {isBmitScheduled ? (
+        <div className="rounded-2xl border border-purple-200 bg-gradient-to-br from-[#FAF5FF] to-[#F3E8FF] p-3.5 shadow-sm space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-700 text-white shadow-sm">
+                <Icon name="calendar" size={16} />
+              </span>
+              <div>
+                <span className="text-[10.5px] font-bold uppercase tracking-wider text-purple-700">
+                  BMIT Assessment Test
+                </span>
+                <h4 className="text-[13.5px] font-black text-purple-950">
+                  {bmitDateFormatted}
+                </h4>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setBmitModalOpen(true)}
+              className="inline-flex items-center gap-1 rounded-lg border border-purple-300 bg-white px-2.5 py-1 text-[11px] font-bold text-purple-700 hover:bg-purple-50 transition shadow-xs"
+            >
+              <Icon name="edit" size={12} /> Reschedule
+            </button>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-[11.5px] border-t border-purple-200/60 pt-2 text-purple-900">
+            <div>
+              <span className="text-purple-600 font-medium">Slot: </span>
+              <span className="font-bold">{bmitSlot}</span>
+            </div>
+            <div>
+              <span className="text-purple-600 font-medium">Centre: </span>
+              <span className="font-bold truncate">{bmitCentre}</span>
+            </div>
+            {lead.extra?.["BMIT Evaluator"] && (
+              <div className="col-span-2">
+                <span className="text-purple-600 font-medium">Evaluator: </span>
+                <span className="font-bold">{lead.extra["BMIT Evaluator"]}</span>
+              </div>
+            )}
+            {lead.extra?.["BMIT Notes"] && (
+              <div className="col-span-2 text-purple-800 italic">
+                Note: {lead.extra["BMIT Notes"]}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : lead.stage === "BMIT" ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-700 font-bold text-xs">⚠️ Stage is BMIT, but test date is not set yet.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setBmitModalOpen(true)}
+            className="inline-flex items-center gap-1 rounded-lg bg-purple-700 px-2.5 py-1 text-[11.5px] font-bold text-white hover:bg-purple-800 transition shadow-xs"
+          >
+            <Icon name="calendar" size={13} /> Select Date
+          </button>
+        </div>
+      ) : null}
+
       <dl className="grid grid-cols-2 gap-3">
         {[
           ["Phone", lead.phone || "—"],
@@ -817,16 +1262,37 @@ function LeadDetail({
           >
             <Icon name="message" size={15} /> WhatsApp
           </a>
-          <Btn variant="ghost" icon="calendar" onClick={() => act("BMIT assessment booked")}>
-            BMIT
-          </Btn>
+          <button
+            type="button"
+            onClick={() => setBmitModalOpen(true)}
+            className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border text-[12.5px] font-bold transition shadow-sm ${
+              isBmitScheduled
+                ? "border-purple-600 bg-purple-600 text-white hover:bg-purple-700"
+                : "border-purple-200 bg-purple-50 text-purple-800 hover:bg-purple-100"
+            }`}
+            title="Schedule or select BMIT assessment test date"
+          >
+            <Icon name="calendar" size={15} />
+            <span>{isBmitScheduled ? "BMIT 📅" : "BMIT"}</span>
+          </button>
         </div>
       </div>
 
       <WaChat phone={lead.phone} name={lead.name} leadId={lead.id} onSent={onToast} />
       <div className="grid grid-cols-2 gap-3">
         <Field label="Stage">
-          <select className={inputCls} value={lead.stage} onChange={(e) => (onPatch({ stage: e.target.value as Stage }), onToast(`Moved to ${e.target.value}`))}>
+          <select
+            className={inputCls}
+            value={lead.stage}
+            onChange={(e) => {
+              const nextStage = e.target.value as Stage;
+              onPatch({ stage: nextStage });
+              onToast(`Moved to ${nextStage}`);
+              if (nextStage === "BMIT" && !lead.extra?.["BMIT Test Date"]) {
+                setBmitModalOpen(true);
+              }
+            }}
+          >
             {STAGES.map((s) => (
               <option key={s}>{s}</option>
             ))}
@@ -869,6 +1335,15 @@ function LeadDetail({
         <input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a note…" />
         <Btn type="submit">Add</Btn>
       </form>
+
+      {/* Date Picker Modal for BMIT Test */}
+      <BmitScheduleModal
+        open={bmitModalOpen}
+        lead={lead}
+        onClose={() => setBmitModalOpen(false)}
+        onSchedule={handleScheduleBmit}
+        onClear={isBmitScheduled ? handleClearBmit : undefined}
+      />
     </div>
   );
 }
