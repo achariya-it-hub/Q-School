@@ -8,14 +8,13 @@
  */
 import { promises as fs } from "fs";
 import path from "path";
-import { DATA_DIR } from "@/lib/data-dir";
+import { DATA_DIR, dataFile } from "@/lib/data-dir";
 import { recordAuditLog } from "@/lib/audit/store";
 import { AGENTS, PIPELINE, STAGES, type PipelineLead, type Stage } from "@qschool/shared";
 
-const DIR = DATA_DIR;
-const LEADS_FILE = path.join(DIR, "crm-leads.json");
-const LOG_FILE = path.join(DIR, "crm-ingest-log.json");
-const STATE_FILE = path.join(DIR, "crm-state.json");
+const LEADS_FILE = dataFile("crm-leads.json");
+const LOG_FILE = dataFile("crm-ingest-log.json");
+const STATE_FILE = dataFile("crm-state.json");
 
 export type SourceKey = "meta" | "google" | "whatsapp" | "website" | "webhook";
 
@@ -96,13 +95,41 @@ async function readJson<T>(file: string, fallback: T): Promise<T> {
 }
 
 async function writeJson(file: string, data: unknown) {
-  const tmp = `${file}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(data, null, 2));
-  await fs.rename(tmp, file);
+  const tmp = `${file}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
+  try {
+    await fs.writeFile(tmp, JSON.stringify(data, null, 2), "utf8");
+    await fs.rename(tmp, file);
+  } catch {
+    try {
+      await fs.writeFile(file, JSON.stringify(data, null, 2), "utf8");
+    } finally {
+      await fs.unlink(tmp).catch(() => {});
+    }
+  }
 }
 
 async function readLeads(): Promise<CrmLead[]> {
-  const leads = await readJson<CrmLead[] | null>(LEADS_FILE, null);
+  let leads = await readJson<CrmLead[] | null>(LEADS_FILE, null);
+  if (!leads || !Array.isArray(leads) || leads.length === 0) {
+    const candidates = [
+      path.join(process.cwd(), "crm-leads.json"),
+      path.join(process.cwd(), "apps", "web", "crm-leads.json"),
+      path.join(__dirname, "..", "..", "..", "crm-leads.json"),
+      path.join(__dirname, "..", "..", "crm-leads.json"),
+      path.join(__dirname, "..", "crm-leads.json"),
+    ];
+    for (const cand of candidates) {
+      if (cand !== LEADS_FILE) {
+        const found = await readJson<CrmLead[] | null>(cand, null);
+        if (found && Array.isArray(found) && found.length > 0) {
+          leads = found;
+          await writeJson(LEADS_FILE, leads).catch(() => {});
+          break;
+        }
+      }
+    }
+  }
+
   if (leads && Array.isArray(leads)) {
     let migrated = false;
     for (const l of leads) {

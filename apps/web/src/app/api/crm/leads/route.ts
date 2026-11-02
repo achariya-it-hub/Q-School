@@ -65,8 +65,12 @@ export async function POST(req: Request) {
     owner: b.owner,
     value: Number(b.value) || 0,
   });
-  if (r.result === "created" && (b.owner || b.value)) await updateLead(r.lead.id, { owner: b.owner, value: Number(b.value) || 0 });
-  return NextResponse.json({ ok: true, ...r });
+  let finalLead = r.lead;
+  if (r.result === "created" && (b.owner || b.value)) {
+    const updated = await updateLead(r.lead.id, { owner: b.owner, value: Number(b.value) || 0 });
+    if (updated) finalLead = updated;
+  }
+  return NextResponse.json({ ok: true, result: r.result, lead: finalLead });
 }
 
 /** Stage move, reassignment, expected fee, or activity note. */

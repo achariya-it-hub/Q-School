@@ -43,7 +43,7 @@ try {
 /** Path of a data file, copying the shipped seed into the data folder the first time. */
 export function dataFile(name: string) {
   const p = path.join(DATA_DIR, name);
-  if (DATA_DIR !== process.cwd() && !existsSync(p)) {
+  if (!existsSync(p)) {
     const candidates = [
       path.join(process.cwd(), name),
       path.join(process.cwd(), "apps", "web", name),
@@ -53,7 +53,7 @@ export function dataFile(name: string) {
     ];
     for (const seed of candidates) {
       try {
-        if (existsSync(seed)) {
+        if (seed !== p && existsSync(seed)) {
           copyFileSync(seed, p);
           break;
         }
