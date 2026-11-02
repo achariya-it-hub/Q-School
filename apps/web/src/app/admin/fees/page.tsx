@@ -89,6 +89,68 @@ export default function FeesPage() {
         />
       </section>
 
+      {/* Official Q-School Course Fee Structure */}
+      <Card className="mt-5 border border-[#C5DDD7] bg-gradient-to-r from-[#F7FCFA] to-[#EDF7F4]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#D8EAE4] pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-md bg-[#054038] px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white">
+                Q-School
+              </span>
+              <h3 className="text-[15px] font-bold text-brand-ink">Official Program Fee Structure</h3>
+            </div>
+            <p className="mt-0.5 text-[12px] text-[#5C716C]">
+              Includes: Q School + Q Learning + annual kit &amp; study material fee
+            </p>
+          </div>
+          <Btn icon="plus" onClick={() => setPlan(true)}>
+            Enroll Student / Create Plan
+          </Btn>
+        </div>
+
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-left text-[12.5px]">
+            <thead>
+              <tr className="border-b border-[#D8EAE4] text-[11px] font-bold uppercase tracking-wider text-[#5C716C]">
+                <th className="py-2 pr-4">Course Name</th>
+                <th className="py-2 pr-4">Age Group</th>
+                <th className="py-2 pr-4">Fee Basis</th>
+                <th className="py-2 pr-4 text-right">Monthly Fee</th>
+                <th className="py-2 pr-4 text-right">Annual / Course Fee</th>
+                <th className="py-2 pl-4">What the Fee Includes</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E2EFEA]">
+              {[
+                { course: "Divya Yoga", age: "Age 6 – 8", basis: "Monthly / Annual", monthly: 5250, annual: 63000 },
+                { course: "Divya Mantra", age: "Age 9 – 10", basis: "Monthly / Annual", monthly: 5833, annual: 70000 },
+                { course: "Divya Mudra", age: "Age 11 – 12", basis: "Monthly / Annual", monthly: 6167, annual: 74000 },
+                { course: "Divya Tratak", age: "Age 13 – 14", basis: "Monthly / Annual", monthly: 6500, annual: 78000 },
+              ].map((p) => (
+                <tr key={p.course} className="hover:bg-white/60">
+                  <td className="py-2.5 pr-4 font-bold text-brand-deep">{p.course}</td>
+                  <td className="py-2.5 pr-4">
+                    <span className="rounded bg-[#E3F4F0] px-2 py-0.5 text-[11px] font-semibold text-brand-deep">
+                      {p.age}
+                    </span>
+                  </td>
+                  <td className="py-2.5 pr-4 text-[#41564f]">{p.basis}</td>
+                  <td className="py-2.5 pr-4 text-right font-mono font-semibold text-[#0B6E5F]">
+                    ₹ {p.monthly.toLocaleString("en-IN")}
+                  </td>
+                  <td className="py-2.5 pr-4 text-right font-mono font-bold text-brand-ink">
+                    ₹ {p.annual.toLocaleString("en-IN")}
+                  </td>
+                  <td className="py-2.5 pl-4 text-[12px] text-[#5C716C]">
+                    Q School + Q Learning + annual kit/material fee
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
       <div className="mt-5 grid grid-cols-1 gap-5 2xl:grid-cols-[minmax(0,1fr)_340px]">
         <Card>
           <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -297,6 +359,13 @@ function Ledger({ a, onCollect }: { a: FeeAccount; onCollect: () => void }) {
   );
 }
 
+const COURSE_FEES: Record<string, { annual: number; monthly: number; label: string }> = {
+  "Divya Yoga": { annual: 63000, monthly: 5250, label: "Divya Yoga (Age 6 – 8)" },
+  "Divya Mantra": { annual: 70000, monthly: 5833, label: "Divya Mantra (Age 9 – 10)" },
+  "Divya Mudra": { annual: 74000, monthly: 6167, label: "Divya Mudra (Age 11 – 12)" },
+  "Divya Tratak": { annual: 78000, monthly: 6500, label: "Divya Tratak (Age 13 – 14)" },
+};
+
 function NewPlanModal({ open, onClose, onDone }: { open: boolean; onClose: () => void; onDone: (m: string) => void }) {
   const [form, setForm] = useState({
     student: "",
@@ -304,12 +373,23 @@ function NewPlanModal({ open, onClose, onDone }: { open: boolean; onClose: () =>
     course: "Divya Yoga",
     batch: "Section A",
     centre: "Moolakulam, Puducherry",
-    total: 45000,
+    total: 63000,
     parts: 1,
     firstDue: TODAY_ISO,
   });
+
+  const onCourseChange = (c: string) => {
+    const feeInfo = COURSE_FEES[c] || COURSE_FEES["Divya Yoga"];
+    setForm((f) => ({
+      ...f,
+      course: c,
+      total: feeInfo.annual,
+    }));
+  };
+
   const up = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: k === "total" || k === "parts" ? Number(e.target.value) : e.target.value }));
+
   return (
     <Modal open={open} title="New fee plan" onClose={onClose}>
       <form
@@ -342,28 +422,27 @@ function NewPlanModal({ open, onClose, onDone }: { open: boolean; onClose: () =>
         </Field>
         <div className="col-span-2">
           <Field label="Class / Course Program">
-            <select className={inputCls} value={form.course} onChange={up("course")}>
-              <option value="Divya Yoga">Divya Yoga (Age 6 – 8)</option>
-              <option value="Divya Mantra">Divya Mantra (Age 9 – 10)</option>
-              <option value="Divya Mudra">Divya Mudra (Age 11 – 12)</option>
-              <option value="Divya Tratak">Divya Tratak (Age 13 – 14)</option>
+            <select className={inputCls} value={form.course} onChange={(e) => onCourseChange(e.target.value)}>
+              <option value="Divya Yoga">Divya Yoga (Age 6 – 8) — ₹63,000 / ₹5,250 mo</option>
+              <option value="Divya Mantra">Divya Mantra (Age 9 – 10) — ₹70,000 / ₹5,833 mo</option>
+              <option value="Divya Mudra">Divya Mudra (Age 11 – 12) — ₹74,000 / ₹6,167 mo</option>
+              <option value="Divya Tratak">Divya Tratak (Age 13 – 14) — ₹78,000 / ₹6,500 mo</option>
             </select>
           </Field>
         </div>
         <Field label="Section / Batch">
           <input className={inputCls} value={form.batch} onChange={up("batch")} placeholder="e.g. Section A" />
         </Field>
-        <Field label="Total fee (₹, incl. GST)">
-          <input type="number" min={1} className={inputCls} value={form.total} onChange={up("total")} />
-        </Field>
-        <Field label="Installments">
+        <Field label="Fee Basis / Installments">
           <select className={inputCls} value={form.parts} onChange={up("parts")}>
-            {[1, 2, 3, 4, 6].map((n) => (
-              <option key={n} value={n}>
-                {n === 1 ? "One-time (Full ₹45,000)" : `${n} monthly installments`}
-              </option>
-            ))}
+            <option value={1}>Annual Plan (One-time ₹{(COURSE_FEES[form.course]?.annual ?? 63000).toLocaleString("en-IN")})</option>
+            <option value={12}>Monthly Plan (12 × ₹{(COURSE_FEES[form.course]?.monthly ?? 5250).toLocaleString("en-IN")}/mo)</option>
+            <option value={2}>Half-Yearly (2 × ₹{Math.round((COURSE_FEES[form.course]?.annual ?? 63000) / 2).toLocaleString("en-IN")})</option>
+            <option value={4}>Quarterly (4 × ₹{Math.round((COURSE_FEES[form.course]?.annual ?? 63000) / 4).toLocaleString("en-IN")})</option>
           </select>
+        </Field>
+        <Field label="Total fee (₹, incl. GST & kit)">
+          <input type="number" min={1} className={inputCls} value={form.total} onChange={up("total")} />
         </Field>
         <Field label="First due date">
           <input type="date" className={inputCls} value={form.firstDue} onChange={up("firstDue")} />

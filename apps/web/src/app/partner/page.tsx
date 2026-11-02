@@ -12,6 +12,13 @@ import {
   type PartnerAdmission,
 } from "@/lib/partners/types";
 
+const PARTNER_COURSE_FEES: Record<string, string> = {
+  "Divya Yoga (Age 6 – 8)": "63000",
+  "Divya Mantra (Age 9 – 10)": "70000",
+  "Divya Mudra (Age 11 – 12)": "74000",
+  "Divya Tratak (Age 13 – 14)": "78000",
+};
+
 function PartnerContent() {
   const searchParams = useSearchParams();
   const codeParam = searchParams.get("code") || searchParams.get("ref") || "";
@@ -36,8 +43,8 @@ function PartnerContent() {
     address: "",
     centreId: "mk",
     course: "Divya Yoga (Age 6 – 8)",
-    originalFee: "45000",
-    feeAmount: "45000",
+    originalFee: "63000",
+    feeAmount: "63000",
     concessionType: "none" as ConcessionType,
     paymentMode: "Cash",
     paymentStatus: "Paid" as "Paid" | "Partial" | "Pending",
@@ -211,8 +218,8 @@ function PartnerContent() {
       address: "",
       centreId: partner?.centreId !== "all" ? (partner?.centreId || "mk") : "mk",
       course: "Divya Yoga (Age 6 – 8)",
-      originalFee: "45000",
-      feeAmount: "45000",
+      originalFee: "63000",
+      feeAmount: "63000",
       concessionType: "none",
       paymentMode: "Cash",
       paymentStatus: "Paid",
@@ -352,31 +359,6 @@ function PartnerContent() {
                 {loading ? "Verifying…" : "Access Marketer Portal →"}
               </button>
             </form>
-
-            <div className="mt-6 pt-5 border-t border-[#EEF3F1]">
-              <p className="text-xs font-semibold text-[#7B8E89] mb-2 text-center uppercase tracking-wider">
-                Quick Demo Marketers:
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { code: "MKT-BALA", name: "Bala Murugan" },
-                  { code: "ACH-PUDU", name: "Achariya School" },
-                  { code: "EDT-KAVI", name: "Kavitha R." },
-                ].map((demo) => (
-                  <button
-                    key={demo.code}
-                    onClick={() => {
-                      setPartnerCode(demo.code);
-                      loginWithCode(demo.code);
-                    }}
-                    className="p-2 rounded-lg border border-[#E2ECE9] bg-[#F9FBFA] hover:bg-[#E3F4F0] text-center transition"
-                  >
-                    <div className="text-[11px] font-bold text-brand-deep">{demo.code}</div>
-                    <div className="text-[10px] text-[#7B8E89] truncate">{demo.name}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </main>
 
@@ -947,7 +929,11 @@ function PartnerContent() {
                         <label className="block text-xs font-semibold text-[#41564F] mb-1">Course / Program</label>
                         <select
                           value={form.course}
-                          onChange={(e) => setForm({ ...form, course: e.target.value })}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const fee = PARTNER_COURSE_FEES[val] || "63000";
+                            setForm({ ...form, course: val, originalFee: fee, feeAmount: fee });
+                          }}
                           className="w-full h-11 px-3 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm focus:border-brand-teal focus:bg-white focus:outline-none"
                         >
                           <option value="Divya Yoga (Age 6 – 8)">Divya Yoga (Age 6 – 8)</option>

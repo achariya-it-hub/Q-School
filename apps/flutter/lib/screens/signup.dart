@@ -15,10 +15,10 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _agreed = true;
   bool _securePassword = true;
 
-  final _nameController = TextEditingController(text: 'Alex Johnson');
-  final _emailController = TextEditingController(text: 'alex@gmail.com');
-  final _mobileController = TextEditingController(text: '98765 43210');
-  final _passwordController = TextEditingController(text: '••••••••••••');
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _mobileController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   void _onSignUp() {
     Navigator.of(context).pushNamed('/interests');

@@ -21,14 +21,21 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
   final _formKey = GlobalKey<FormState>();
 
   final _studentNameController = TextEditingController();
-  final _dobController = TextEditingController(text: '2015-06-15');
+  final _dobController = TextEditingController();
   final _schoolController = TextEditingController();
   final _parentNameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _addressController = TextEditingController();
-  final _feeController = TextEditingController(text: '45000');
+  final _feeController = TextEditingController(text: '63000');
   final _notesController = TextEditingController();
+
+  static const Map<String, int> _courseFees = {
+    'Divya Yoga (Age 6 – 8)': 63000,
+    'Divya Mantra (Age 9 – 10)': 70000,
+    'Divya Mudra (Age 11 – 12)': 74000,
+    'Divya Tratak (Age 13 – 14)': 78000,
+  };
 
   String _selectedGrade = 'Grade 5';
   String _selectedCentre = 'mk';
@@ -407,7 +414,14 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
               value: _selectedCourse,
               decoration: _inputDecoration('Course / Program', '', Icons.menu_book),
               items: _courses.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis))).toList(),
-              onChanged: (v) => setState(() => _selectedCourse = v!),
+              onChanged: (v) {
+                if (v != null) {
+                  setState(() {
+                    _selectedCourse = v;
+                    _feeController.text = (_courseFees[v] ?? 63000).toString();
+                  });
+                }
+              },
             ),
             const SizedBox(height: 12),
             Row(
@@ -418,7 +432,7 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
                     controller: _feeController,
                     keyboardType: TextInputType.number,
                     onChanged: (_) => setState(() {}),
-                    decoration: _inputDecoration('Course Fee (₹) *', '45000', Icons.currency_rupee),
+                    decoration: _inputDecoration('Course Fee (₹) *', '63000', Icons.currency_rupee),
                     validator: (v) => (int.tryParse(v ?? '') ?? 0) <= 0 ? 'Enter fee' : null,
                   ),
                 ),

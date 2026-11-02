@@ -34,6 +34,50 @@ export interface FeeAccount {
   installments: Installment[];
 }
 
+export interface FeeScheduleItem {
+  course: string;
+  ageRange: string;
+  basis: string;
+  monthlyFee: number;
+  annualFee: number;
+  includes: string;
+}
+
+export const QSCHOOL_FEE_SCHEDULE: FeeScheduleItem[] = [
+  {
+    course: "Divya Yoga",
+    ageRange: "Age 6 – 8",
+    basis: "Monthly / Annual",
+    monthlyFee: 5250,
+    annualFee: 63000,
+    includes: "Q School + Q Learning + annual kit/material fee",
+  },
+  {
+    course: "Divya Mantra",
+    ageRange: "Age 9 – 10",
+    basis: "Monthly / Annual",
+    monthlyFee: 5833,
+    annualFee: 70000,
+    includes: "Q School + Q Learning + annual kit/material fee",
+  },
+  {
+    course: "Divya Mudra",
+    ageRange: "Age 11 – 12",
+    basis: "Monthly / Annual",
+    monthlyFee: 6167,
+    annualFee: 74000,
+    includes: "Q School + Q Learning + annual kit/material fee",
+  },
+  {
+    course: "Divya Tratak",
+    ageRange: "Age 13 – 14",
+    basis: "Monthly / Annual",
+    monthlyFee: 6500,
+    annualFee: 78000,
+    includes: "Q School + Q Learning + annual kit/material fee",
+  },
+];
+
 export const FEE_ACCOUNTS: FeeAccount[] = [
   {
     id: "FA-000001",
@@ -51,7 +95,7 @@ export const FEE_ACCOUNTS: FeeAccount[] = [
       {
         no: 1,
         due: "2026-08-18",
-        amount: 45000,
+        amount: 63000,
         paidOn: "2026-08-18",
         method: "UPI",
         ref: "REC-00000007",
@@ -74,7 +118,7 @@ export const FEE_ACCOUNTS: FeeAccount[] = [
       {
         no: 1,
         due: "2026-09-01",
-        amount: 45000,
+        amount: 70000,
         paidOn: "2026-09-01",
         method: "UPI",
         ref: "REC-00000008",
@@ -97,7 +141,7 @@ export const FEE_ACCOUNTS: FeeAccount[] = [
       {
         no: 1,
         due: "2026-09-10",
-        amount: 22500,
+        amount: 37000,
         paidOn: "2026-09-10",
         method: "Card",
         ref: "REC-00000009",
@@ -105,7 +149,7 @@ export const FEE_ACCOUNTS: FeeAccount[] = [
       {
         no: 2,
         due: "2026-10-10",
-        amount: 22500,
+        amount: 37000,
       },
     ],
   },
@@ -125,7 +169,7 @@ export const FEE_ACCOUNTS: FeeAccount[] = [
       {
         no: 1,
         due: "2026-09-15",
-        amount: 45000,
+        amount: 78000,
         paidOn: "2026-09-15",
         method: "Net Banking",
         ref: "REC-00000010",

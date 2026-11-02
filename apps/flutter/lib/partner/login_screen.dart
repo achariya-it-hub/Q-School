@@ -286,115 +286,15 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 32),
-              // Demo Marketer Quick Buttons
+              const SizedBox(height: 36),
               Center(
                 child: Text(
-                  'QUICK DEMO PROMOTERS',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.4),
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _DemoButton(
-                      code: 'MKT-BALA',
-                      name: 'Bala Murugan',
-                      onTap: () {
-                        _codeController.text = 'MKT-BALA';
-                        _login('MKT-BALA');
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _DemoButton(
-                      code: 'ACH-PUDU',
-                      name: 'Achariya School',
-                      onTap: () {
-                        _codeController.text = 'ACH-PUDU';
-                        _login('ACH-PUDU');
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _DemoButton(
-                      code: 'EDT-KAVI',
-                      name: 'Kavitha R.',
-                      onTap: () {
-                        _codeController.text = 'EDT-KAVI';
-                        _login('EDT-KAVI');
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-              Center(
-                child: Text(
-                  'Connected to Q-School Cloud ERP &bull; erp.theqschool.com',
+                  'Connected to Q-School Cloud ERP • erp.theqschool.com',
                   style: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 11),
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DemoButton extends StatelessWidget {
-  final String code;
-  final String name;
-  final VoidCallback onTap;
-
-  const _DemoButton({
-    required this.code,
-    required this.name,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.04),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
-        ),
-        child: Column(
-          children: [
-            Text(
-              code,
-              style: const TextStyle(
-                color: QS.mint,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.6),
-                fontSize: 10,
-              ),
-            ),
-          ],
         ),
       ),
     );

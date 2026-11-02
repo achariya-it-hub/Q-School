@@ -7,6 +7,13 @@ import { Icon } from "@/components/icons";
 import { ADMISSION_CENTRES } from "@qschool/shared";
 import { CONCESSION_RULES, type ConcessionType, type Partner } from "@/lib/partners/types";
 
+const ADMIT_COURSE_FEES: Record<string, string> = {
+  "Divya Yoga (Age 6 – 8)": "63000",
+  "Divya Mantra (Age 9 – 10)": "70000",
+  "Divya Mudra (Age 11 – 12)": "74000",
+  "Divya Tratak (Age 13 – 14)": "78000",
+};
+
 function PartnerAdmitContent() {
   const searchParams = useSearchParams();
   const refCode = searchParams.get("ref") || searchParams.get("code") || "";
@@ -33,7 +40,7 @@ function PartnerAdmitContent() {
     address: "",
     centreId: "mk",
     course: "Divya Yoga (Age 6 – 8)",
-    feeAmount: "45000",
+    feeAmount: "63000",
     concessionType: "none" as ConcessionType,
   });
 
@@ -61,7 +68,7 @@ function PartnerAdmitContent() {
       .finally(() => setLoadingPartner(false));
   }, [refCode]);
 
-  const baseFee = Number(form.feeAmount) || 45000;
+  const baseFee = Number(form.feeAmount) || 63000;
   const is50Percent = form.concessionType === "staff_child" || form.concessionType === "sibling";
   const finalPayableFee = is50Percent ? baseFee * 0.5 : baseFee;
 
@@ -352,7 +359,10 @@ function PartnerAdmitContent() {
                     <label className="block text-xs font-semibold text-[#41564F] mb-1">Program of Interest</label>
                     <select
                       value={form.course}
-                      onChange={(e) => setForm({ ...form, course: e.target.value })}
+                      onChange={(e) => {
+                        const c = e.target.value;
+                        setForm({ ...form, course: c, feeAmount: ADMIT_COURSE_FEES[c] || "63000" });
+                      }}
                       className="w-full h-11 px-3 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm focus:border-brand-teal focus:bg-white focus:outline-none"
                     >
                       <option value="Divya Yoga (Age 6 – 8)">Divya Yoga (Age 6 – 8)</option>

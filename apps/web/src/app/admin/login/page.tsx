@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "@/components/icons";
 
-const DEMO = process.env.NODE_ENV !== "production";
-
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -78,7 +76,7 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"
-                placeholder="admin@theqschool.com or admin@qschool.com"
+                placeholder="name@theqschool.com"
                 className="w-full bg-transparent text-sm outline-none"
               />
             </span>
@@ -110,9 +108,6 @@ export default function AdminLoginPage() {
             {loading ? "Signing in…" : "Sign in"} {!loading && <Icon name="arrowRight" size={17} />}
           </button>
 
-          <p className="mt-4 rounded-xl bg-[#F3F8F6] px-3 py-2.5 text-[12px] text-[#41564f]">
-            Admin credentials: <span className="font-mono font-medium">admin@theqschool.com</span> / <span className="font-mono font-medium">admin123</span>
-          </p>
           <Link href="/" className="mt-6 inline-flex items-center gap-1 text-[13px] font-semibold text-brand-teal hover:underline">
             <Icon name="chevLeft" size={15} /> Back to website
           </Link>

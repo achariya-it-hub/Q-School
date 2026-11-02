@@ -18,27 +18,14 @@ class _LoginScreenState extends State<LoginScreen> {
   int _selectedRole = 0; // 0: Student, 1: Teacher, 2: Admin, 3: Partner
   bool _securePassword = true;
   bool _isLoading = false;
-  final TextEditingController _emailController =
-      TextEditingController(text: 'alex@gmail.com');
-  final TextEditingController _passwordController =
-      TextEditingController(text: 'student123');
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   void _selectRole(int index) {
     setState(() {
       _selectedRole = index;
-      if (index == 0) {
-        _emailController.text = 'alex@gmail.com';
-        _passwordController.text = 'student123';
-      } else if (index == 1) {
-        _emailController.text = 'alex.prof@qschool.edu';
-        _passwordController.text = 'teacher123';
-      } else if (index == 2) {
-        _emailController.text = 'admin@qschool.edu';
-        _passwordController.text = 'admin123';
-      } else if (index == 3) {
-        _emailController.text = 'ACH-PUDU';
-        _passwordController.text = 'partner123';
-      }
+      _emailController.clear();
+      _passwordController.clear();
     });
   }
 
@@ -206,27 +193,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                   ),
-                  if (_selectedRole == 3) ...[
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        const Text(
-                          'Quick Codes: ',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            color: QS.sub,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        _demoCodeChip('MKT-BALA'),
-                        _demoCodeChip('ACH-PUDU'),
-                        _demoCodeChip('EDT-KAVI'),
-                      ],
-                    ),
-                  ],
                   const SizedBox(height: 18),
 
                   // Password Input
@@ -419,29 +385,6 @@ class _LoginScreenState extends State<LoginScreen> {
               fontWeight: active ? FontWeight.w800 : FontWeight.w600,
               color: active ? Colors.white : QS.sub,
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _demoCodeChip(String code) {
-    return InkWell(
-      onTap: () => setState(() => _emailController.text = code),
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: fade(QS.teal, 0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: fade(QS.teal, 0.3)),
-        ),
-        child: Text(
-          code,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            color: QS.teal,
           ),
         ),
       ),

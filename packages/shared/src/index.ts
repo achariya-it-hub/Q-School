@@ -32,6 +32,10 @@ export interface QSchoolProgram {
   minAge: number;
   maxAge: number;
   ageRange: string;
+  monthlyFee: number;
+  annualFee: number;
+  feeBasis: string;
+  includes: string;
   fee: number;
   description: string;
 }
@@ -43,7 +47,11 @@ export const QSCHOOL_PROGRAMS: QSchoolProgram[] = [
     minAge: 6,
     maxAge: 8,
     ageRange: "Age 6 – 8",
-    fee: 45000,
+    monthlyFee: 5250,
+    annualFee: 63000,
+    feeBasis: "Monthly / Annual",
+    includes: "Q School + Q Learning + annual kit/material fee",
+    fee: 63000,
     description: "Foundational yogic postures, pranayama breathing, and body awareness for children aged 6 to 8.",
   },
   {
@@ -52,7 +60,11 @@ export const QSCHOOL_PROGRAMS: QSchoolProgram[] = [
     minAge: 9,
     maxAge: 10,
     ageRange: "Age 9 – 10",
-    fee: 45000,
+    monthlyFee: 5833,
+    annualFee: 70000,
+    feeBasis: "Monthly / Annual",
+    includes: "Q School + Q Learning + annual kit/material fee",
+    fee: 70000,
     description: "Sound resonance, sacred chanting, focus, and memory enhancement for children aged 9 to 10.",
   },
   {
@@ -61,7 +73,11 @@ export const QSCHOOL_PROGRAMS: QSchoolProgram[] = [
     minAge: 11,
     maxAge: 12,
     ageRange: "Age 11 – 12",
-    fee: 45000,
+    monthlyFee: 6167,
+    annualFee: 74000,
+    feeBasis: "Monthly / Annual",
+    includes: "Q School + Q Learning + annual kit/material fee",
+    fee: 74000,
     description: "Energy gesture science, finger dexterity, reflexology, and mental concentration for ages 11 to 12.",
   },
   {
@@ -70,7 +86,11 @@ export const QSCHOOL_PROGRAMS: QSchoolProgram[] = [
     minAge: 13,
     maxAge: 14,
     ageRange: "Age 13 – 14",
-    fee: 45000,
+    monthlyFee: 6500,
+    annualFee: 78000,
+    feeBasis: "Monthly / Annual",
+    includes: "Q School + Q Learning + annual kit/material fee",
+    fee: 78000,
     description: "Gazing and visual focus techniques for laser concentration, willpower, and clarity for ages 13 to 14.",
   },
 ];
@@ -93,7 +113,7 @@ export const COURSES: Course[] = [
     title: "Divya Yoga (Age 6 – 8)",
     category: "Quantum Schooling",
     mode: "hybrid",
-    price: 45000,
+    price: 63000,
     rating: 4.9,
     learners: 128,
     durationHours: 48,
@@ -106,7 +126,7 @@ export const COURSES: Course[] = [
     title: "Divya Mantra (Age 9 – 10)",
     category: "Quantum Schooling",
     mode: "hybrid",
-    price: 45000,
+    price: 70000,
     rating: 4.9,
     learners: 94,
     durationHours: 48,
@@ -119,7 +139,7 @@ export const COURSES: Course[] = [
     title: "Divya Mudra (Age 11 – 12)",
     category: "Quantum Schooling",
     mode: "hybrid",
-    price: 45000,
+    price: 74000,
     rating: 4.8,
     learners: 86,
     durationHours: 48,
@@ -132,7 +152,7 @@ export const COURSES: Course[] = [
     title: "Divya Tratak (Age 13 – 14)",
     category: "Quantum Schooling",
     mode: "hybrid",
-    price: 45000,
+    price: 78000,
     rating: 5.0,
     learners: 72,
     durationHours: 48,
