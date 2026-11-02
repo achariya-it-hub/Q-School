@@ -79,6 +79,8 @@ export interface PipelineLead {
   lastActivity: string; // human
   slaBreached?: boolean;
   timeline: { when: string; what: string }[];
+  location?: string;
+  centreId?: string;
 }
 
 export const AGENTS = ["Priya K.", "Rohit M.", "Sneha D.", "Arjun V."];

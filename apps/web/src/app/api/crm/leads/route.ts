@@ -34,6 +34,8 @@ export async function POST(req: Request) {
         interest: r.interest ? String(r.interest).trim() : undefined,
         campaign: r.campaign ? String(r.campaign).trim() : undefined,
         owner: r.owner ? String(r.owner).trim() : undefined,
+        location: r.location ? String(r.location).trim() : undefined,
+        centreId: r.centreId ? String(r.centreId).trim() : undefined,
         value: typeof r.value === "number" ? r.value : Number(r.value) || 0,
         stage: r.stage as Stage | undefined,
       }));
@@ -51,7 +53,18 @@ export async function POST(req: Request) {
 
   // Single Lead Create
   if (!b.name || !b.phone) return NextResponse.json({ error: "name and phone are required" }, { status: 400 });
-  const r = await ingestLead({ sourceKey: "webhook", source: String(b.source || "Walk-in"), name: b.name, phone: b.phone, email: b.email, interest: b.interest });
+  const r = await ingestLead({
+    sourceKey: "webhook",
+    source: String(b.source || "Walk-in"),
+    name: b.name,
+    phone: b.phone,
+    email: b.email,
+    interest: b.interest,
+    location: b.location,
+    centreId: b.centreId,
+    owner: b.owner,
+    value: Number(b.value) || 0,
+  });
   if (r.result === "created" && (b.owner || b.value)) await updateLead(r.lead.id, { owner: b.owner, value: Number(b.value) || 0 });
   return NextResponse.json({ ok: true, ...r });
 }

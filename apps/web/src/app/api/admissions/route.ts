@@ -3,10 +3,23 @@
  * Creates the student as "Pending"; the respective centre activates them after confirming payment.
  */
 import { NextResponse } from "next/server";
-import { ADMISSION_CENTRES } from "@qschool/shared";
+import { ADMISSION_CENTRES, centreName } from "@qschool/shared";
 import { addStudent } from "@/lib/students/store";
+import { ingestLead } from "@/lib/crm/store";
 
 export const dynamic = "force-dynamic";
+
+const CENTRE_MANAGERS: Record<string, string> = {
+  mk: "Faculty - Pondy",
+  ad: "Faculty - Adyar",
+  vl: "Faculty - WK",
+  sc: "Faculty - Coimbatore",
+  au: "Faculty - Pune",
+  bh: "Faculty - Hyderabad",
+  kn: "Faculty - Kasturi Nagar",
+  wf: "Faculty - Whitefield",
+  tn: "Faculty - Trichy",
+};
 
 const cors = () => ({
   "Access-Control-Allow-Origin": process.env.ADMISSIONS_ALLOW_ORIGIN || "*",
@@ -93,6 +106,49 @@ export async function POST(req: Request) {
 
   try {
     const { student, duplicate } = await addStudent(rec, b.photo);
+
+    // Ingest lead into CRM with respective location
+    try {
+      const locName = centreName(rec.centreId);
+      const studentName = rec.studentName || "Student";
+      const parentName = rec.fatherName || rec.motherName || rec.parentName || "Parent";
+      const leadName = `${studentName} (Parent: ${parentName})`;
+
+      const extraData: Record<string, string> = {
+        "Student Name": studentName,
+        "Parent Name": parentName,
+        "Branch": locName,
+        "DOB": rec.dob || "",
+        ...(rec.age ? { "Age": String(rec.age) } : {}),
+        ...(rec.gender ? { "Gender": rec.gender } : {}),
+        ...(rec.fatherName ? { "Father": `${rec.fatherName}${rec.fatherProfession ? ` (${rec.fatherProfession})` : ""}` } : {}),
+        ...(rec.motherName ? { "Mother": `${rec.motherName}${rec.motherProfession ? ` (${rec.motherProfession})` : ""}` } : {}),
+        ...(rec.emergencyContactName ? { "Emergency Contact": `${rec.emergencyContactName} (${rec.emergencyContactRelation || "Contact"}) ${rec.emergencyContactPhone || ""}` } : {}),
+        ...(rec.siblingName ? { "Sibling": `${rec.siblingName}${rec.siblingAge ? ` (${rec.siblingAge} yrs)` : ""}` } : {}),
+        ...(rec.address ? { "Address": rec.address } : {}),
+        ...(rec.aadhaar ? { "Aadhaar": `XXXX XXXX ${rec.aadhaar.slice(-4)}` } : {}),
+        "Application ID": student.id,
+        "Status": "Admission Submitted",
+      };
+
+      await ingestLead({
+        sourceKey: "website",
+        source: "Admission Form",
+        name: leadName,
+        phone: rec.phone,
+        email: rec.email || undefined,
+        interest: `Admission Application (${locName})`,
+        formName: "Q-School Admission Form",
+        location: locName,
+        centreId: rec.centreId,
+        owner: CENTRE_MANAGERS[rec.centreId],
+        stage: "Enquiry",
+        extra: extraData,
+      });
+    } catch (crmErr) {
+      console.error("[admissions] Failed to ingest lead into CRM:", crmErr);
+    }
+
     return json({ ok: true, status: "ok", studentId: student.id, duplicate });
   } catch (e) {
     return json({ ok: false, error: e instanceof Error ? e.message : "Could not save" }, 400);

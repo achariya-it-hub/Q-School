@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { AGENTS, STAGES, inr, type Stage } from "@qschool/shared";
+import { ADMISSION_CENTRES, AGENTS, STAGES, inr, type Stage } from "@qschool/shared";
 import { AdminShell } from "@/components/admin/shell";
 import { Btn, Drawer, Field, Modal, PageHeader, SearchInput, StatusBadge, Toast, inputCls, useToast } from "@/components/admin/ui";
 import { useCrmLeads, type CrmLead } from "@/components/admin/crm";
@@ -114,6 +114,7 @@ export default function LeadsPage() {
   const [q, setQ] = useState("");
   const [owner, setOwner] = useState("All");
   const [src, setSrc] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("All");
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [drag, setDrag] = useState<string | null>(null);
   const [over, setOver] = useState<Stage | null>(null);
@@ -194,8 +195,15 @@ export default function LeadsPage() {
   const shown = leads
     .filter((l) => owner === "All" || l.owner === owner)
     .filter((l) => src === "all" || l.sourceKey === src)
+    .filter((l) => {
+      if (locationFilter === "All") return true;
+      return (
+        (l.location && l.location.toLowerCase().includes(locationFilter.toLowerCase())) ||
+        (l.centreId && ADMISSION_CENTRES.find((c) => c.name === locationFilter)?.id === l.centreId)
+      );
+    })
     .filter((l) =>
-      `${l.name} ${l.phone} ${l.interest} ${l.source} ${l.campaign ?? ""}`.toLowerCase().includes(q.toLowerCase())
+      `${l.name} ${l.phone} ${l.interest} ${l.source} ${l.location ?? ""} ${l.campaign ?? ""}`.toLowerCase().includes(q.toLowerCase())
     );
   const lead = leads.find((l) => l.id === open) ?? null;
   const pipelineValue = shown.filter((l) => !["Admitted", "Dropped"].includes(l.stage)).reduce((a, l) => a + l.value, 0);
@@ -265,6 +273,19 @@ export default function LeadsPage() {
             <option value="All">All owners</option>
             {AGENTS.map((a) => (
               <option key={a}>{a}</option>
+            ))}
+          </select>
+          <select
+            value={locationFilter}
+            onChange={(e) => setLocationFilter(e.target.value)}
+            className="h-10 rounded-xl border border-[#E2ECE9] bg-[#F7FAF9] px-3 text-[13px] font-medium text-brand-ink outline-none focus:border-brand-teal"
+            aria-label="Location"
+          >
+            <option value="All">All locations</option>
+            {ADMISSION_CENTRES.map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.name}
+              </option>
             ))}
           </select>
         </div>
@@ -395,7 +416,7 @@ export default function LeadsPage() {
                         <p className="font-bold text-brand-ink hover:text-brand-teal cursor-pointer" onClick={() => setOpen(l.id)}>
                           {l.name}
                         </p>
-                        <p className="text-[11px] text-[#6b807b] truncate max-w-[200px]">{l.interest}</p>
+                        <p className="text-[11px] text-[#6b807b] truncate max-w-[200px]">{l.location ? `📍 ${l.location} · ` : ""}{l.interest}</p>
                       </td>
                       <td className="py-3 px-4 text-[12px] text-[#41564f]">{l.phone}</td>
                       <td className="py-3 px-4">
@@ -538,7 +559,7 @@ export default function LeadsPage() {
                           <p className="text-xs font-bold text-brand-ink cursor-pointer hover:text-brand-teal" onClick={() => setOpen(l.id)}>
                             {l.name}
                           </p>
-                          <p className="text-[11px] text-[#6b807b]">{l.interest} • {l.phone}</p>
+                          <p className="text-[11px] text-[#6b807b]">{l.location ? `📍 ${l.location} • ` : ""}{l.interest} • {l.phone}</p>
                         </div>
                       </div>
 
@@ -683,6 +704,11 @@ function LeadCard({
         <span className={`rounded-md px-1.5 py-0.5 text-[10.5px] font-semibold ${SRC_STYLE[l.sourceKey ?? "webhook"]}`}>
           {l.source}
         </span>
+        {l.location && (
+          <span className="rounded-md bg-[#E0F2FE] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#0369A1] border border-[#BAE6FD]/70">
+            📍 {l.location}
+          </span>
+        )}
         {l.isTest && <span className="rounded-md bg-[#FFF6E0] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#8A5A00]">Test</span>}
         {l.value > 0 && <span className="text-[11px] font-bold text-brand-ink">{inr(l.value)}</span>}
       </div>
@@ -723,6 +749,7 @@ function LeadDetail({
         {[
           ["Phone", lead.phone],
           ["Email", lead.email || "—"],
+          ["Location / Branch", lead.location || "—"],
           ["Source", lead.source],
           ["Interested in", lead.interest],
           ["Campaign", lead.campaign || "—"],
@@ -833,9 +860,9 @@ function NewLead({
 }: {
   open: boolean;
   onClose: () => void;
-  onCreate: (b: { name: string; phone: string; interest: string; source: string; owner: string; value: number }) => void;
+  onCreate: (b: { name: string; phone: string; interest: string; source: string; owner: string; value: number; location?: string; centreId?: string }) => void;
 }) {
-  const [f, setF] = useState({ name: "", phone: "", interest: "", source: "Walk-in", owner: AGENTS[0], value: 0 });
+  const [f, setF] = useState({ name: "", phone: "", interest: "", source: "Walk-in", location: ADMISSION_CENTRES[0].name, centreId: ADMISSION_CENTRES[0].id, owner: AGENTS[0], value: 0 });
   return (
     <Modal open={open} title="New lead" onClose={onClose}>
       <form
@@ -862,6 +889,22 @@ function NewLead({
             ))}
           </select>
         </Field>
+        <div className="col-span-2">
+          <Field label="Location / Centre">
+            <select
+              className={inputCls}
+              value={f.location}
+              onChange={(e) => {
+                const c = ADMISSION_CENTRES.find((x) => x.name === e.target.value);
+                setF({ ...f, location: e.target.value, centreId: c?.id || "" });
+              }}
+            >
+              {ADMISSION_CENTRES.map((c) => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </Field>
+        </div>
         <div className="col-span-2">
           <Field label="Interested in">
             <input className={inputCls} value={f.interest} onChange={(e) => setF({ ...f, interest: e.target.value })} placeholder="Course / workshop" />

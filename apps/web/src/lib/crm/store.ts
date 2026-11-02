@@ -35,6 +35,8 @@ export interface CrmLead extends PipelineLead {
   formName?: string;
   extra?: Record<string, string>;
   isTest?: boolean;
+  location?: string;
+  centreId?: string;
 }
 
 export interface IncomingLead {
@@ -52,6 +54,11 @@ export interface IncomingLead {
   extra?: Record<string, string>;
   createdAt?: string;
   isTest?: boolean;
+  location?: string;
+  centreId?: string;
+  owner?: string;
+  value?: number;
+  stage?: Stage;
 }
 
 export interface IngestEvent {
@@ -200,7 +207,7 @@ export async function ingestLead(input: IncomingLead): Promise<{ result: "create
       return { result: "duplicate" as const, lead: dup };
     }
 
-    const owner = AGENTS[st.rr % AGENTS.length];
+    const owner = input.owner || AGENTS[st.rr % AGENTS.length];
     const lead: CrmLead = {
       id: `L-${Date.now().toString(36).toUpperCase()}`,
       name: clip(input.name, 120) || (phone ? `Lead ${prettyPhone(phone)}` : "Unknown lead"),
@@ -209,9 +216,11 @@ export async function ingestLead(input: IncomingLead): Promise<{ result: "create
       interest: clip(input.interest, 120) || clip(input.formName, 120) || "General enquiry",
       source,
       sourceKey: input.sourceKey,
-      stage: "Enquiry",
+      stage: input.stage || "Enquiry",
       owner,
-      value: 0,
+      value: typeof input.value === "number" ? input.value : 0,
+      location: clip(input.location, 120) || undefined,
+      centreId: clip(input.centreId, 32) || undefined,
       createdAt: now.toISOString(),
       lastActivity: "Just now",
       externalId: input.externalId,
@@ -222,10 +231,10 @@ export async function ingestLead(input: IncomingLead): Promise<{ result: "create
       timeline: [
         {
           when,
-          what: `Lead captured from ${source}${input.formName ? ` · form “${clip(input.formName, 60)}”` : ""}${input.campaign ? ` · ${clip(input.campaign, 60)}` : ""}${input.externalId ? ` · ref ${input.externalId}` : ""}`,
+          what: `Lead captured from ${source}${input.location ? ` (${input.location})` : ""}${input.formName ? ` · form “${clip(input.formName, 60)}”` : ""}${input.campaign ? ` · ${clip(input.campaign, 60)}` : ""}${input.externalId ? ` · ref ${input.externalId}` : ""}`,
         },
         ...(input.message ? [{ when, what: `Message: “${clip(input.message, 200)}”` }] : []),
-        { when, what: `Auto-assigned to ${owner} (round-robin)` },
+        { when, what: input.owner ? `Assigned to ${owner} (${input.location || "Centre"})` : `Auto-assigned to ${owner} (round-robin)` },
       ],
     };
     leads.unshift(lead);

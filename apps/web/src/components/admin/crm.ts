@@ -57,7 +57,7 @@ export function useCrmLeads(pollMs = 20000) {
   );
 
   const create = useCallback(
-    async (b: { name: string; phone: string; interest?: string; source: string; owner?: string; value?: number }) => {
+    async (b: { name: string; phone: string; interest?: string; source: string; owner?: string; value?: number; location?: string; centreId?: string }) => {
       const r = await fetch("/api/crm/leads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(b) });
       const d = await r.json();
       await load();
