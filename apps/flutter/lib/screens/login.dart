@@ -21,19 +21,23 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController =
       TextEditingController(text: 'alex@gmail.com');
   final TextEditingController _passwordController =
-      TextEditingController(text: '••••••••••••');
+      TextEditingController(text: 'student123');
 
   void _selectRole(int index) {
     setState(() {
       _selectedRole = index;
       if (index == 0) {
         _emailController.text = 'alex@gmail.com';
+        _passwordController.text = 'student123';
       } else if (index == 1) {
         _emailController.text = 'alex.prof@qschool.edu';
+        _passwordController.text = 'teacher123';
       } else if (index == 2) {
         _emailController.text = 'admin@qschool.edu';
+        _passwordController.text = 'admin123';
       } else if (index == 3) {
-        _emailController.text = 'MKT-BALA';
+        _emailController.text = 'ACH-PUDU';
+        _passwordController.text = 'partner123';
       }
     });
   }
@@ -250,6 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: TextField(
+                            key: ValueKey<bool>(_securePassword),
                             controller: _passwordController,
                             obscureText: _securePassword,
                             style: const TextStyle(
@@ -262,16 +267,23 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () => setState(
-                              () => _securePassword = !_securePassword),
-                          child: Icon(
+                        IconButton(
+                          tooltip: _securePassword ? 'Show password' : 'Hide password',
+                          splashRadius: 20,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: Icon(
                             _securePassword
                                 ? Icons.visibility_outlined
                                 : Icons.visibility_off_outlined,
                             size: 20,
-                            color: QS.sub,
+                            color: _securePassword ? QS.sub : QS.teal,
                           ),
+                          onPressed: () {
+                            setState(() {
+                              _securePassword = !_securePassword;
+                            });
+                          },
                         ),
                       ],
                     ),

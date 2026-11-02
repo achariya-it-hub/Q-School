@@ -159,6 +159,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextField(
+                      key: ValueKey<bool>(_securePassword),
                       controller: _passwordController,
                       obscureText: _securePassword,
                       style: const TextStyle(fontSize: 14, color: QS.ink),
@@ -168,16 +169,23 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () =>
-                        setState(() => _securePassword = !_securePassword),
-                    child: Icon(
+                  IconButton(
+                    tooltip: _securePassword ? 'Show password' : 'Hide password',
+                    splashRadius: 20,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: Icon(
                       _securePassword
                           ? Icons.visibility_outlined
                           : Icons.visibility_off_outlined,
                       size: 20,
-                      color: QS.sub,
+                      color: _securePassword ? QS.sub : QS.teal,
                     ),
+                    onPressed: () {
+                      setState(() {
+                        _securePassword = !_securePassword;
+                      });
+                    },
                   ),
                 ],
               ),
