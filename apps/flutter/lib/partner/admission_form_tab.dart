@@ -27,12 +27,12 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
   final _phoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _addressController = TextEditingController();
-  final _feeController = TextEditingController(text: '25000');
+  final _feeController = TextEditingController(text: '45000');
   final _notesController = TextEditingController();
 
   String _selectedGrade = 'Grade 5';
   String _selectedCentre = 'mk';
-  String _selectedCourse = 'Comprehensive Robotics & AI Program';
+  String _selectedCourse = 'Divya Yoga (Age 6 – 8)';
   String _selectedPaymentMode = 'Cash';
   String _selectedPaymentStatus = 'Paid';
 
@@ -65,11 +65,10 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
   ];
 
   final List<String> _courses = [
-    'Comprehensive Robotics & AI Program',
-    'Vedic Mathematics & Speed Math',
-    'STEM Explorers Foundation (Grades 1-5)',
-    'Python Coding & IoT Kit',
-    'BMIT Assessment & Counselling',
+    'Divya Yoga (Age 6 – 8)',
+    'Divya Mantra (Age 9 – 10)',
+    'Divya Mudra (Age 11 – 12)',
+    'Divya Tratak (Age 13 – 14)',
   ];
 
   @override
@@ -419,7 +418,7 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
                     controller: _feeController,
                     keyboardType: TextInputType.number,
                     onChanged: (_) => setState(() {}),
-                    decoration: _inputDecoration('Course Fee (₹) *', '25000', Icons.currency_rupee),
+                    decoration: _inputDecoration('Course Fee (₹) *', '45000', Icons.currency_rupee),
                     validator: (v) => (int.tryParse(v ?? '') ?? 0) <= 0 ? 'Enter fee' : null,
                   ),
                 ),

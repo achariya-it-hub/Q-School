@@ -305,7 +305,7 @@ export async function createPartnerAdmission(input: NewPartnerAdmissionInput): P
       address: input.address?.trim(),
       centreId: newStudentInput.centreId,
       centreName: centreName(newStudentInput.centreId),
-      course: input.course || "Comprehensive Robotics & AI Program",
+      course: input.course || "Divya Yoga (Age 6 – 8)",
       feeAmount: finalFee,
       originalFee: originalFee || finalFee,
       concessionType,

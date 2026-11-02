@@ -35,9 +35,9 @@ function PartnerContent() {
     email: "",
     address: "",
     centreId: "mk",
-    course: "Comprehensive Robotics & AI Program",
-    originalFee: "25000",
-    feeAmount: "25000",
+    course: "Divya Yoga (Age 6 – 8)",
+    originalFee: "45000",
+    feeAmount: "45000",
     concessionType: "none" as ConcessionType,
     paymentMode: "Cash",
     paymentStatus: "Paid" as "Paid" | "Partial" | "Pending",
@@ -210,9 +210,9 @@ function PartnerContent() {
       email: "",
       address: "",
       centreId: partner?.centreId !== "all" ? (partner?.centreId || "mk") : "mk",
-      course: "Comprehensive Robotics & AI Program",
-      originalFee: "25000",
-      feeAmount: "25000",
+      course: "Divya Yoga (Age 6 – 8)",
+      originalFee: "45000",
+      feeAmount: "45000",
       concessionType: "none",
       paymentMode: "Cash",
       paymentStatus: "Paid",
@@ -950,11 +950,10 @@ function PartnerContent() {
                           onChange={(e) => setForm({ ...form, course: e.target.value })}
                           className="w-full h-11 px-3 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm focus:border-brand-teal focus:bg-white focus:outline-none"
                         >
-                          <option value="Comprehensive Robotics & AI Program">Comprehensive Robotics & AI</option>
-                          <option value="Vedic Mathematics & Speed Math">Vedic Mathematics & Speed Math</option>
-                          <option value="STEM Explorers Foundation (Grades 1-5)">STEM Explorers Foundation</option>
-                          <option value="Python Coding & IoT Kit">Python Coding & IoT Kit</option>
-                          <option value="BMIT Assessment & Personal Counselling">BMIT Assessment & Counselling</option>
+                          <option value="Divya Yoga (Age 6 – 8)">Divya Yoga (Age 6 – 8)</option>
+                          <option value="Divya Mantra (Age 9 – 10)">Divya Mantra (Age 9 – 10)</option>
+                          <option value="Divya Mudra (Age 11 – 12)">Divya Mudra (Age 11 – 12)</option>
+                          <option value="Divya Tratak (Age 13 – 14)">Divya Tratak (Age 13 – 14)</option>
                         </select>
                       </div>
 

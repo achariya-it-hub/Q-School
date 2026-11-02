@@ -32,8 +32,8 @@ function PartnerAdmitContent() {
     email: "",
     address: "",
     centreId: "mk",
-    course: "Comprehensive Robotics & AI Program",
-    feeAmount: "25000",
+    course: "Divya Yoga (Age 6 – 8)",
+    feeAmount: "45000",
     concessionType: "none" as ConcessionType,
   });
 
@@ -61,7 +61,7 @@ function PartnerAdmitContent() {
       .finally(() => setLoadingPartner(false));
   }, [refCode]);
 
-  const baseFee = Number(form.feeAmount) || 25000;
+  const baseFee = Number(form.feeAmount) || 45000;
   const is50Percent = form.concessionType === "staff_child" || form.concessionType === "sibling";
   const finalPayableFee = is50Percent ? baseFee * 0.5 : baseFee;
 
@@ -355,10 +355,10 @@ function PartnerAdmitContent() {
                       onChange={(e) => setForm({ ...form, course: e.target.value })}
                       className="w-full h-11 px-3 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm focus:border-brand-teal focus:bg-white focus:outline-none"
                     >
-                      <option value="Comprehensive Robotics & AI Program">Comprehensive Robotics & AI Program</option>
-                      <option value="Vedic Mathematics & Speed Math">Vedic Mathematics & Speed Math</option>
-                      <option value="STEM Explorers Foundation">STEM Explorers Foundation</option>
-                      <option value="Python Coding & IoT Kit">Python Coding & IoT Kit</option>
+                      <option value="Divya Yoga (Age 6 – 8)">Divya Yoga (Age 6 – 8)</option>
+                      <option value="Divya Mantra (Age 9 – 10)">Divya Mantra (Age 9 – 10)</option>
+                      <option value="Divya Mudra (Age 11 – 12)">Divya Mudra (Age 11 – 12)</option>
+                      <option value="Divya Tratak (Age 13 – 14)">Divya Tratak (Age 13 – 14)</option>
                     </select>
                   </div>
                 </div>
