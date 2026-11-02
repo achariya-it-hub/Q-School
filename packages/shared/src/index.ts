@@ -190,3 +190,4 @@ export * from "./admin";
 export * from "./finance";
 export * from "./admission";
 export * from "./payroll";
+export * from "./progress";

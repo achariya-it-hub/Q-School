@@ -70,6 +70,15 @@ export async function ensureTables(): Promise<boolean> {
           );
         `;
 
+        await sql`
+          CREATE TABLE IF NOT EXISTS qs_student_progress (
+            id VARCHAR(64) PRIMARY KEY,
+            data JSONB NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          );
+        `;
+
         // Check if qs_users is empty, seed if so
         const userCount = await sql`SELECT COUNT(*)::int as count FROM qs_users;`;
         if (userCount[0]?.count === 0) {
@@ -355,3 +364,75 @@ export async function saveDbLeadsBulk(leads: any[]): Promise<boolean> {
     return false;
   }
 }
+
+/* ─────────── Student Progress Operations ─────────── */
+
+export async function getDbProgress(): Promise<any[] | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  await ensureTables();
+  try {
+    const rows = await sql`
+      SELECT data FROM qs_student_progress
+      ORDER BY updated_at DESC;
+    `;
+    return rows.map((r: any) => r.data);
+  } catch (err) {
+    console.error("[db] getDbProgress error:", err);
+    return null;
+  }
+}
+
+export async function saveDbProgress(item: any): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) return false;
+  await ensureTables();
+  try {
+    await sql`
+      INSERT INTO qs_student_progress (id, data, updated_at)
+      VALUES (${item.id}, ${JSON.stringify(item)}::jsonb, NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        data = EXCLUDED.data,
+        updated_at = NOW();
+    `;
+    return true;
+  } catch (err) {
+    console.error("[db] saveDbProgress error:", err);
+    return false;
+  }
+}
+
+export async function saveDbProgressBulk(items: any[]): Promise<boolean> {
+  const sql = getSql();
+  if (!sql || !items.length) return false;
+  await ensureTables();
+  try {
+    for (const item of items) {
+      await sql`
+        INSERT INTO qs_student_progress (id, data, updated_at)
+        VALUES (${item.id}, ${JSON.stringify(item)}::jsonb, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          data = EXCLUDED.data,
+          updated_at = NOW();
+      `;
+    }
+    return true;
+  } catch (err) {
+    console.error("[db] saveDbProgressBulk error:", err);
+    return false;
+  }
+}
+
+export async function deleteDbProgress(id: string): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) return false;
+  await ensureTables();
+  try {
+    await sql`DELETE FROM qs_student_progress WHERE id = ${id};`;
+    return true;
+  } catch (err) {
+    console.error("[db] deleteDbProgress error:", err);
+    return false;
+  }
+}
+

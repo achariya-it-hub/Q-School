@@ -31,6 +31,7 @@ const GROUPS: { title: string; items: { label: string; icon: IconName; href: str
     title: "Academics",
     items: [
       { label: "Students", icon: "community", href: "/admin/enrolments" },
+      { label: "Progress Tracker", icon: "clipboard", href: "/admin/enrolments?tab=tracker" },
       { label: "Users", icon: "users", href: "/admin/students" },
       { label: "Courses", icon: "book", href: "/admin/courses" },
       { label: "Live sessions", icon: "webinar", href: "/admin/live" },
