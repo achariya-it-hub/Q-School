@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { STUDENT } from "@qschool/shared";
 import { Icon, type IconName } from "@/components/icons";
 import { Avatar } from "./art";
+import { NotificationsMenu } from "@/components/notifications-menu";
 
 const STUDENT_NAV: { label: string; icon: IconName; href: string; chevron?: boolean }[] = [
   { label: "Dashboard", icon: "home", href: "/dashboard" },
@@ -146,12 +147,7 @@ export function DashboardShell({ children, isInstructor }: { children: React.Rea
         </label>
 
         <div className="ml-auto flex items-center gap-2 sm:gap-4">
-          <button className="relative rounded-full p-2 text-brand-deep transition hover:bg-[#EEF6F3]" aria-label="Notifications">
-            <Icon name="bell" size={22} />
-            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E5484D] px-1 text-[10px] font-semibold text-white">
-              {STUDENT.notifications}
-            </span>
-          </button>
+          <NotificationsMenu variant="student" />
           <button className="hidden rounded-full p-2 text-brand-deep transition hover:bg-[#EEF6F3] sm:block" aria-label="Messages">
             <Icon name="message" size={22} />
           </button>

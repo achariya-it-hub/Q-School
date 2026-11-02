@@ -29,7 +29,7 @@ const view = async () => {
   // Check bundled default users
   const def = DEFAULT_USERS.find((u) => u.email.toLowerCase() === currentEmail);
   if (def) {
-    const roleLabel = def.role === "CentreManager" ? "Centre Manager" : def.role || "Staff";
+    const roleLabel = def.role === "CentreManager" || (def.role as string) === "CentreHead" ? "Centre Head" : def.role || "Staff";
     return { name: def.name, email: def.email, role: roleLabel, hasPhoto: false };
   }
 
@@ -37,7 +37,7 @@ const view = async () => {
   try {
     const dbUser = await findDbUserByEmail(currentEmail);
     if (dbUser) {
-      const roleLabel = dbUser.role === "CentreManager" ? "Centre Manager" : dbUser.role || "Staff";
+      const roleLabel = dbUser.role === "CentreManager" || (dbUser.role as string) === "CentreHead" ? "Centre Head" : dbUser.role || "Staff";
       return { name: dbUser.name, email: dbUser.email, role: roleLabel, hasPhoto: false };
     }
   } catch {}
@@ -50,7 +50,7 @@ const view = async () => {
     }
     const u = list.find((x: any) => x.email?.toLowerCase() === currentEmail);
     if (u) {
-      const roleLabel = u.role === "CentreManager" ? "Centre Manager" : u.role || "Staff";
+      const roleLabel = u.role === "CentreManager" || (u.role as string) === "CentreHead" ? "Centre Head" : u.role || "Staff";
       return { name: u.name, email: u.email, role: roleLabel, hasPhoto: false };
     }
   } catch {}

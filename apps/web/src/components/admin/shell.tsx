@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Icon, type IconName } from "@/components/icons";
 import { ProfileMenu } from "@/components/admin/profile-menu";
+import { NotificationsMenu } from "@/components/notifications-menu";
+import { RESTRICTED_CENTRE_HEAD_HREFS, isCentreHeadRole } from "@/lib/centre-head";
 
 const GROUPS: { title: string; items: { label: string; icon: IconName; href: string }[] }[] = [
   { title: "Overview", items: [{ label: "Dashboard", icon: "grid", href: "/admin/dashboard" }] },
@@ -59,9 +61,10 @@ const GROUPS: { title: string; items: { label: string; icon: IconName; href: str
   },
 ];
 
-function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+function Sidebar({ userRole, onNavigate }: { userRole?: string; onNavigate?: () => void }) {
   const path = usePathname();
   const router = useRouter();
+  const isHead = isCentreHeadRole(userRole);
 
   const logout = () => {
     try {
@@ -70,9 +73,14 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
     fetch("/api/admin/session", { method: "DELETE" }).finally(() => router.push("/admin/login"));
   };
 
+  const visibleGroups = GROUPS.map((g) => ({
+    ...g,
+    items: g.items.filter((item) => !isHead || !RESTRICTED_CENTRE_HEAD_HREFS.has(item.href)),
+  })).filter((g) => g.items.length > 0);
+
   return (
     <div className="flex h-full flex-col px-3 pb-5 pt-4">
-      {GROUPS.map((g, gi) => (
+      {visibleGroups.map((g, gi) => (
         <div key={g.title} className={gi ? "mt-4" : ""}>
           <p className="mb-1 px-3 text-[10.5px] font-semibold uppercase tracking-wider text-white/45">{g.title}</p>
           <nav className="space-y-0.5">
@@ -118,10 +126,35 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const path = usePathname();
   const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
+  const [userRole, setUserRole] = useState<string>("");
   const [sbw, setSbw] = useState(220); // desktop sidebar width, drag the right edge to resize
   const [drag, setDrag] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("qschool_admin_session");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.role) setUserRole(parsed.role);
+      }
+    } catch {}
+    fetch("/api/admin/profile")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((p) => {
+        if (p?.role) setUserRole(p.role);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Redirect centre heads away from restricted administration paths
+  useEffect(() => {
+    if (isCentreHeadRole(userRole) && RESTRICTED_CENTRE_HEAD_HREFS.has(path)) {
+      router.replace("/admin/dashboard");
+    }
+  }, [userRole, path, router]);
 
   useEffect(() => {
     const v = Number(localStorage.getItem("qs-sidebar-w"));
@@ -177,12 +210,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </label>
 
         <div className="ml-auto flex items-center gap-2 sm:gap-4">
-          <button className="relative rounded-full p-2 text-brand-deep hover:bg-[#EEF6F3]" aria-label="Notifications">
-            <Icon name="bell" size={22} />
-            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#E5484D] px-1 text-[10px] font-semibold text-white">
-              5
-            </span>
-          </button>
+          <NotificationsMenu variant="admin" />
           <ProfileMenu />
         </div>
       </header>
@@ -190,7 +218,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <div className="flex">
         <div className="relative hidden shrink-0 lg:block" style={{ width: sbw }}>
           <aside className="sticky top-[72px] h-[calc(100vh-72px)] w-full overflow-y-auto bg-gradient-to-b from-[#06463D] to-[#043530]">
-            <Sidebar />
+            <Sidebar userRole={userRole} />
           </aside>
           <div
             role="separator"
@@ -217,7 +245,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   <Icon name="x" size={20} />
                 </button>
               </div>
-              <Sidebar onNavigate={() => setOpen(false)} />
+              <Sidebar userRole={userRole} onNavigate={() => setOpen(false)} />
             </aside>
           </div>
         )}

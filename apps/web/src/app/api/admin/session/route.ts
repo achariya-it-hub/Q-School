@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Wrong email or password" }, { status: 401 });
   }
 
-  const formatRole = (r?: string) => (r === "CentreManager" ? "Centre Manager" : r || "Staff");
+  const formatRole = (r?: string) => (r === "CentreManager" || r === "CentreHead" ? "Centre Head" : r || "Staff");
 
   let user = { email: cleanEmail, name: "Admin", role: "Super Admin" };
 
