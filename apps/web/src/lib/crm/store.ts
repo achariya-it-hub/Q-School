@@ -133,18 +133,16 @@ async function readLeads(): Promise<CrmLead[]> {
   }
 
   let leads = await readJson<CrmLead[] | null>(LEADS_FILE, null);
-  if (!leads || !Array.isArray(leads) || leads.length === 0) {
+  if (leads === null) {
     const candidates = [
-      path.join(process.cwd(), "crm-leads.json"),
+      path.join(DATA_DIR, "crm-leads.json"),
       path.join(process.cwd(), "apps", "web", "crm-leads.json"),
-      path.join(__dirname, "..", "..", "..", "crm-leads.json"),
-      path.join(__dirname, "..", "..", "crm-leads.json"),
-      path.join(__dirname, "..", "crm-leads.json"),
+      path.join(process.cwd(), "crm-leads.json"),
     ];
     for (const cand of candidates) {
       if (cand !== LEADS_FILE) {
         const found = await readJson<CrmLead[] | null>(cand, null);
-        if (found && Array.isArray(found) && found.length > 0) {
+        if (found && Array.isArray(found)) {
           leads = found;
           await writeJson(LEADS_FILE, leads).catch(() => {});
           break;

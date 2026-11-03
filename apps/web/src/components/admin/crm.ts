@@ -12,6 +12,7 @@ export interface CrmLead extends PipelineLead {
   formName?: string;
   extra?: Record<string, string>;
   isTest?: boolean;
+  _clientModifiedAt?: number;
 }
 
 const CRM_CACHE_KEY = "qs_crm_leads_cache";
@@ -85,13 +86,30 @@ export function useCrmLeads(pollMs = 20000) {
           // Keep existing leads in memory and cache if server has 0 leads
           return prev;
         }
-        // Merge strategy: map by ID so neither server nor client leads are dropped
+        // Merge strategy: map by ID, protecting recent local user edits from being overwritten by stale server polls
+        const now = Date.now();
         const map = new Map<string, CrmLead>();
         for (const l of prev) {
           map.set(l.id, l);
         }
-        for (const l of list) {
-          map.set(l.id, l);
+        for (const serverLead of list) {
+          const existing = map.get(serverLead.id);
+          // If the user modified this lead locally within the last 60 seconds, keep their edited fields
+          if (existing && existing._clientModifiedAt && now - existing._clientModifiedAt < 60000) {
+            map.set(serverLead.id, {
+              ...serverLead,
+              stage: existing.stage,
+              owner: existing.owner,
+              value: existing.value !== undefined ? existing.value : serverLead.value,
+              extra: { ...(serverLead.extra || {}), ...(existing.extra || {}) },
+              timeline: (existing.timeline && existing.timeline.length > (serverLead.timeline?.length || 0))
+                ? existing.timeline
+                : (serverLead.timeline || []),
+              _clientModifiedAt: existing._clientModifiedAt,
+            });
+          } else {
+            map.set(serverLead.id, serverLead);
+          }
         }
         const merged = Array.from(map.values());
         saveCachedLeads(merged);
@@ -121,6 +139,7 @@ export function useCrmLeads(pollMs = 20000) {
         extra?: Record<string, any>;
       },
     ) => {
+      const now = Date.now();
       // optimistic update
       setLeads((ls) => {
         const updated = ls.map((l) =>
@@ -147,6 +166,7 @@ export function useCrmLeads(pollMs = 20000) {
                   : {}),
                 lastActivity: "Just now",
                 slaBreached: false,
+                _clientModifiedAt: now,
               }
             : l,
         );
@@ -167,6 +187,7 @@ export function useCrmLeads(pollMs = 20000) {
               ...lead,
               stage: (lead.stage as string) === "Demo" ? "BMIT" : lead.stage,
               timeline: Array.isArray(lead.timeline) ? lead.timeline : [],
+              _clientModifiedAt: now,
             };
             setLeads((ls) => {
               const updated = ls.map((l) => (l.id === id ? formatted : l));
@@ -184,6 +205,7 @@ export function useCrmLeads(pollMs = 20000) {
 
   const create = useCallback(
     async (b: { name: string; phone: string; interest?: string; source: string; owner?: string; value?: number; location?: string; centreId?: string }) => {
+      const now = Date.now();
       try {
         const r = await fetch("/api/crm/leads", {
           method: "POST",
@@ -196,6 +218,7 @@ export function useCrmLeads(pollMs = 20000) {
             ...d.lead,
             stage: (d.lead.stage as string) === "Demo" ? "BMIT" : d.lead.stage,
             timeline: Array.isArray(d.lead.timeline) ? d.lead.timeline : [],
+            _clientModifiedAt: now,
           };
           setLeads((prev) => {
             const exists = prev.some((l) => l.id === newLead.id);

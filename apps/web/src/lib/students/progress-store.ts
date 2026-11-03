@@ -6,119 +6,6 @@ import { listStudents } from "@/lib/students/store";
 
 const PROGRESS_FILE = dataFile("student-progress.json");
 
-const DEFAULT_PROGRESS: StudentProgress[] = [
-  {
-    id: "PRG-0001",
-    studentName: "Aarav Sharma",
-    age: 9,
-    doj: "12 Jul 2026",
-    workshop2Days: "Completed",
-    programName: "Quantum Speed Reading",
-    batch: "Weekend Batch A (10:00 AM)",
-    trainerName: "Priya K.",
-    noOfClasses: "12 / 16",
-    vision: "Level 2 (Numbers & Colors)",
-    videoShare1: "Shared",
-    symbolOfElements: "50/50 Passed",
-    videoShare2: "Shared",
-    qHabit: "21-Day Habit Master",
-    tracker: "Up to date",
-    abacus: "Level 1 Passed",
-    centreId: "moolakulam",
-    notes: "Active learner, excels in blindfold card recognition.",
-    createdAt: "2026-07-12T10:00:00.000Z",
-    updatedAt: "2026-10-28T14:30:00.000Z",
-  },
-  {
-    id: "PRG-0002",
-    studentName: "Diya Patel",
-    age: 8,
-    doj: "18 Jul 2026",
-    workshop2Days: "Completed",
-    programName: "Midbrain Activation",
-    batch: "Weekend Batch B (11:30 AM)",
-    trainerName: "Rohit M.",
-    noOfClasses: "10 / 16",
-    vision: "Color & Shape ID",
-    videoShare1: "Shared",
-    symbolOfElements: "30 Elements",
-    videoShare2: "Pending",
-    qHabit: "Active (14 Days)",
-    tracker: "Up to date",
-    abacus: "Beginner",
-    centreId: "lawspet",
-    notes: "Regular in daily practice, parent shared video on WhatsApp group.",
-    createdAt: "2026-07-18T11:30:00.000Z",
-    updatedAt: "2026-10-25T11:00:00.000Z",
-  },
-  {
-    id: "PRG-0003",
-    studentName: "Rohan Varma",
-    age: 11,
-    doj: "05 Aug 2026",
-    workshop2Days: "Completed",
-    programName: "Super Memory & Vedic Math",
-    batch: "Weekend Batch A (10:00 AM)",
-    trainerName: "Sneha D.",
-    noOfClasses: "8 / 16",
-    vision: "Blindfold Reading Passed",
-    videoShare1: "Shared",
-    symbolOfElements: "118/118 Mastered",
-    videoShare2: "Shared",
-    qHabit: "Active (21 Days)",
-    tracker: "Up to date",
-    abacus: "Level 2 Passed",
-    centreId: "moolakulam",
-    notes: "Completed full periodic table element symbols memory test.",
-    createdAt: "2026-08-05T10:00:00.000Z",
-    updatedAt: "2026-10-29T16:20:00.000Z",
-  },
-  {
-    id: "PRG-0004",
-    studentName: "Ananya Iyer",
-    age: 7,
-    doj: "15 Aug 2026",
-    workshop2Days: "Pending",
-    programName: "Divya Yoga",
-    batch: "Weekday Evening (04:30 PM)",
-    trainerName: "Arjun V.",
-    noOfClasses: "6 / 16",
-    vision: "Sensory Awakening",
-    videoShare1: "Pending",
-    symbolOfElements: "20 Elements",
-    videoShare2: "Pending",
-    qHabit: "In Progress",
-    tracker: "Pending Review",
-    abacus: "Level 1",
-    centreId: "lawspet",
-    notes: "Workshop scheduled for coming weekend.",
-    createdAt: "2026-08-15T16:30:00.000Z",
-    updatedAt: "2026-10-20T17:00:00.000Z",
-  },
-  {
-    id: "PRG-0005",
-    studentName: "Kavya Nair",
-    age: 10,
-    doj: "02 Sep 2026",
-    workshop2Days: "Completed",
-    programName: "Quantum Speed Reading",
-    batch: "Weekend Batch A (10:00 AM)",
-    trainerName: "Priya K.",
-    noOfClasses: "14 / 16",
-    vision: "Book Page Scan (Level 3)",
-    videoShare1: "Shared",
-    symbolOfElements: "118/118 Mastered",
-    videoShare2: "Shared",
-    qHabit: "Habit Champion (30 Days)",
-    tracker: "Up to date",
-    abacus: "Level 3 Speed Passed",
-    centreId: "moolakulam",
-    notes: "High speed flipping & content comprehension verified by trainer.",
-    createdAt: "2026-09-02T10:00:00.000Z",
-    updatedAt: "2026-10-31T18:00:00.000Z",
-  },
-];
-
 let lock: Promise<unknown> = Promise.resolve();
 function serial<T>(fn: () => Promise<T>): Promise<T> {
   const next = lock.then(fn, fn);
@@ -157,15 +44,7 @@ async function readAll(): Promise<StudentProgress[]> {
   }
 
   // Fallback to disk
-  let diskItems = await readFromDisk();
-  if (diskItems.length === 0) {
-    diskItems = DEFAULT_PROGRESS;
-    await writeToDisk(diskItems);
-    if (isDbConfigured()) {
-      void saveDbProgressBulk(diskItems);
-    }
-  }
-  return diskItems;
+  return await readFromDisk();
 }
 
 export async function listProgress(centreId?: string): Promise<StudentProgress[]> {

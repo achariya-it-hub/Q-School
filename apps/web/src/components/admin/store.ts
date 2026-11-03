@@ -1,8 +1,7 @@
 "use client";
 
 /**
- * Console demo store — module-level state shared by every admin page during the session
- * (survives client-side navigation, resets on reload). Swap each action for an API call later.
+ * Console store — shared across admin pages with local persistence (survives page refresh).
  */
 import { useSyncExternalStore } from "react";
 import {
@@ -34,21 +33,76 @@ interface State {
   tasks: StaffTask[];
 }
 
+const ACCOUNTS_CACHE_KEY = "qs_finance_accounts_cache";
+const EXPENSES_CACHE_KEY = "qs_finance_expenses_cache";
+
+function getInitialAccounts(): FeeAccount[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(ACCOUNTS_CACHE_KEY);
+    if (raw !== null) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+function getInitialExpenses(): Expense[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(EXPENSES_CACHE_KEY);
+    if (raw !== null) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+function persistState(s: State) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(ACCOUNTS_CACHE_KEY, JSON.stringify(s.accounts));
+    localStorage.setItem(EXPENSES_CACHE_KEY, JSON.stringify(s.expenses));
+  } catch {}
+}
+
 let state: State = {
-  accounts: [...FEE_ACCOUNTS],
+  accounts: getInitialAccounts(),
   leads: [],
-  expenses: [],
+  expenses: getInitialExpenses(),
   leaves: [],
   stock: [],
   tasks: [], // loaded from the server by syncTasks()
 };
 
+// Re-sync from localStorage when running in client window
+if (typeof window !== "undefined") {
+  const savedAcc = getInitialAccounts();
+  const savedExp = getInitialExpenses();
+  state = {
+    ...state,
+    accounts: savedAcc,
+    expenses: savedExp,
+  };
+}
+
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 const set = (fn: (s: State) => State) => {
   state = fn(state);
+  persistState(state);
   emit();
 };
+
+export function clearFeeAccounts() {
+  set((s) => ({ ...s, accounts: [] }));
+}
+
+export function restoreDefaultFeeAccounts() {
+  set((s) => ({ ...s, accounts: [...FEE_ACCOUNTS] }));
+}
 
 export function useConsole<T>(select: (s: State) => T): T {
   return useSyncExternalStore(

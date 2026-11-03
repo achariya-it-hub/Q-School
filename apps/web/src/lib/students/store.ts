@@ -6,6 +6,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { ADMISSION_CENTRES, PAYMENT_MODES, type AdmissionPayment, type PayLink, type PaymentMode, type StudentRecord } from "@qschool/shared";
 import { DATA_DIR, dataFile } from "@/lib/data-dir";
+import { isDbConfigured, getDbStudents, saveDbStudentsBulk } from "@/lib/db";
 
 const FILE = dataFile("students.json");
 const PHOTO_DIR = path.join(DATA_DIR, "student-photos");
@@ -20,13 +21,34 @@ function locked<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 async function read(): Promise<StudentRecord[]> {
-  try {
-    return JSON.parse(await fs.readFile(FILE, "utf8"));
-  } catch {
-    return [];
+  if (isDbConfigured()) {
+    try {
+      const dbStudents = await getDbStudents();
+      if (Array.isArray(dbStudents) && dbStudents.length > 0) {
+        return dbStudents;
+      }
+    } catch (e) {
+      console.warn("[students-store] DB read failed, falling back to disk:", e);
+    }
   }
+
+  try {
+    const fromDisk = JSON.parse(await fs.readFile(FILE, "utf8"));
+    if (Array.isArray(fromDisk)) {
+      if (isDbConfigured() && fromDisk.length > 0) {
+        void saveDbStudentsBulk(fromDisk);
+      }
+      return fromDisk;
+    }
+  } catch {}
+  return [];
 }
-const write = (all: StudentRecord[]) => fs.writeFile(FILE, JSON.stringify(all, null, 2));
+const write = async (all: StudentRecord[]) => {
+  await fs.writeFile(FILE, JSON.stringify(all, null, 2));
+  if (isDbConfigured() && all.length > 0) {
+    void saveDbStudentsBulk(all);
+  }
+};
 
 export async function listStudents(centreId?: string): Promise<StudentRecord[]> {
   const all = await read();

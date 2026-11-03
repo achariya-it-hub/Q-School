@@ -62,10 +62,31 @@ const ABACUS_OPTIONS = [
   "Not Applicable",
 ];
 
+const PROGRESS_CACHE_KEY = "qs_progress_tracker_cache";
+
+function getCachedProgress(): StudentProgress[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(PROGRESS_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+function saveCachedProgress(items: StudentProgress[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(PROGRESS_CACHE_KEY, JSON.stringify(items));
+  } catch {}
+}
+
 export function StudentsProgressTracker({ mode = "admin" }: { mode?: "admin" | "centre" }) {
-  const [items, setItems] = useState<StudentProgress[]>([]);
+  const [items, setItems] = useState<StudentProgress[]>(getCachedProgress);
   const [students, setStudents] = useState<StudentRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [q, setQ] = useState("");
   const [progFilter, setProgFilter] = useState("all");
@@ -80,7 +101,19 @@ export function StudentsProgressTracker({ mode = "admin" }: { mode?: "admin" | "
       const res = await fetch("/api/students/progress", { cache: "no-store" });
       const data = await res.json();
       if (data.ok && Array.isArray(data.items)) {
-        setItems(data.items);
+        setItems((prev) => {
+          if (!data.items || data.items.length === 0) {
+            // Keep local cached records if server returns empty
+            return prev;
+          }
+          // Merge preserving any locally edited items
+          const map = new Map<string, StudentProgress>();
+          for (const it of prev) map.set(it.id, it);
+          for (const it of data.items) map.set(it.id, it);
+          const merged = Array.from(map.values());
+          saveCachedProgress(merged);
+          return merged;
+        });
       }
     } catch (err) {
       console.warn("Failed to load progress records:", err);
@@ -141,6 +174,14 @@ export function StudentsProgressTracker({ mode = "admin" }: { mode?: "admin" | "
       }
       show(isUpdate ? `Updated progress for ${record.studentName}` : `Added ${record.studentName} to tracker`);
       setEditItem(null);
+      if (data.item) {
+        setItems((prev) => {
+          const exists = prev.some((p) => p.id === data.item.id);
+          const next = exists ? prev.map((p) => (p.id === data.item.id ? data.item : p)) : [data.item, ...prev];
+          saveCachedProgress(next);
+          return next;
+        });
+      }
       await loadProgress();
     } catch (err) {
       show("Network error saving record");
@@ -154,7 +195,11 @@ export function StudentsProgressTracker({ mode = "admin" }: { mode?: "admin" | "
       const data = await res.json();
       if (data.ok) {
         show(`Removed ${name} from tracker`);
-        setItems((prev) => prev.filter((p) => p.id !== id));
+        setItems((prev) => {
+          const next = prev.filter((p) => p.id !== id);
+          saveCachedProgress(next);
+          return next;
+        });
       } else {
         show(data.error || "Could not delete record");
       }

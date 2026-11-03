@@ -79,6 +79,15 @@ export async function ensureTables(): Promise<boolean> {
           );
         `;
 
+        await sql`
+          CREATE TABLE IF NOT EXISTS qs_students (
+            id VARCHAR(64) PRIMARY KEY,
+            data JSONB NOT NULL,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          );
+        `;
+
         // Check if qs_users is empty, seed if so
         const userCount = await sql`SELECT COUNT(*)::int as count FROM qs_users;`;
         if (userCount[0]?.count === 0) {
@@ -435,4 +444,63 @@ export async function deleteDbProgress(id: string): Promise<boolean> {
     return false;
   }
 }
+
+/* ─────────── Students Admissions Operations ─────────── */
+
+export async function getDbStudents(): Promise<any[] | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  await ensureTables();
+  try {
+    const rows = await sql`
+      SELECT data FROM qs_students
+      ORDER BY created_at DESC;
+    `;
+    return rows.map((r: any) => r.data);
+  } catch (err) {
+    console.error("[db] getDbStudents error:", err);
+    return null;
+  }
+}
+
+export async function saveDbStudent(student: any): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) return false;
+  await ensureTables();
+  try {
+    await sql`
+      INSERT INTO qs_students (id, data, updated_at)
+      VALUES (${student.id}, ${JSON.stringify(student)}::jsonb, NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        data = EXCLUDED.data,
+        updated_at = NOW();
+    `;
+    return true;
+  } catch (err) {
+    console.error("[db] saveDbStudent error:", err);
+    return false;
+  }
+}
+
+export async function saveDbStudentsBulk(students: any[]): Promise<boolean> {
+  const sql = getSql();
+  if (!sql || !students.length) return false;
+  await ensureTables();
+  try {
+    for (const student of students) {
+      await sql`
+        INSERT INTO qs_students (id, data, updated_at)
+        VALUES (${student.id}, ${JSON.stringify(student)}::jsonb, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          data = EXCLUDED.data,
+          updated_at = NOW();
+      `;
+    }
+    return true;
+  } catch (err) {
+    console.error("[db] saveDbStudentsBulk error:", err);
+    return false;
+  }
+}
+
 

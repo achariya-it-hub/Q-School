@@ -23,16 +23,11 @@ function pick(): string {
       return tmp;
     } catch {}
   }
-  if (process.env.NODE_ENV !== "production") return process.cwd();
-  const home = path.join(os.homedir(), "qschool-data");
-  try {
-    mkdirSync(home, { recursive: true });
-    accessSync(home, constants.W_OK);
-    return home;
-  } catch {
-    console.warn(`[q-school] could not use ${home} for data; falling back to ${process.cwd()}. Set CRM_DATA_DIR.`);
-    return process.cwd();
-  }
+  const appRoot = existsSync(path.join(process.cwd(), "apps", "web"))
+    ? path.join(process.cwd(), "apps", "web")
+    : process.cwd();
+
+  return appRoot;
 }
 
 export const DATA_DIR = pick();
