@@ -55,6 +55,7 @@ function CampaignsContent() {
   const [platformFilter, setPlatformFilter] = useState<string>("all");
   const [pillarFilter, setPillarFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [activeKpi, setActiveKpi] = useState<"all" | "meta" | "linkedin" | "live" | "pending">("all");
   const [search, setSearch] = useState("");
 
   // Calendar view month state
@@ -341,14 +342,25 @@ function CampaignsContent() {
   // Filtered campaigns
   const filteredCampaigns = useMemo(() => {
     return campaigns.filter((c) => {
+      // Quick KPI Filter
+      if (activeKpi === "meta") {
+        if (!c.platforms.includes("Meta") && !c.platforms.includes("FB") && !c.platforms.includes("IG")) return false;
+      } else if (activeKpi === "linkedin") {
+        if (!c.platforms.toLowerCase().includes("linkedin") && !c.platforms.toLowerCase().includes("x")) return false;
+      } else if (activeKpi === "live") {
+        if (c.postStatus !== "Live" && c.postStatus !== "Published") return false;
+      } else if (activeKpi === "pending") {
+        if (c.approvalStatus !== "Pending" && c.creativeApprovalStatus !== "Pending") return false;
+      }
+
       if (platformFilter !== "all") {
-        if (platformFilter === "meta" && !c.platforms.includes("Meta")) return false;
+        if (platformFilter === "meta" && !c.platforms.includes("Meta") && !c.platforms.includes("FB") && !c.platforms.includes("IG")) return false;
         if (platformFilter === "google" && !c.platforms.includes("Google")) return false;
-        if (platformFilter === "linkedin" && !c.platforms.includes("LinkedIn")) return false;
+        if (platformFilter === "linkedin" && !c.platforms.toLowerCase().includes("linkedin") && !c.platforms.toLowerCase().includes("x")) return false;
       }
       if (pillarFilter !== "all" && c.contentPillar !== pillarFilter) return false;
       if (statusFilter !== "all" && c.postStatus !== statusFilter) return false;
-      if (view === "sales_ads" && c.contentPillar !== "Sales & Admission Ad" && c.contentPillar !== "SMT & Enrolment" && !c.platforms.includes("Google") && !c.platforms.includes("Meta")) {
+      if (view === "sales_ads" && c.contentPillar !== "Sales & Admission Ad" && c.contentPillar !== "BMIT & Enrolment" && !c.platforms.includes("Google") && !c.platforms.includes("Meta")) {
         return false;
       }
       if (search.trim()) {
@@ -364,7 +376,7 @@ function CampaignsContent() {
       }
       return true;
     });
-  }, [campaigns, platformFilter, pillarFilter, statusFilter, view, search]);
+  }, [campaigns, activeKpi, platformFilter, pillarFilter, statusFilter, view, search]);
 
   // Statistics
   const stats = useMemo(() => {
@@ -464,37 +476,218 @@ function CampaignsContent() {
         </Btn>
       </PageHeader>
 
-      {/* KPI Figures */}
+      {/* KPI Figures - Interactive Quick Filter Buttons */}
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Figure
-          label="Total Scheduled"
-          value={stats.total.toString()}
-          icon="calendar"
-        />
-        <Figure
-          label="FB & IG Posts"
-          value={stats.metaCount.toString()}
-          icon="users"
-        />
-        <Figure
-          label="LinkedIn & X Posts"
-          value={stats.linkedinCount.toString()}
-          icon="globe"
-        />
-        <Figure
-          label="Live / Published"
-          value={stats.liveCount.toString()}
-          icon="checkCircle"
-        />
-        <Figure
-          label="Pending Approvals"
-          value={stats.pendingApprovalCount.toString()}
-          icon="alert"
-        />
+        {/* Total Scheduled */}
+        <button
+          type="button"
+          onClick={() => {
+            setActiveKpi("all");
+            setPlatformFilter("all");
+            setStatusFilter("all");
+            setPillarFilter("all");
+            setView("table");
+          }}
+          className={`rounded-[18px] border p-4 text-left transition-all duration-150 cursor-pointer group hover:shadow-md ${
+            activeKpi === "all"
+              ? "border-brand-teal bg-[#F2F8F6] ring-2 ring-brand-teal/20 shadow-xs"
+              : "border-[#E2ECE9] bg-white hover:border-brand-teal/60 hover:bg-[#FAFDFD]"
+          }`}
+          title="Click to view all 16 scheduled posts"
+        >
+          <div className="flex items-center justify-between">
+            <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[#5C716C] group-hover:text-brand-deep">
+              <Icon name="calendar" size={15} />
+              <span>Total Scheduled</span>
+            </p>
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full transition ${
+                activeKpi === "all"
+                  ? "bg-brand-deep text-white"
+                  : "bg-slate-100 text-slate-600 group-hover:bg-brand-teal group-hover:text-white"
+              }`}
+            >
+              {activeKpi === "all" ? "Active" : "View all"}
+            </span>
+          </div>
+          <p className="mt-2 text-[26px] font-bold leading-none text-brand-ink">{stats.total}</p>
+          <p className="mt-2 text-[11.5px] text-[#7B8E89]">All calendar campaigns</p>
+        </button>
+
+        {/* FB & IG Posts */}
+        <button
+          type="button"
+          onClick={() => {
+            setActiveKpi("meta");
+            setPlatformFilter("meta");
+            setStatusFilter("all");
+            setView("table");
+          }}
+          className={`rounded-[18px] border p-4 text-left transition-all duration-150 cursor-pointer group hover:shadow-md ${
+            activeKpi === "meta"
+              ? "border-[#1877F2] bg-blue-50/70 ring-2 ring-blue-500/20 shadow-xs"
+              : "border-[#E2ECE9] bg-white hover:border-blue-400 hover:bg-blue-50/20"
+          }`}
+          title="Click to filter FB & Instagram posts (13 posts)"
+        >
+          <div className="flex items-center justify-between">
+            <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[#1877F2]">
+              <Icon name="users" size={15} />
+              <span>FB &amp; IG Posts</span>
+            </p>
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full transition ${
+                activeKpi === "meta"
+                  ? "bg-[#1877F2] text-white"
+                  : "bg-blue-100 text-blue-700 group-hover:bg-[#1877F2] group-hover:text-white"
+              }`}
+            >
+              {activeKpi === "meta" ? "Active" : "Filter"}
+            </span>
+          </div>
+          <p className="mt-2 text-[26px] font-bold leading-none text-brand-ink">{stats.metaCount}</p>
+          <p className="mt-2 text-[11.5px] text-[#7B8E89]">Meta marketing &amp; reels</p>
+        </button>
+
+        {/* LinkedIn & X Posts */}
+        <button
+          type="button"
+          onClick={() => {
+            setActiveKpi("linkedin");
+            setPlatformFilter("linkedin");
+            setStatusFilter("all");
+            setView("table");
+          }}
+          className={`rounded-[18px] border p-4 text-left transition-all duration-150 cursor-pointer group hover:shadow-md ${
+            activeKpi === "linkedin"
+              ? "border-[#0A66C2] bg-indigo-50/70 ring-2 ring-indigo-500/20 shadow-xs"
+              : "border-[#E2ECE9] bg-white hover:border-indigo-400 hover:bg-indigo-50/20"
+          }`}
+          title="Click to filter LinkedIn & X posts (3 posts)"
+        >
+          <div className="flex items-center justify-between">
+            <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-[#0A66C2]">
+              <Icon name="globe" size={15} />
+              <span>LinkedIn &amp; X Posts</span>
+            </p>
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full transition ${
+                activeKpi === "linkedin"
+                  ? "bg-[#0A66C2] text-white"
+                  : "bg-indigo-100 text-indigo-700 group-hover:bg-[#0A66C2] group-hover:text-white"
+              }`}
+            >
+              {activeKpi === "linkedin" ? "Active" : "Filter"}
+            </span>
+          </div>
+          <p className="mt-2 text-[26px] font-bold leading-none text-brand-ink">{stats.linkedinCount}</p>
+          <p className="mt-2 text-[11.5px] text-[#7B8E89]">B2B &amp; thought leadership</p>
+        </button>
+
+        {/* Live / Published */}
+        <button
+          type="button"
+          onClick={() => {
+            setActiveKpi("live");
+            setStatusFilter("Published");
+            setPlatformFilter("all");
+            setView("table");
+          }}
+          className={`rounded-[18px] border p-4 text-left transition-all duration-150 cursor-pointer group hover:shadow-md ${
+            activeKpi === "live"
+              ? "border-emerald-600 bg-emerald-50/70 ring-2 ring-emerald-500/20 shadow-xs"
+              : "border-[#E2ECE9] bg-white hover:border-emerald-400 hover:bg-emerald-50/20"
+          }`}
+          title="Click to filter Live & Published posts (1 post)"
+        >
+          <div className="flex items-center justify-between">
+            <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-emerald-700">
+              <Icon name="checkCircle" size={15} />
+              <span>Live / Published</span>
+            </p>
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full transition ${
+                activeKpi === "live"
+                  ? "bg-emerald-600 text-white"
+                  : "bg-emerald-100 text-emerald-800 group-hover:bg-emerald-600 group-hover:text-white"
+              }`}
+            >
+              {activeKpi === "live" ? "Active" : "Filter"}
+            </span>
+          </div>
+          <p className="mt-2 text-[26px] font-bold leading-none text-brand-ink">{stats.liveCount}</p>
+          <p className="mt-2 text-[11.5px] text-[#7B8E89]">Live on social channels</p>
+        </button>
+
+        {/* Pending Approvals */}
+        <button
+          type="button"
+          onClick={() => {
+            setActiveKpi("pending");
+            setStatusFilter("all");
+            setPlatformFilter("all");
+            setView("table");
+          }}
+          className={`rounded-[18px] border p-4 text-left transition-all duration-150 cursor-pointer group hover:shadow-md ${
+            activeKpi === "pending"
+              ? "border-amber-500 bg-amber-50/70 ring-2 ring-amber-500/20 shadow-xs"
+              : "border-[#E2ECE9] bg-white hover:border-amber-400 hover:bg-amber-50/20"
+          }`}
+          title="Click to filter pending approval posts (14 posts)"
+        >
+          <div className="flex items-center justify-between">
+            <p className="flex items-center gap-1.5 text-[12.5px] font-semibold text-amber-700">
+              <Icon name="alert" size={15} />
+              <span>Pending Approvals</span>
+            </p>
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full transition ${
+                activeKpi === "pending"
+                  ? "bg-amber-600 text-white"
+                  : "bg-amber-100 text-amber-800 group-hover:bg-amber-600 group-hover:text-white"
+              }`}
+            >
+              {activeKpi === "pending" ? "Active" : "Review"}
+            </span>
+          </div>
+          <p className="mt-2 text-[26px] font-bold leading-none text-brand-ink">{stats.pendingApprovalCount}</p>
+          <p className="mt-2 text-[11.5px] text-[#7B8E89]">Awaiting copy or design sign-off</p>
+        </button>
       </div>
 
       {/* Main Container Card */}
       <Card>
+        {/* Active Filter Notice */}
+        {activeKpi !== "all" && (
+          <div className="mb-4 flex items-center justify-between rounded-xl bg-[#F0F7F5] border border-[#D7EAE4] px-4 py-2.5 text-xs font-semibold text-[#2C4A43]">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-brand-teal animate-pulse" />
+              <span>
+                Filtered by:{" "}
+                <strong className="font-bold text-brand-ink">
+                  {activeKpi === "meta" && "FB & IG Posts (Meta)"}
+                  {activeKpi === "linkedin" && "LinkedIn & X Posts"}
+                  {activeKpi === "live" && "Live / Published Posts"}
+                  {activeKpi === "pending" && "Pending Approvals (Copy or Creative)"}
+                </strong>{" "}
+                — {filteredCampaigns.length} posts shown
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveKpi("all");
+                setPlatformFilter("all");
+                setStatusFilter("all");
+              }}
+              className="px-2.5 py-1 rounded-lg bg-white border border-[#D7EAE4] text-xs font-bold text-[#2C4A43] hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition flex items-center gap-1.5"
+            >
+              <span>Clear Filter</span>
+              <Icon name="x" size={13} />
+            </button>
+          </div>
+        )}
+
         {/* Top Controls Bar */}
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap items-center gap-3">
@@ -514,9 +707,12 @@ function CampaignsContent() {
             <div className="flex items-center gap-1 bg-[#F7FAF9] border border-[#E2ECE9] p-1 rounded-xl shadow-xs">
               <button
                 type="button"
-                onClick={() => setPlatformFilter("all")}
+                onClick={() => {
+                  setPlatformFilter("all");
+                  setActiveKpi("all");
+                }}
                 className={`px-2.5 py-1 text-xs font-bold rounded-lg transition ${
-                  platformFilter === "all"
+                  platformFilter === "all" && activeKpi === "all"
                     ? "bg-white text-brand-ink shadow-xs"
                     : "text-[#7B8E89] hover:text-black"
                 }`}
@@ -525,9 +721,12 @@ function CampaignsContent() {
               </button>
               <button
                 type="button"
-                onClick={() => setPlatformFilter("meta")}
+                onClick={() => {
+                  setPlatformFilter("meta");
+                  setActiveKpi("meta");
+                }}
                 className={`px-2.5 py-1 text-xs font-bold rounded-lg transition flex items-center gap-1 ${
-                  platformFilter === "meta"
+                  platformFilter === "meta" || activeKpi === "meta"
                     ? "bg-[#1877F2] text-white shadow-xs"
                     : "text-[#1877F2] hover:bg-blue-50"
                 }`}
@@ -536,7 +735,10 @@ function CampaignsContent() {
               </button>
               <button
                 type="button"
-                onClick={() => setPlatformFilter("google")}
+                onClick={() => {
+                  setPlatformFilter("google");
+                  setActiveKpi("all");
+                }}
                 className={`px-2.5 py-1 text-xs font-bold rounded-lg transition flex items-center gap-1 ${
                   platformFilter === "google"
                     ? "bg-[#EA4335] text-white shadow-xs"
@@ -547,9 +749,12 @@ function CampaignsContent() {
               </button>
               <button
                 type="button"
-                onClick={() => setPlatformFilter("linkedin")}
+                onClick={() => {
+                  setPlatformFilter("linkedin");
+                  setActiveKpi("linkedin");
+                }}
                 className={`px-2.5 py-1 text-xs font-bold rounded-lg transition flex items-center gap-1 ${
-                  platformFilter === "linkedin"
+                  platformFilter === "linkedin" || activeKpi === "linkedin"
                     ? "bg-[#0A66C2] text-white shadow-xs"
                     : "text-[#0A66C2] hover:bg-blue-50"
                 }`}
