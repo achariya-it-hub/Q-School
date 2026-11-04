@@ -234,6 +234,23 @@ export default function QMasterPage() {
             >
               🔑 Key
             </button>
+
+            {/* Close Button to return */}
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined" && window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  window.location.href = "/dashboard";
+                }
+              }}
+              className="flex items-center gap-1.5 rounded-2xl border border-red-200 bg-red-50/70 hover:bg-red-100 text-red-700 px-3.5 py-2 text-xs font-bold transition shadow-xs"
+              title="Close Q-Master"
+            >
+              <span className="text-sm font-bold leading-none">✕</span>
+              <span>Close</span>
+            </button>
           </div>
         </div>
 

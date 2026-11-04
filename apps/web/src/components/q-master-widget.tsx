@@ -2,13 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function QMasterWidget() {
   const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const pathname = usePathname();
   const [query, setQuery] = useState("");
   const [ageLevel, setAgeLevel] = useState<"Kids" | "Junior" | "Teens">("Junior");
   const [loading, setLoading] = useState(false);
   const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+
+  // Hide floating widget when on the dedicated Q-Master full-screen page
+  if (pathname === "/q-master") return null;
 
   const [chat, setChat] = useState<Array<{ sender: "ai" | "user"; text: string; badge?: string }>>([
     {
@@ -124,20 +130,50 @@ export function QMasterWidget() {
   return (
     <div className="fixed bottom-6 right-6 z-50">
       {/* Floating Toggle Button */}
-      {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="group flex items-center gap-2.5 rounded-full bg-[#054038] p-3.5 text-white shadow-[0_12px_28px_-6px_rgba(5,64,56,0.6)] border border-[#2BD6B4]/30 transition hover:scale-105 active:scale-95"
-        >
-          <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#0E937E] text-white">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-mark.png" alt="Q-Master" className="h-5 w-5 object-contain" />
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2BD6B4] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-[#2BD6B4]"></span>
+      {!open && !dismissed && (
+        <div className="relative group flex items-center">
+          <button
+            onClick={() => setOpen(true)}
+            className="flex items-center gap-2.5 rounded-full bg-[#054038] p-3.5 pr-4 text-white shadow-[0_12px_28px_-6px_rgba(5,64,56,0.6)] border border-[#2BD6B4]/30 transition hover:scale-105 active:scale-95"
+            title="Open Q-Master AI Tutor"
+          >
+            <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#0E937E] text-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-mark.png" alt="Q-Master" className="h-5 w-5 object-contain" />
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2BD6B4] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#2BD6B4]"></span>
+              </span>
             </span>
-          </span>
-          <span className="pr-1 text-sm font-bold tracking-wide">Q-Master AI</span>
+            <span className="pr-1 text-sm font-bold tracking-wide">Q-Master AI</span>
+          </button>
+
+          {/* Close button to dismiss floating widget */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setDismissed(true);
+            }}
+            className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#054038] text-white/80 hover:text-white hover:bg-red-600 border border-white/50 shadow-md text-[10px] font-bold transition"
+            title="Close Q-Master"
+            aria-label="Close Q-Master"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Re-open minimized pill if dismissed */}
+      {!open && dismissed && (
+        <button
+          onClick={() => setDismissed(false)}
+          className="flex h-9 items-center gap-1.5 rounded-full bg-[#054038]/90 px-3 text-xs font-bold text-white shadow-md border border-[#2BD6B4]/30 hover:bg-[#054038] transition hover:scale-105"
+          title="Restore Q-Master AI Tutor"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-mark.png" alt="Q-Master" className="h-4 w-4 object-contain" />
+          <span>Q-Master</span>
         </button>
       )}
 
@@ -158,10 +194,16 @@ export function QMasterWidget() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Link href="/q-master" className="rounded-lg bg-white/15 px-2 py-1 text-[11px] font-semibold text-white hover:bg-white/25">
+              <Link href="/q-master" className="rounded-lg bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-white/25 transition">
                 Full Screen
               </Link>
-              <button onClick={() => setOpen(false)} className="rounded-lg p-1 text-white/80 hover:bg-white/10 hover:text-white">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 text-white/90 hover:bg-red-600/80 hover:text-white transition text-xs font-bold"
+                title="Close Q-Master"
+                aria-label="Close Q-Master"
+              >
                 ✕
               </button>
             </div>
