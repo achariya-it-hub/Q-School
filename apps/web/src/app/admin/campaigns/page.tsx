@@ -56,10 +56,10 @@ function CampaignsContent() {
   // Form State for Create / Edit
   const [form, setForm] = useState<NewCampaignInput>({
     postDate: new Date().toISOString().split("T")[0],
-    writer: "Srikeha",
+    writer: "Sneka",
     contentPillar: "Brand & Category Awareness",
     format: "Static Image",
-    platforms: "Meta (FB/IG)",
+    platforms: "FB/IG",
     audience: "B2C",
     postConcept: "",
     postContent: "",
@@ -74,6 +74,10 @@ function CampaignsContent() {
     creativeApprovalStatus: "Pending",
     postStatus: "Draft",
     postUrl: "",
+    facebookUrl: "",
+    instaUrl: "",
+    xUrl: "",
+    linkedinUrl: "",
     publishedBy: "",
     publishedOn: "",
     budget: 0,
@@ -107,10 +111,10 @@ function CampaignsContent() {
     setEditingItem(null);
     setForm({
       postDate: dateStr || new Date().toISOString().split("T")[0],
-      writer: "Srikeha",
+      writer: "Sneka",
       contentPillar: "Brand & Category Awareness",
       format: "Static Image",
-      platforms: "Meta (FB/IG)",
+      platforms: "FB/IG",
       audience: "B2C",
       postConcept: "",
       postContent: "",
@@ -125,6 +129,10 @@ function CampaignsContent() {
       creativeApprovalStatus: "Pending",
       postStatus: "Draft",
       postUrl: "",
+      facebookUrl: "",
+      instaUrl: "",
+      xUrl: "",
+      linkedinUrl: "",
       publishedBy: "",
       publishedOn: "",
       budget: 0,
@@ -158,6 +166,10 @@ function CampaignsContent() {
       creativeApprovedOn: item.creativeApprovedOn || "",
       postStatus: item.postStatus,
       postUrl: item.postUrl || "",
+      facebookUrl: item.facebookUrl || "",
+      instaUrl: item.instaUrl || "",
+      xUrl: item.xUrl || "",
+      linkedinUrl: item.linkedinUrl || "",
       publishedBy: item.publishedBy || "",
       publishedOn: item.publishedOn || "",
       budget: item.budget || 0,
@@ -337,14 +349,14 @@ function CampaignsContent() {
   // Statistics
   const stats = useMemo(() => {
     const total = campaigns.length;
-    const metaCount = campaigns.filter((c) => c.platforms.includes("Meta")).length;
-    const googleCount = campaigns.filter((c) => c.platforms.includes("Google")).length;
+    const metaCount = campaigns.filter((c) => c.platforms.includes("Meta") || c.platforms.includes("FB")).length;
+    const linkedinCount = campaigns.filter((c) => c.platforms.includes("Linkedin") || c.platforms.includes("X")).length;
     const liveCount = campaigns.filter((c) => c.postStatus === "Live" || c.postStatus === "Published").length;
     const pendingApprovalCount = campaigns.filter(
       (c) => c.approvalStatus === "Pending" || c.creativeApprovalStatus === "Pending"
     ).length;
 
-    return { total, metaCount, googleCount, liveCount, pendingApprovalCount };
+    return { total, metaCount, linkedinCount, liveCount, pendingApprovalCount };
   }, [campaigns]);
 
   // Calendar Days Computation
@@ -397,7 +409,7 @@ function CampaignsContent() {
     <AdminShell>
       <PageHeader
         title="Campaign Calendar"
-        sub="Marketing content planner and paid ad schedule for Meta (Facebook & Instagram), Google Ads, and social channels"
+        sub="Marketing content planner and publishing schedule for Meta (FB & Instagram), LinkedIn, and X"
       >
         <Btn variant="primary" icon="plus" onClick={() => openCreateModal()}>
           New Campaign Post
@@ -407,6 +419,28 @@ function CampaignsContent() {
         </Btn>
         <Btn variant="ghost" icon="download" onClick={handleExportCsv}>
           Export Calendar CSV
+        </Btn>
+        <Btn
+          variant="ghost"
+          icon="check"
+          onClick={async () => {
+            if (!confirm("Re-sync content calendar to official schedule (Sneka - Nov 2026)?")) return;
+            try {
+              const res = await fetch("/api/admin/campaigns", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "reset" }),
+              });
+              if (res.ok) {
+                show("Content calendar re-synced successfully!");
+                loadData();
+              }
+            } catch {
+              show("Failed to re-sync calendar");
+            }
+          }}
+        >
+          Re-sync Calendar
         </Btn>
       </PageHeader>
 
@@ -418,14 +452,14 @@ function CampaignsContent() {
           icon="calendar"
         />
         <Figure
-          label="Meta (FB & IG) Posts"
+          label="FB & IG Posts"
           value={stats.metaCount.toString()}
           icon="users"
         />
         <Figure
-          label="Google Ads & Search"
-          value={stats.googleCount.toString()}
-          icon="search"
+          label="LinkedIn & X Posts"
+          value={stats.linkedinCount.toString()}
+          icon="globe"
         />
         <Figure
           label="Live / Published"
@@ -582,14 +616,14 @@ function CampaignsContent() {
 
                         {/* Platform */}
                         <td className="py-3 px-3.5">
-                          {c.platforms.includes("Meta") ? (
+                          {c.platforms.includes("Meta") || c.platforms.includes("FB") ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold text-[11px] border border-blue-200">
                               <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                               {c.platforms}
                             </span>
-                          ) : c.platforms.includes("Google") ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-50 text-red-700 font-semibold text-[11px] border border-red-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
+                          ) : c.platforms.includes("Linkedin") || c.platforms.includes("LinkedIn") || c.platforms.includes("X") ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold text-[11px] border border-indigo-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
                               {c.platforms}
                             </span>
                           ) : (
@@ -715,8 +749,52 @@ function CampaignsContent() {
 
                         {/* Assets & Links */}
                         <td className="py-3 px-3.5 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            {c.sheetLink ? (
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                            {c.facebookUrl && (
+                              <a
+                                href={c.facebookUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 text-[10px] font-bold border border-blue-200 transition"
+                                title="Open Facebook Post"
+                              >
+                                FB
+                              </a>
+                            )}
+                            {c.instaUrl && (
+                              <a
+                                href={c.instaUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 hover:bg-rose-100 text-[10px] font-bold border border-rose-200 transition"
+                                title="Open Instagram Post"
+                              >
+                                IG
+                              </a>
+                            )}
+                            {c.linkedinUrl && (
+                              <a
+                                href={c.linkedinUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-[10px] font-bold border border-indigo-200 transition"
+                                title="Open LinkedIn Post"
+                              >
+                                IN
+                              </a>
+                            )}
+                            {c.xUrl && (
+                              <a
+                                href={c.xUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 hover:bg-slate-200 text-[10px] font-bold border border-slate-300 transition"
+                                title="Open X Post"
+                              >
+                                X
+                              </a>
+                            )}
+                            {c.sheetLink && (
                               <a
                                 href={c.sheetLink}
                                 target="_blank"
@@ -726,12 +804,8 @@ function CampaignsContent() {
                               >
                                 <Icon name="link" size={13} />
                               </a>
-                            ) : (
-                              <span className="p-1.5 text-gray-300" title="No copy doc link">
-                                <Icon name="link" size={13} />
-                              </span>
                             )}
-                            {c.driveLink ? (
+                            {c.driveLink && (
                               <a
                                 href={c.driveLink}
                                 target="_blank"
@@ -741,12 +815,8 @@ function CampaignsContent() {
                               >
                                 <Icon name="external" size={13} />
                               </a>
-                            ) : (
-                              <span className="p-1.5 text-gray-300" title="No drive link">
-                                <Icon name="external" size={13} />
-                              </span>
                             )}
-                            {c.postUrl && (
+                            {c.postUrl && !c.facebookUrl && !c.instaUrl && (
                               <a
                                 href={c.postUrl}
                                 target="_blank"
@@ -756,6 +826,9 @@ function CampaignsContent() {
                               >
                                 <Icon name="share" size={13} />
                               </a>
+                            )}
+                            {!c.sheetLink && !c.driveLink && !c.postUrl && !c.facebookUrl && !c.instaUrl && (
+                              <span className="text-[11px] text-gray-300">—</span>
                             )}
                           </div>
                         </td>
@@ -1337,7 +1410,49 @@ function CampaignsContent() {
                 </Field>
               </div>
 
-              <Field label="Live Post / Ad URL">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Facebook Post URL">
+                  <input
+                    type="url"
+                    className={inputCls}
+                    placeholder="https://facebook.com/photo?..."
+                    value={form.facebookUrl || ""}
+                    onChange={(e) => setForm({ ...form, facebookUrl: e.target.value })}
+                  />
+                </Field>
+                <Field label="Instagram Post URL">
+                  <input
+                    type="url"
+                    className={inputCls}
+                    placeholder="https://instagram.com/p/..."
+                    value={form.instaUrl || ""}
+                    onChange={(e) => setForm({ ...form, instaUrl: e.target.value })}
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="LinkedIn Post URL">
+                  <input
+                    type="url"
+                    className={inputCls}
+                    placeholder="https://linkedin.com/..."
+                    value={form.linkedinUrl || ""}
+                    onChange={(e) => setForm({ ...form, linkedinUrl: e.target.value })}
+                  />
+                </Field>
+                <Field label="X (Twitter) Post URL">
+                  <input
+                    type="url"
+                    className={inputCls}
+                    placeholder="https://x.com/..."
+                    value={form.xUrl || ""}
+                    onChange={(e) => setForm({ ...form, xUrl: e.target.value })}
+                  />
+                </Field>
+              </div>
+
+              <Field label="Primary Live Post / Ad URL">
                 <input
                   type="url"
                   className={inputCls}
@@ -1439,10 +1554,10 @@ function BulkUploadCampaignsModal({
   const parsedRecords = parseCsvRows(csvText);
   const campaignRows = parsedRecords.map((r) => ({
     postDate: r.postdate || r.date || r.scheduleddate || new Date().toISOString().split("T")[0],
-    writer: r.writer || r.copywriter || "Srikeha",
+    writer: r.writer || r.copywriter || "Sneka",
     contentPillar: (r.contentpillar || r.pillar || "Brand & Category Awareness") as ContentPillar,
     format: (r.format || r.adformat || "Static Image") as ContentFormat,
-    platforms: (r.platforms || r.platform || "Meta (FB/IG)") as CampaignPlatform,
+    platforms: (r.platforms || r.platform || "FB/IG") as CampaignPlatform,
     audience: (r.audience?.toUpperCase() === "B2B" ? "B2B" : "B2C") as any,
     postConcept: r.postconcept || r.concept || r.campaignname || r.title || "",
     postContent: r.postcontent || r.content || r.copy || "",

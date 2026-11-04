@@ -1,4 +1,6 @@
 export type CampaignPlatform =
+  | "FB/IG"
+  | "Linkedin/X"
   | "Meta (FB/IG)"
   | "Google Ads"
   | "Meta & Google"
@@ -15,6 +17,7 @@ export type ContentPillar =
   | "Community & Proof"
   | "Centres Spotlight"
   | "Franchise & Business Opportunity"
+  | "BMIT & Enrolment"
   | "SMT & Enrolment"
   | "Sales & Admission Ad";
 
@@ -73,7 +76,11 @@ export interface CampaignItem {
   creativeApprovalStatus: ApprovalStatus;
   creativeApprovedOn?: string;
   postStatus: PublishingStatus;
-  postUrl?: string; // Live ad / social link
+  postUrl?: string; // Primary live ad / social link
+  facebookUrl?: string; // Direct Facebook Post Link
+  instaUrl?: string; // Direct Instagram Post Link
+  xUrl?: string; // Direct X (Twitter) Post Link
+  linkedinUrl?: string; // Direct LinkedIn Post Link
   publishedBy?: string;
   publishedOn?: string;
   budget?: number; // Optional ad spend INR
@@ -93,6 +100,7 @@ export const CONTENT_PILLARS: ContentPillar[] = [
   "Community & Proof",
   "Centres Spotlight",
   "Franchise & Business Opportunity",
+  "BMIT & Enrolment",
   "SMT & Enrolment",
   "Sales & Admission Ad",
 ];
@@ -109,6 +117,8 @@ export const CONTENT_FORMATS: ContentFormat[] = [
 ];
 
 export const CAMPAIGN_PLATFORMS: CampaignPlatform[] = [
+  "FB/IG",
+  "Linkedin/X",
   "Meta (FB/IG)",
   "Google Ads",
   "Meta & Google",
@@ -117,5 +127,5 @@ export const CAMPAIGN_PLATFORMS: CampaignPlatform[] = [
   "WhatsApp Broadcast",
 ];
 
-export const WRITERS = ["Srikeha", "Marketing Lead", "Content Team", "AI Assistant"];
+export const WRITERS = ["Sneka", "Srikeha", "Marketing Lead", "Content Team", "AI Assistant"];
 export const DESIGNERS = ["Hari", "Creative Studio", "Video Editor", "Freelance"];

@@ -4,6 +4,7 @@ import {
   bulkCreateCampaigns,
   createCampaign,
   listCampaigns,
+  resetToOfficialCalendar,
   type NewCampaignInput,
 } from "@/lib/crm/campaigns-store";
 
@@ -15,7 +16,8 @@ export async function GET() {
     const campaigns = await listCampaigns();
 
     const total = campaigns.length;
-    const metaCount = campaigns.filter((c) => c.platforms.includes("Meta")).length;
+    const metaCount = campaigns.filter((c) => c.platforms.includes("Meta") || c.platforms.includes("FB")).length;
+    const linkedinCount = campaigns.filter((c) => c.platforms.includes("Linkedin") || c.platforms.includes("LinkedIn")).length;
     const googleCount = campaigns.filter((c) => c.platforms.includes("Google")).length;
     const liveCount = campaigns.filter((c) => c.postStatus === "Live" || c.postStatus === "Published").length;
     const pendingApprovalCount = campaigns.filter(
@@ -28,6 +30,7 @@ export async function GET() {
       stats: {
         total,
         metaCount,
+        linkedinCount,
         googleCount,
         liveCount,
         pendingApprovalCount,
@@ -42,6 +45,11 @@ export async function POST(req: Request) {
   if (!isAdmin()) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   try {
     const body = await req.json();
+
+    if (body.action === "reset") {
+      const campaigns = await resetToOfficialCalendar();
+      return NextResponse.json({ ok: true, campaigns, reset: true });
+    }
 
     // Bulk creation
     if (Array.isArray(body.rows) || Array.isArray(body.campaigns)) {
