@@ -6,11 +6,12 @@ import { useEffect, useRef, useState } from "react";
 
 const NAV = [
   { href: "/q-master", label: "Q-Master AI 🧠" },
-  { href: "/#programs", label: "Programs" },
-  { href: "/#live", label: "Live & Webinars" },
-  { href: "/courses", label: "Courses" },
-  { href: "/#centres", label: "Centres" },
-  { href: "/#pricing", label: "Pricing" },
+  { href: "/#story", label: "Story & Vision" },
+  { href: "/#framework", label: "Q 5D™ Framework" },
+  { href: "/#programs", label: "8 Programs" },
+  { href: "/#neo-sapiens", label: "Neo Sapiens" },
+  { href: "/#centres", label: "9 Centres" },
+  { href: "/#demo", label: "Book Free Demo" },
 ];
 
 export function SiteHeader() {
