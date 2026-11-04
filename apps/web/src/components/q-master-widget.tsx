@@ -13,6 +13,36 @@ export function QMasterWidget() {
   const [loading, setLoading] = useState(false);
   const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 
+  const [chat, setChat] = useState<Array<{ sender: "ai" | "user"; text: string; badge?: string }>>([
+    {
+      sender: "ai",
+      text: "Hello scholar! 🌟 I'm Q-Master, your AI Educational Tutor. Ask me ANY doubt in Science, Anatomy, Math, Physics, History or Coding!",
+      badge: "Q-Master AI",
+    },
+  ]);
+
+  // Check if dismissed in this session
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined" && sessionStorage.getItem("qschool_qmaster_closed") === "1") {
+        setDismissed(true);
+      }
+    } catch (_) {}
+  }, []);
+
+  // Listen to open event from header or anywhere
+  useEffect(() => {
+    const handleOpen = () => {
+      setDismissed(false);
+      setOpen(true);
+      try {
+        sessionStorage.removeItem("qschool_qmaster_closed");
+      } catch (_) {}
+    };
+    window.addEventListener("qmaster:open", handleOpen);
+    return () => window.removeEventListener("qmaster:open", handleOpen);
+  }, []);
+
   // Close on Escape key press
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -24,16 +54,8 @@ export function QMasterWidget() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open]);
 
-  // Hide floating widget when on the dedicated Q-Master full-screen page
-  if (pathname === "/q-master") return null;
-
-  const [chat, setChat] = useState<Array<{ sender: "ai" | "user"; text: string; badge?: string }>>([
-    {
-      sender: "ai",
-      text: "Hello scholar! 🌟 I'm Q-Master, your AI Educational Tutor. Ask me ANY doubt in Science, Anatomy, Math, Physics, History or Coding!",
-      badge: "Q-Master AI",
-    },
-  ]);
+  // Hide floating widget when on the dedicated Q-Master full-screen page or dismissed
+  if (pathname === "/q-master" || dismissed) return null;
 
   const fetchLiveGemini = async (q: string, level: string): Promise<string | null> => {
     const cleanKey = apiKey.trim();
@@ -159,33 +181,25 @@ export function QMasterWidget() {
             <span className="pr-1 text-sm font-bold tracking-wide">Q-Master AI</span>
           </button>
 
-          {/* Close button to dismiss floating widget */}
+          {/* Close button to dismiss floating widget completely */}
           <button
             type="button"
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               setDismissed(true);
+              setOpen(false);
+              try {
+                sessionStorage.setItem("qschool_qmaster_closed", "1");
+              } catch (_) {}
             }}
-            className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#054038] text-white/80 hover:text-white hover:bg-red-600 border border-white/50 shadow-md text-[10px] font-bold transition"
+            className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white border-2 border-white shadow-md text-xs font-bold transition cursor-pointer"
             title="Close Q-Master"
             aria-label="Close Q-Master"
           >
             ✕
           </button>
         </div>
-      )}
-
-      {/* Re-open minimized pill if dismissed */}
-      {!open && dismissed && (
-        <button
-          onClick={() => setDismissed(false)}
-          className="flex h-9 items-center gap-1.5 rounded-full bg-[#054038]/90 px-3 text-xs font-bold text-white shadow-md border border-[#2BD6B4]/30 hover:bg-[#054038] transition hover:scale-105"
-          title="Restore Q-Master AI Tutor"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-mark.png" alt="Q-Master" className="h-4 w-4 object-contain" />
-          <span>Q-Master</span>
-        </button>
       )}
 
       {/* Floating Modal Window */}
@@ -217,12 +231,16 @@ export function QMasterWidget() {
                   e.preventDefault();
                   e.stopPropagation();
                   setOpen(false);
+                  setDismissed(true);
+                  try {
+                    sessionStorage.setItem("qschool_qmaster_closed", "1");
+                  } catch (_) {}
                 }}
-                className="flex items-center gap-1 rounded-lg bg-red-600/90 hover:bg-red-600 px-2.5 py-1 text-white transition text-[11px] font-bold shadow-xs cursor-pointer"
-                title="Close Chatbot"
-                aria-label="Close Chatbot"
+                className="flex items-center gap-1 rounded-lg bg-red-600 hover:bg-red-700 px-2.5 py-1 text-white transition text-[11px] font-bold shadow-xs cursor-pointer"
+                title="Close Q-Master"
+                aria-label="Close Q-Master"
               >
-                <span className="text-xs leading-none">✕</span>
+                <span className="text-xs leading-none font-bold">✕</span>
                 <span>Close</span>
               </button>
             </div>

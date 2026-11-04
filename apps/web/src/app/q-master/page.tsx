@@ -235,15 +235,23 @@ export default function QMasterPage() {
               🔑 Key
             </button>
 
-            {/* Close Button to exit Q-Master and return to Dashboard */}
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-1.5 rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 px-3.5 py-2 text-xs font-bold transition shadow-xs hover:border-red-300"
-              title="Close Q-Master (Return to Dashboard)"
+            {/* Close Button to exit Q-Master */}
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined" && window.history.length > 1 && document.referrer) {
+                  window.history.back();
+                } else {
+                  window.location.href = "/";
+                }
+              }}
+              className="flex items-center gap-1.5 rounded-2xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 px-3.5 py-2 text-xs font-bold transition shadow-xs hover:border-red-300 cursor-pointer"
+              title="Close Q-Master"
+              aria-label="Close Q-Master"
             >
               <span className="text-sm font-bold leading-none">✕</span>
               <span>Close</span>
-            </Link>
+            </button>
           </div>
         </div>
 
