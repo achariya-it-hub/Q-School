@@ -10,6 +10,10 @@ import { Parallax } from "@/components/landing/parallax";
 import { CountUp } from "@/components/landing/count-up";
 import { HeroCarousel } from "@/components/landing/hero-carousel";
 import { PhotoSlide } from "@/components/landing/photo-slide";
+import { QuantumNexus } from "@/components/three/quantum-nexus";
+import { QuantumCoreOrb } from "@/components/three/quantum-core-orb";
+import { Quantum5DVisualizer } from "@/components/three/quantum-5d-visualizer";
+import { QuantumBrainMesh } from "@/components/three/quantum-brain-mesh";
 import type { HeroSlide, HomeContent, SectionKey } from "@/lib/site/home-content";
 
 /* Renders the home page from editable content (Admin Console › Website & Official Brochure). */
@@ -117,6 +121,8 @@ function Hero({ c }: { c: HomeContent["hero"] }) {
   if (!slides.length) return null;
   return (
     <section className="relative overflow-hidden bg-brand-deep text-white">
+      {/* 3D Quantum Particle Constellation Canvas */}
+      <QuantumNexus className="pointer-events-none absolute inset-0 z-0 opacity-45" particleCount={95} speed={0.45} colorScheme="teal" />
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.07]"
         style={{
@@ -200,8 +206,11 @@ function StoryAndGenAlpha() {
   ];
 
   return (
-    <section id="story" className="scroll-mt-20 py-20 bg-white border-y border-[#E2ECE9]">
-      <div className="container-qs">
+    <section id="story" className="relative scroll-mt-20 py-20 bg-gradient-to-b from-[#F4F8F7] via-white to-[#F4F8F7] border-y border-[#E2ECE9] overflow-hidden">
+      {/* 3D Ambient Quantum Field */}
+      <QuantumNexus className="pointer-events-none absolute inset-0 opacity-30" particleCount={85} speed={0.35} colorScheme="emerald" />
+
+      <div className="container-qs relative z-10">
         <Reveal variant="blur" className="mx-auto max-w-3xl text-center">
           <Kicker>The Q-School Story</Kicker>
           <H2>A Brighter Future Starts With the Learner</H2>
@@ -213,31 +222,40 @@ function StoryAndGenAlpha() {
         {/* Narrative & Founder Quote Split */}
         <div className="mt-14 grid grid-cols-1 items-stretch gap-8 lg:grid-cols-2">
           <Reveal variant="left">
-            <div className="emboss flex h-full flex-col justify-between rounded-3xl p-7 sm:p-9 bg-[#F9FBFB] border border-[#CFE3DD]">
-              <div>
-                <span className="chip !px-3 !py-1 !text-xs !bg-[#2BD6B4]/20 !text-[#0B6E5F] font-bold">THE SHIFT</span>
+            <div className="relative overflow-hidden rounded-3xl p-7 sm:p-9 bg-white/95 backdrop-blur-md border border-[#CFE3DD] shadow-xl flex h-full flex-col justify-between group hover:border-[#2BD6B4]/60 transition duration-500">
+              {/* Internal 3D Particle Field */}
+              <QuantumNexus className="absolute inset-0 pointer-events-none opacity-25" particleCount={45} speed={0.3} colorScheme="teal" />
+
+              <div className="relative z-10">
+                <div className="flex items-center justify-between">
+                  <span className="chip !px-3 !py-1 !text-xs !bg-[#2BD6B4]/20 !text-[#0B6E5F] font-bold">THE SHIFT</span>
+                  <span className="text-[11px] font-bold text-[#0E937E] uppercase tracking-wider">Human Intelligence First</span>
+                </div>
                 <h3 className="mt-4 text-2xl font-bold text-brand-ink">Beyond Competing with Machines</h3>
-                <p className="mt-4 text-[15px] leading-relaxed text-[#5c7772]">
+                <p className="mt-3 text-[15px] leading-relaxed text-[#5c7772]">
                   Q-School (The Quantum Schooling) was created to respond to that shift — <strong className="text-brand-ink font-semibold">not by teaching children to compete with machines</strong>, but by deliberately developing the human capacities that remain essential:
                 </p>
-                <div className="mt-6 flex flex-wrap gap-2">
+                <div className="mt-5 flex flex-wrap gap-2">
                   {["Attention", "Imagination", "Judgement", "Emotional Awareness", "Self-Belief", "Creativity", "Original Thought"].map((c) => (
-                    <span key={c} className="rounded-full bg-white px-3 py-1 text-[13px] font-semibold text-brand-deep border border-[#CFE3DD] shadow-xs">
+                    <span
+                      key={c}
+                      className="rounded-full bg-white/95 px-3.5 py-1 text-[12.5px] font-bold text-brand-deep border border-[#CFE3DD] shadow-xs hover:border-[#2BD6B4] hover:shadow-[0_0_12px_rgba(43,214,180,0.45)] hover:scale-105 transition duration-300 cursor-default"
+                    >
                       ✦ {c}
                     </span>
                   ))}
                 </div>
-                <p className="mt-5 text-[14.5px] leading-relaxed text-[#5c7772]">
+                <p className="mt-5 text-[14px] leading-relaxed text-[#5c7772]">
                   Drawing from contemporary learning methods, cognitive-development practices, and selected principles inspired by India’s knowledge traditions, Q-School brings these dimensions together in one structured learning journey.
                 </p>
 
                 {/* Mentor Photo Card */}
-                <div className="mt-5 overflow-hidden rounded-2xl border border-[#CFE3DD] shadow-xs">
+                <div className="mt-5 overflow-hidden rounded-2xl border border-[#CFE3DD] shadow-xs group/img">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/images/mentor-student.jpg"
                     alt="Q-School Certified Mentor guiding young learner"
-                    className="h-44 w-full object-cover"
+                    className="h-44 w-full object-cover transition duration-700 group-hover/img:scale-105"
                   />
                   <div className="bg-white px-3.5 py-2 text-[11.5px] font-semibold text-[#0B6E5F] flex items-center justify-between">
                     <span>Individualised Mentor Guidance</span>
@@ -246,7 +264,7 @@ function StoryAndGenAlpha() {
                 </div>
               </div>
 
-              <div className="mt-8 border-t border-[#E2ECE9] pt-6 flex items-center gap-3">
+              <div className="relative z-10 mt-8 border-t border-[#E2ECE9] pt-6 flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-deep text-[#2BD6B4]">
                   <Icon name="award" size={20} />
                 </span>
@@ -259,25 +277,36 @@ function StoryAndGenAlpha() {
           </Reveal>
 
           <Reveal delay={120} variant="right">
-            <div className="relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#054038] to-[#0A5A4E] p-7 text-white sm:p-9 shadow-xl">
-              <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-[#2BD6B4]/15 blur-2xl" />
-              <div>
+            <div className="relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#054038] via-[#04332D] to-[#011C18] p-7 text-white sm:p-9 shadow-2xl border border-[#2BD6B4]/30 group">
+              {/* Interactive 3D Quantum Atom Core */}
+              <div className="absolute -top-10 -right-10 w-60 h-60 pointer-events-auto opacity-80 group-hover:opacity-100 transition duration-500">
+                <QuantumCoreOrb />
+              </div>
+              <div className="pointer-events-none absolute -left-12 -bottom-12 h-44 w-44 rounded-full bg-[#2BD6B4]/15 blur-2xl" />
+
+              <div className="relative z-10">
                 <span className="font-hand text-5xl leading-none text-[#2BD6B4]">&ldquo;</span>
-                <blockquote className="mt-2 text-[17px] font-medium leading-relaxed text-white/95">
+                <blockquote className="mt-2 text-[17px] font-medium leading-relaxed text-white/95 max-w-[85%]">
                   Education must do more than transfer information. It must develop the human being who receives it. My vision for Q-School is to help every child discover their strengths, build the habits to use them well, and grow with the confidence to navigate a world that is changing every day.
                 </blockquote>
-                <div className="mt-6 border-t border-white/15 pt-4">
-                  <p className="text-[16px] font-bold text-[#2BD6B4]">Dr J Arawindhan</p>
-                  <p className="text-[13px] text-white/70">Founder, Chief Mentor &amp; Managing Director, Q-School</p>
+                <div className="mt-6 border-t border-white/15 pt-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-[16px] font-bold text-[#2BD6B4]">Dr J Arawindhan</p>
+                    <p className="text-[13px] text-white/70">Founder, Chief Mentor &amp; Managing Director, Q-School</p>
+                  </div>
+                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[10.5px] font-bold text-[#2BD6B4] border border-[#2BD6B4]/30 backdrop-blur-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#2BD6B4] animate-ping" />
+                    3D Quantum Core
+                  </span>
                 </div>
               </div>
 
-              <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-white/15 pt-6 text-xs">
-                <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-xs">
+              <div className="relative z-10 mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-white/15 pt-6 text-xs">
+                <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-xs border border-white/10 hover:border-[#2BD6B4]/50 transition">
                   <p className="font-bold text-[#2BD6B4] uppercase tracking-wider text-[11px]">Our Mission</p>
                   <p className="mt-1 text-white/80 leading-relaxed">Systematically develop every child&apos;s ability to focus, learn, think, create, communicate, adapt, solve and lead in an AI-driven world.</p>
                 </div>
-                <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-xs">
+                <div className="rounded-2xl bg-white/10 p-4 backdrop-blur-xs border border-white/10 hover:border-[#2BD6B4]/50 transition">
                   <p className="font-bold text-[#2BD6B4] uppercase tracking-wider text-[11px]">Our Vision</p>
                   <p className="mt-1 text-white/80 leading-relaxed">The definitive future-readiness programme recognized nationally as the trusted partner that develops the learner behind the learning.</p>
                 </div>
@@ -456,11 +485,13 @@ function PedagogySection() {
 /* ───────────────────────── 3. AI vs. HI (Human Intelligence) ───────────────────────── */
 function AIvsHI() {
   return (
-    <section className="relative overflow-hidden bg-[#054038] py-20 text-white">
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#054038] via-[#032D27] to-[#054038] py-20 text-white">
+      {/* 3D Quantum Nexus Synapse Background */}
+      <QuantumNexus className="pointer-events-none absolute inset-0 opacity-40" particleCount={110} speed={0.4} colorScheme="teal" />
       <div className="pointer-events-none absolute -left-32 -top-32 h-80 w-80 rounded-full bg-brand-teal/40 blur-3xl" />
       <div className="pointer-events-none absolute -right-32 -bottom-32 h-80 w-80 rounded-full bg-[#2BD6B4]/20 blur-3xl" />
 
-      <div className="container-qs relative">
+      <div className="container-qs relative z-10">
         <Reveal variant="blur" className="mx-auto max-w-3xl text-center">
           <span className="chip !px-3.5 !py-1 !text-xs !bg-[#2BD6B4] !text-brand-deep font-black">AI VS. HI</span>
           <h2 className="mt-4 text-3xl font-extrabold sm:text-4xl text-white">
@@ -471,22 +502,9 @@ function AIvsHI() {
           </p>
         </Reveal>
 
-        {/* Glowing 3D Quantum Brain Feature */}
-        <div className="mx-auto mt-10 mb-4 flex justify-center">
-          <div className="relative group">
-            <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-[#2BD6B4] to-[#0E937E] opacity-75 blur-xl group-hover:opacity-100 transition duration-700" />
-            <div className="relative h-44 w-44 sm:h-52 sm:w-52 overflow-hidden rounded-full border-4 border-[#2BD6B4] bg-[#042823] shadow-2xl">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/side-brain.png"
-                alt="Quantum Neuro-Intelligence"
-                className="h-full w-full object-cover object-center transition duration-700 group-hover:scale-105"
-              />
-            </div>
-            <span className="absolute -bottom-3 inset-x-0 mx-auto w-max rounded-full bg-[#054038] px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-[#2BD6B4] border border-[#2BD6B4]/40 shadow-lg">
-              Quantum Neuro-Intelligence
-            </span>
-          </div>
+        {/* 3D Interactive Dual-Hemisphere Brain (AI Computation vs HI Consciousness) */}
+        <div className="mt-8 mb-6">
+          <QuantumBrainMesh />
         </div>
 
         {/* Side by Side */}
@@ -597,6 +615,11 @@ function Framework5D() {
             Our proprietary 5D architecture structures each child’s transformation from initial understanding to peak human performance.
           </p>
         </Reveal>
+
+        {/* 3D Interactive XYZTP 5-Dimension Hypercube Visualizer */}
+        <div className="mt-12 max-w-4xl mx-auto">
+          <Quantum5DVisualizer />
+        </div>
 
         {/* 5 Dimensions Grid */}
         <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
