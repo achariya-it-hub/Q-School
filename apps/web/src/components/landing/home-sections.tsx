@@ -227,9 +227,23 @@ function StoryAndGenAlpha() {
                     </span>
                   ))}
                 </div>
-                <p className="mt-6 text-[14.5px] leading-relaxed text-[#5c7772]">
+                <p className="mt-5 text-[14.5px] leading-relaxed text-[#5c7772]">
                   Drawing from contemporary learning methods, cognitive-development practices, and selected principles inspired by India’s knowledge traditions, Q-School brings these dimensions together in one structured learning journey.
                 </p>
+
+                {/* Mentor Photo Card */}
+                <div className="mt-5 overflow-hidden rounded-2xl border border-[#CFE3DD] shadow-xs">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/mentor-student.jpg"
+                    alt="Q-School Certified Mentor guiding young learner"
+                    className="h-44 w-full object-cover"
+                  />
+                  <div className="bg-white px-3.5 py-2 text-[11.5px] font-semibold text-[#0B6E5F] flex items-center justify-between">
+                    <span>Individualised Mentor Guidance</span>
+                    <span className="text-[#6b807b] font-normal">Ages 6–14 Years</span>
+                  </div>
+                </div>
               </div>
 
               <div className="mt-8 border-t border-[#E2ECE9] pt-6 flex items-center gap-3">
@@ -274,12 +288,36 @@ function StoryAndGenAlpha() {
 
         {/* Gen Alpha & New-Age Parenting Challenge */}
         <div className="mt-16 rounded-3xl bg-[#F4F8F7] border border-[#CFE3DD] p-7 sm:p-10">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="chip !px-3 !py-1 !text-xs !bg-[#054038] !text-white font-bold">GEN ALPHA</span>
-            <h3 className="mt-3 text-2xl sm:text-3xl font-bold text-brand-ink">A New Generation. A New World. A New Way to Learn.</h3>
-            <p className="mt-3 text-sm text-[#5c7772]">
-              Born into a digitally connected world, Generation Alpha is growing up alongside artificial intelligence, smart technology and rapid global change. Their future calls for adaptability, creativity, critical thinking, and emotional intelligence.
-            </p>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-5 relative">
+              <div className="overflow-hidden rounded-3xl border border-[#CFE3DD] shadow-md aspect-[4/3]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/gen-alpha-kid.jpg"
+                  alt="Generation Alpha Learner"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <span className="absolute -bottom-3 -right-3 rounded-2xl bg-[#054038] text-white px-4 py-2 text-xs font-bold shadow-lg border border-[#2BD6B4]/30">
+                Ages 6–14 Years
+              </span>
+            </div>
+
+            <div className="lg:col-span-7">
+              <span className="chip !px-3 !py-1 !text-xs !bg-[#054038] !text-white font-bold">GEN ALPHA</span>
+              <h3 className="mt-3 text-2xl sm:text-3xl font-bold text-brand-ink">A New Generation. A New World. A New Way to Learn.</h3>
+              <p className="mt-3 text-sm text-[#5c7772] leading-relaxed">
+                Born into a digitally connected world, Generation Alpha is growing up alongside artificial intelligence, smart technology and rapid global change. Their future calls for adaptability, creativity, critical thinking, and emotional intelligence.
+              </p>
+              <div className="mt-5 rounded-2xl border border-[#2BD6B4]/40 bg-[#E9F6F3] p-4 text-left">
+                <p className="text-xs sm:text-sm font-semibold text-brand-deep italic">
+                  &ldquo;My child is growing up in a world I never experienced. Am I preparing them for the future they will inherit?&rdquo;
+                </p>
+                <p className="mt-1 text-xs text-[#41564f]">
+                  The answer lies in nurturing the child behind the learning — attention, judgment, and original imagination.
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -292,15 +330,6 @@ function StoryAndGenAlpha() {
                 <p className="mt-2 text-xs leading-relaxed text-[#5c7772]">{t.desc}</p>
               </div>
             ))}
-          </div>
-
-          <div className="mt-8 rounded-2xl border border-[#2BD6B4]/40 bg-[#E9F6F3] p-6 text-center">
-            <p className="text-sm sm:text-base font-semibold text-brand-deep italic">
-              &ldquo;My child is growing up in a world I never experienced. Am I preparing them for the future they will inherit?&rdquo;
-            </p>
-            <p className="mt-2 text-xs sm:text-sm text-[#41564f]">
-              From screen-time struggles to attention fragmentation, study pressure and emotional development, modern parents face a new set of questions. <strong>The answer lies in nurturing the child beyond textbooks and technology.</strong>
-            </p>
           </div>
         </div>
       </div>
@@ -388,6 +417,36 @@ function PedagogySection() {
               </div>
             ))}
           </div>
+
+          {/* Hands-On Workshop Feature Banner */}
+          <div className="mt-14 overflow-hidden rounded-3xl border border-[#CFE3DD] bg-white shadow-md grid grid-cols-1 md:grid-cols-12 items-stretch">
+            <div className="relative md:col-span-5 min-h-[240px] md:min-h-full">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/workshop.png"
+                alt="Interactive Q-School Workshop"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/50 via-transparent to-transparent" />
+              <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-brand-deep backdrop-blur-xs">
+                Active Learning Cohorts
+              </span>
+            </div>
+            <div className="md:col-span-7 p-7 sm:p-8 flex flex-col justify-between">
+              <div>
+                <span className="chip !px-3 !py-1 !text-xs !bg-[#054038] !text-white font-bold">IMMERSIVE PEDAGOGY</span>
+                <h4 className="mt-3 text-2xl font-bold text-brand-ink">Where Learning Truly Comes Alive</h4>
+                <p className="mt-3 text-sm text-[#5c7772] leading-relaxed">
+                  Moving children away from passive screens and rote textbooks into collaborative, high-energy cognitive workshops. Children debate, sketch mental models, solve spatial puzzles, and build real leadership habits together.
+                </p>
+              </div>
+              <div className="mt-6 flex flex-wrap gap-2 text-xs font-bold text-brand-deep">
+                <span className="rounded-xl bg-[#E2ECE9] px-3 py-1.5">✦ Hands-On Drills</span>
+                <span className="rounded-xl bg-[#E2ECE9] px-3 py-1.5">✦ Max 15 per Cohort</span>
+                <span className="rounded-xl bg-[#E2ECE9] px-3 py-1.5">✦ 9 Centres in India</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -411,6 +470,24 @@ function AIvsHI() {
             Artificial Intelligence is reshaping how we learn, work, and live. It can process information, recognize patterns, and automate tasks. But human progress also depends on <strong className="text-white">empathy, imagination, independent judgement, and ethical decision-making.</strong>
           </p>
         </Reveal>
+
+        {/* Glowing 3D Quantum Brain Feature */}
+        <div className="mx-auto mt-10 mb-4 flex justify-center">
+          <div className="relative group">
+            <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-[#2BD6B4] to-[#0E937E] opacity-75 blur-xl group-hover:opacity-100 transition duration-700" />
+            <div className="relative h-44 w-44 sm:h-52 sm:w-52 overflow-hidden rounded-full border-4 border-[#2BD6B4] bg-[#042823] shadow-2xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/side-brain.png"
+                alt="Quantum Neuro-Intelligence"
+                className="h-full w-full object-cover object-center transition duration-700 group-hover:scale-105"
+              />
+            </div>
+            <span className="absolute -bottom-3 inset-x-0 mx-auto w-max rounded-full bg-[#054038] px-3.5 py-1 text-[11px] font-black uppercase tracking-wider text-[#2BD6B4] border border-[#2BD6B4]/40 shadow-lg">
+              Quantum Neuro-Intelligence
+            </span>
+          </div>
+        </div>
 
         {/* Side by Side */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
@@ -594,16 +671,28 @@ function Programs({ c }: { c: HomeContent["programs"] }) {
           {programs.map((p, i) => (
             <Reveal key={p.slug} delay={(i % 4) * 90} variant="zoom">
               <Tilt className="h-full rounded-3xl">
-                <div className="emboss emboss-hover group flex h-full flex-col justify-between rounded-3xl bg-[#FDFCF9] p-6 border border-[#CFE3DD]">
+                <div className="emboss emboss-hover group flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-[#FDFCF9] p-6 border border-[#CFE3DD]">
                   <div>
-                    <div className="flex items-center justify-between">
-                      <span className="chip !px-2.5 !py-0.5 !text-[10px] !bg-[#054038] !text-white font-bold">
-                        {p.badge}
-                      </span>
-                      <span className="text-[11px] font-semibold text-[#0E937E]">48 Classes</span>
+                    {/* Program Image Banner */}
+                    <div className="relative -mx-6 -mt-6 mb-4 h-40 overflow-hidden bg-[#054038]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={p.image || `/images/programs/${p.slug}.jpg`}
+                        alt={p.title}
+                        className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                      <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between">
+                        <span className="chip !px-2.5 !py-0.5 !text-[10px] !bg-white/95 !text-[#054038] font-black shadow-xs backdrop-blur-xs">
+                          {p.badge}
+                        </span>
+                        <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10.5px] font-bold text-white backdrop-blur-xs">
+                          48 Classes
+                        </span>
+                      </div>
                     </div>
 
-                    <h3 className="mt-4 text-[17px] font-bold text-brand-ink group-hover:text-brand-teal transition">
+                    <h3 className="mt-1 text-[17px] font-bold text-brand-ink group-hover:text-brand-teal transition">
                       {p.title}
                     </h3>
                     <p className="text-xs font-semibold text-[#0E937E] mt-0.5">{p.format}</p>
@@ -685,24 +774,46 @@ function NeoSapiensSection() {
 
         {/* The 3 Pillars */}
         <div className="mt-16 rounded-3xl bg-gradient-to-br from-[#054038] to-[#0A5A4E] p-8 sm:p-12 text-white shadow-xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <span className="chip !px-3 !py-1 !text-xs !bg-[#2BD6B4] !text-brand-deep font-black">THE CORE PILLARS</span>
-            <h3 className="mt-3 text-2xl sm:text-3xl font-extrabold text-white">The 3 Pillars of Neo Sapiens</h3>
-          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7">
+              <span className="chip !px-3 !py-1 !text-xs !bg-[#2BD6B4] !text-brand-deep font-black">THE CORE PILLARS</span>
+              <h3 className="mt-3 text-2xl sm:text-3xl font-extrabold text-white">The 3 Pillars of Neo Sapiens</h3>
+              <p className="mt-2 text-xs sm:text-sm text-white/80 leading-relaxed">
+                Nurturing a complete human being with an Aware Mind, Agile Brain, and Authentic Spirit.
+              </p>
 
-          <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {pillars.map((p) => (
-              <div key={p.num} className="rounded-2xl border border-white/15 bg-white/10 p-6 backdrop-blur-sm flex flex-col justify-between">
-                <div>
-                  <span className="text-2xl font-black text-[#2BD6B4]">{p.num}</span>
-                  <h4 className="mt-2 text-lg font-bold text-white">{p.title}</h4>
-                  <p className="mt-2.5 text-xs text-white/80 leading-relaxed">{p.desc}</p>
+              <div className="mt-6 space-y-4">
+                {pillars.map((p) => (
+                  <div key={p.num} className="rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur-sm">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl font-black text-[#2BD6B4]">{p.num}</span>
+                      <h4 className="text-base font-bold text-white">{p.title}</h4>
+                    </div>
+                    <p className="mt-1.5 text-xs text-white/80 leading-relaxed pl-8">{p.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 relative flex justify-center">
+              <div className="relative overflow-hidden rounded-3xl border-2 border-[#2BD6B4]/50 shadow-2xl bg-[#042d27] max-w-[360px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/bmit-hero.png"
+                  alt="Engineering the Neo Sapiens"
+                  className="w-full h-auto object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <div className="absolute bottom-3 inset-x-3 text-center">
+                  <span className="chip !bg-white/95 !text-brand-deep !font-black !text-[11px] shadow-sm">
+                    Engineering Future-Ready Human Beings
+                  </span>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
 
-          <p className="mt-10 text-center font-bold tracking-wide text-xs sm:text-sm text-[#2BD6B4] uppercase">
+          <p className="mt-10 border-t border-white/15 pt-6 text-center font-bold tracking-wide text-xs sm:text-sm text-[#2BD6B4] uppercase">
             THINK SMARTER · LEARN DEEPER · LEAD BETTER — ENGINEERING THE NEO SAPIENS
           </p>
         </div>
@@ -1149,6 +1260,36 @@ function Centres({ c }: { c: HomeContent["centres"] }) {
         </div>
       </Reveal>
 
+      {/* Centre Environment Showcase */}
+      <div className="mt-8 overflow-hidden rounded-3xl border border-[#CFE3DD] bg-white shadow-md grid grid-cols-1 lg:grid-cols-12 items-stretch">
+        <div className="relative lg:col-span-5 min-h-[220px] lg:min-h-full">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/classroom-centre.jpg"
+            alt="Q-School Learning Centre"
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/50 via-transparent to-transparent" />
+          <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-brand-deep backdrop-blur-xs">
+            Purpose-Built Quantum Pods
+          </span>
+        </div>
+        <div className="lg:col-span-7 p-6 sm:p-8 flex flex-col justify-between">
+          <div>
+            <span className="chip !px-3 !py-1 !text-xs !bg-[#0E937E] !text-white font-bold">PHYSICAL HUBS</span>
+            <h3 className="mt-3 text-xl sm:text-2xl font-bold text-brand-ink">State-of-the-Art Quantum Learning Spaces</h3>
+            <p className="mt-2 text-xs sm:text-sm text-[#5c7772] leading-relaxed">
+              Designed for sensory activation, ergonomic posture, and deep focus. Every centre features certified Quantum Mentors, low teacher-student ratios (maximum 15 learners per cohort), and dedicated exploration kits.
+            </p>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2 text-xs font-bold text-brand-deep">
+            <span className="rounded-xl bg-[#E2ECE9] px-3 py-1.5">✦ Chennai (Valasaravakkam &amp; Adyar)</span>
+            <span className="rounded-xl bg-[#E2ECE9] px-3 py-1.5">✦ Bengaluru (Whitefield &amp; Kasturi Nagar)</span>
+            <span className="rounded-xl bg-[#E2ECE9] px-3 py-1.5">✦ Hyderabad, Pune, Trichy, Coimbatore, Pondy</span>
+          </div>
+        </div>
+      </div>
+
       <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
         {CENTERS.map((ct, i) => (
           <Reveal key={ct.id} delay={(i % 3) * 100} variant="zoom">
@@ -1317,6 +1458,22 @@ function Demo({ c }: { c: HomeContent["demo"] }) {
                   </li>
                 ))}
               </ul>
+
+              {/* Happy Family Trust Card */}
+              <div className="mt-6 flex items-center gap-3.5 rounded-2xl bg-white/10 border border-white/15 p-3.5 max-w-md backdrop-blur-xs">
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-[#2BD6B4]/50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/side-family.png"
+                    alt="Parent & Child Learning Success"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white">Trusted by 25,000+ Happy Families</p>
+                  <p className="text-[11.5px] text-white/70">Personalized assessment &amp; zero obligation to enrol.</p>
+                </div>
+              </div>
 
               {/* Direct counselor callout */}
               <div className="mt-8 rounded-2xl bg-white/10 border border-white/15 p-4.5 max-w-md">

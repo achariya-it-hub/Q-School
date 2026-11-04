@@ -10,13 +10,13 @@
 const u = (id: string, w = 900) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=70`;
 
 export const PHOTOS = {
-  codingClass: { src: u("photo-1653566031285-8e198bca09d5", 1000), alt: "Young learner in a live coding class" },
-  writingClass: { src: u("photo-1599666505327-7758b44a9985", 1000), alt: "Learner joining a creative writing session on a tablet" },
-  liveClass: { src: u("photo-1623076189461-f7706b741c04", 1000), alt: "Young learner in a live class on a laptop" },
-  coding: { src: u("photo-1597933471507-1ca5765185d8", 600), alt: "Boy learning to code on a laptop" },
-  robotics: { src: u("photo-1603354351149-e97b9124020d", 600), alt: "Girl building a robot car in a workshop" },
-  group: { src: u("photo-1585980243496-fe29a36bd382", 700), alt: "Children working together at a learning centre" },
+  codingClass: { src: "/images/mentor-student.jpg", alt: "Certified Quantum Mentor guiding learner" },
+  writingClass: { src: "/images/programs/quantum-reading.jpg", alt: "Learner reading and comprehending deeply" },
+  liveClass: { src: "/images/bmit-hero.png", alt: "Young learner in a live Q-School quantum class" },
+  coding: { src: "/images/programs/quantum-learning.jpg", alt: "Boy building cognitive mental models" },
+  robotics: { src: "/images/programs/quantum-creation.jpg", alt: "Child building creative innovations in a workshop" },
+  group: { src: "/images/workshop.png", alt: "Children working together at a Q-School learning centre" },
   // full-width hero slides (landscape, larger)
-  heroCoding: { src: u("photo-1653566031285-8e198bca09d5", 1920), alt: "Young learner coding on a laptop" },
-  heroWorkshop: { src: u("photo-1585980243496-fe29a36bd382", 1920), alt: "Children building a project together at a workshop" },
+  heroCoding: { src: "/images/side-brain.png", alt: "Human Intelligence in the Age of AI" },
+  heroWorkshop: { src: "/images/classroom-centre.jpg", alt: "Modern state-of-the-art Q-School learning space" },
 } as const;

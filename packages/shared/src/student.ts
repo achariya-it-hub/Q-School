@@ -58,6 +58,7 @@ export interface Program {
   type: ProgramType;
   /** Short line under the title, e.g. "Self-paced Course" or "Live Workshop". */
   format: string;
+  image?: string;
   lessons?: number;
   hours?: number;
   duration?: string;
@@ -80,6 +81,7 @@ export const PROGRAMS: Program[] = [
     title: "01. Quantum Vision",
     type: "course",
     format: "Foundation for Learning · 48 Classes",
+    image: "/images/programs/quantum-vision.jpg",
     lessons: 48,
     hours: 72,
     rating: 4.9,
@@ -108,6 +110,7 @@ export const PROGRAMS: Program[] = [
     title: "02. Quantum Creation",
     type: "course",
     format: "Expand Imagination · 48 Classes",
+    image: "/images/programs/quantum-creation.jpg",
     lessons: 48,
     hours: 72,
     rating: 4.9,
@@ -136,6 +139,7 @@ export const PROGRAMS: Program[] = [
     title: "03. Quantum Way",
     type: "course",
     format: "Learn, Apply & Evolve · Advanced",
+    image: "/images/programs/quantum-way.jpg",
     lessons: 48,
     hours: 72,
     rating: 4.8,
@@ -164,6 +168,7 @@ export const PROGRAMS: Program[] = [
     title: "04. Quantum Learning",
     type: "course",
     format: "Learn Better. Remember Longer.",
+    image: "/images/programs/quantum-learning.jpg",
     lessons: 48,
     hours: 72,
     rating: 4.9,
@@ -192,6 +197,7 @@ export const PROGRAMS: Program[] = [
     title: "05. Quantum Reading",
     type: "course",
     format: "Read Faster. Understand Deeper.",
+    image: "/images/programs/quantum-reading.jpg",
     lessons: 48,
     hours: 72,
     rating: 4.8,
@@ -220,6 +226,7 @@ export const PROGRAMS: Program[] = [
     title: "06. Quantum Mastery",
     type: "course",
     format: "Life Skills for a Brighter Tomorrow",
+    image: "/images/programs/quantum-mastery.jpg",
     lessons: 48,
     hours: 72,
     rating: 4.9,
@@ -248,6 +255,7 @@ export const PROGRAMS: Program[] = [
     title: "07. Q-Maths",
     type: "course",
     format: "See, Understand & Think Mathematically",
+    image: "/images/programs/q-maths.jpg",
     lessons: 48,
     hours: 72,
     rating: 4.9,
@@ -276,6 +284,7 @@ export const PROGRAMS: Program[] = [
     title: "08. Q-Science",
     type: "course",
     format: "Explore, Understand & Discover",
+    image: "/images/programs/q-science.jpg",
     lessons: 48,
     hours: 72,
     rating: 4.9,

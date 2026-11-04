@@ -148,7 +148,7 @@ export const DEFAULT_HOME: HomeContent = {
         body: "Awakening Genius. Activating Quantum Intelligence. Shaping Future-Ready Human Beings. We systematically develop the essential human capacities that remain vital in an AI-driven world: attention, imagination, judgement, emotional awareness, self-belief, and original thought.",
         primary: { label: "Book a Free Demo Class", href: "#demo" },
         secondary: { label: "Explore 8 Q-Programs", href: "#programs" },
-        image: u("photo-1623076189461-f7706b741c04"),
+        image: "/images/bmit-hero.png",
         imageAlt: "Young learner engaging in quantum cognitive development",
         windowTitle: "The Q 5D™ XYZTP Learning Journey",
         windowMentor: "Dr J Arawindhan & Quantum Mentors",
@@ -167,7 +167,7 @@ export const DEFAULT_HOME: HomeContent = {
         body: "AI may change the world; human intelligence will shape its future. While machines automate and process data, Q-School empowers children to think critically, create with empathy, build emotional strength, and lead with purpose.",
         primary: { label: "Read the Q-School Story", href: "#story" },
         secondary: { label: "Founder's Vision", href: "#vision" },
-        image: u("photo-1653566031285-8e198bca09d5", 1920),
+        image: "/images/side-brain.png",
         imageAlt: "Child developing high-order reasoning and cognitive skills",
         chips: [
           { icon: "shield", label: "Critical Thinking" },
@@ -199,7 +199,7 @@ export const DEFAULT_HOME: HomeContent = {
         body: "48 classes. One continuous developmental journey. Structured progression across Year 1 Foundation, Year 2 Progression, and Year 3 Advanced Development at our 9 physical learning centres and live online interactive cohorts.",
         primary: { label: "Find Your Nearest Centre", href: "#centres" },
         secondary: { label: "Speak to a Counsellor", href: "#demo" },
-        image: u("photo-1585980243496-fe29a36bd382", 1920),
+        image: "/images/classroom-centre.jpg",
         imageAlt: "Children learning together in a Q-School active learning classroom",
         chips: [
           { icon: "building", label: "9 Dedicated Centres" },
