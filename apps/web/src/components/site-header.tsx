@@ -5,13 +5,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const NAV = [
-  { href: "/q-master", label: "Q-Master AI 🧠" },
-  { href: "/#story", label: "Story & Vision" },
-  { href: "/#framework", label: "Q 5D™ Framework" },
-  { href: "/#programs", label: "8 Programs" },
-  { href: "/#neo-sapiens", label: "Neo Sapiens" },
-  { href: "/#centres", label: "9 Centres" },
-  { href: "/#demo", label: "Book Free Demo" },
+  { href: "/#programs", label: "Programs" },
+  { href: "/#framework", label: "Framework" },
+  { href: "/#centres", label: "Centres" },
+  { href: "/#story", label: "About" },
+  { href: "/q-master", label: "Q-Master AI" },
 ];
 
 export function SiteHeader() {
