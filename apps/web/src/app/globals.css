@@ -15,7 +15,7 @@ html {
 }
 
 body {
-  @apply bg-[#f4faf8] text-brand-ink antialiased;
+  @apply bg-[#f4faf8] text-brand-ink antialiased text-[16px] sm:text-[17.5px] leading-relaxed;
   /* slide-in reveals start off-screen; clip (not hidden) keeps the sticky header working */
   overflow-x: clip;
   font-family: Poppins, system-ui, sans-serif;
@@ -26,11 +26,11 @@ body {
 }
 
 .btn-primary {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-teal px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-deep;
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-teal px-6 py-3.5 text-base font-semibold text-white transition hover:bg-brand-deep;
 }
 
 .btn-ghost {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-brand-teal px-6 py-3 text-sm font-semibold text-brand-teal transition hover:bg-brand-teal hover:text-white;
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-brand-teal px-6 py-3.5 text-base font-semibold text-brand-teal transition hover:bg-brand-teal hover:text-white;
 }
 
 .card {
@@ -38,7 +38,7 @@ body {
 }
 
 .chip {
-  @apply inline-flex items-center rounded-full border border-[#d7f0eb] bg-brand-teal100/60 px-3 py-1 text-xs font-medium text-brand-deep;
+  @apply inline-flex items-center rounded-full border border-[#d7f0eb] bg-brand-teal100/60 px-3.5 py-1 text-[13px] font-bold text-brand-deep;
 }
 
 /* ------------------------------------------------------------ 3D / emboss */

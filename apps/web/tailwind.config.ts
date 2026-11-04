@@ -22,11 +22,22 @@ const config: Config = {
         slideIn: { "0%": { transform: "translateX(24px)", opacity: "0" }, "100%": { transform: "none", opacity: "1" } },
         float: { "0%,100%": { transform: "translateY(0)" }, "50%": { transform: "translateY(-8px)" } },
         marquee: { "0%": { transform: "translateX(0)" }, "100%": { transform: "translateX(-50%)" } },
+        "border-beam": {
+          "100%": {
+            "offset-distance": "100%",
+          },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "0% 0%" },
+          "100%": { backgroundPosition: "200% 0%" },
+        },
       },
       animation: {
         float: "float 6s ease-in-out infinite",
         "fade-up": "fadeUp .7s ease-out both",
         marquee: "marquee 40s linear infinite",
+        "border-beam": "border-beam var(--duration, 12s) infinite linear",
+        shimmer: "shimmer 2.5s linear infinite",
       },
     },
   },
