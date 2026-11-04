@@ -34,6 +34,20 @@ import {
   type WorkflowStatus,
 } from "@/lib/crm/campaign-types";
 
+function formatDisplayDate(dateStr?: string): string {
+  if (!dateStr || dateStr.trim() === "" || dateStr === "—") return "—";
+  const trimmed = dateStr.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    const [y, m, d] = trimmed.split("-");
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const monthIndex = parseInt(m, 10) - 1;
+    const monthName = months[monthIndex] || m;
+    const shortYear = y.slice(-2);
+    return `${d}-${monthName}-${shortYear}`;
+  }
+  return trimmed;
+}
+
 function CampaignsContent() {
   const [campaigns, setCampaigns] = useState<CampaignItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -273,7 +287,10 @@ function CampaignsContent() {
       "Design Approval Status",
       "Design Approved On",
       "Post Status",
-      "Post URL",
+      "Facebook URL",
+      "Instagram URL",
+      "X URL",
+      "LinkedIn URL",
       "Published by",
       "Published on",
       "Budget (INR)",
@@ -300,7 +317,10 @@ function CampaignsContent() {
       `"${c.creativeApprovalStatus || ""}"`,
       `"${c.creativeApprovedOn || ""}"`,
       `"${c.postStatus}"`,
-      `"${c.postUrl || ""}"`,
+      `"${c.facebookUrl || c.postUrl || ""}"`,
+      `"${c.instaUrl || ""}"`,
+      `"${c.xUrl || ""}"`,
+      `"${c.linkedinUrl || ""}"`,
       `"${c.publishedBy || ""}"`,
       `"${c.publishedOn || ""}"`,
       c.budget || 0,
@@ -561,89 +581,87 @@ function CampaignsContent() {
           />
         </div>
 
-        {/* ───────── VIEW 1: CAMPAIGNS TABLE (Standard Q-School Clean Design) ───────── */}
+        {/* ───────── VIEW 1: CAMPAIGNS TABLE (Official 22-Column Master Spreadsheet) ───────── */}
         {view === "table" && (
-          <div className="rounded-2xl border border-[#E2ECE9] bg-white overflow-hidden shadow-xs">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-[12.5px] whitespace-nowrap">
-                <thead>
-                  <tr className="border-b border-[#EEF3F1] bg-[#F7FAF9] text-[11px] font-bold text-[#41564F] uppercase tracking-wider select-none">
-                    <th className="py-3 px-3.5">Post Date</th>
-                    <th className="py-3 px-3.5">Campaign &amp; Concept</th>
-                    <th className="py-3 px-3.5">Platform</th>
-                    <th className="py-3 px-3.5">Pillar &amp; Format</th>
-                    <th className="py-3 px-3.5">Audience</th>
-                    <th className="py-3 px-3.5">Copywriter</th>
-                    <th className="py-3 px-3.5 text-center">Copy Review</th>
-                    <th className="py-3 px-3.5">Designer</th>
-                    <th className="py-3 px-3.5 text-center">Creative Review</th>
-                    <th className="py-3 px-3.5 text-center">Publishing</th>
-                    <th className="py-3 px-3.5 text-center">Assets &amp; Links</th>
-                    <th className="py-3 px-3.5 text-right">Actions</th>
+          <div className="rounded-2xl border border-neutral-300 bg-white overflow-hidden shadow-xs">
+            <div className="overflow-x-auto max-h-[750px]">
+              <table className="w-full text-left text-[12px] whitespace-nowrap border-collapse">
+                <thead className="sticky top-0 z-10 shadow-xs">
+                  {/* Master Spreadsheet Header Row 1 */}
+                  <tr className="bg-[#FFFF00] text-black text-[11.5px] font-bold select-none">
+                    <th rowSpan={2} className="border border-neutral-400 px-3 py-2 text-left whitespace-nowrap">Post Date</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-3 py-2 text-left whitespace-nowrap">Writer</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-3 py-2 text-left whitespace-nowrap">Content Pillars</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-left whitespace-nowrap">Format</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-left whitespace-nowrap">Platforms</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-left whitespace-nowrap">Audience</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-3 py-2 text-left min-w-[200px]">Post Concept</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-left whitespace-nowrap">Sheet Link</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-left whitespace-nowrap">Worked on</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-center whitespace-nowrap">Status</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-center whitespace-nowrap">Approval Status</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-left whitespace-nowrap">Approved On</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-left whitespace-nowrap">Designer</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-left whitespace-nowrap">Assigned On</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-left whitespace-nowrap">Completed on</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-left whitespace-nowrap">Drive Link</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-center whitespace-nowrap">Approval Status</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-left whitespace-nowrap">Approved On</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-center whitespace-nowrap">Post Status</th>
+                    <th colSpan={4} className="border border-neutral-400 px-3 py-1.5 text-center font-bold">Post URL</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-left whitespace-nowrap">Published by</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2.5 py-2 text-left whitespace-nowrap">Published on</th>
+                    <th rowSpan={2} className="border border-neutral-400 px-2 py-2 text-center whitespace-nowrap">Actions</th>
+                  </tr>
+                  {/* Master Spreadsheet Header Row 2 (Sub-columns for Post URL) */}
+                  <tr className="bg-[#FFFF00] text-black text-[11px] font-bold select-none">
+                    <th className="border border-neutral-400 px-3 py-1 text-center whitespace-nowrap">Facebook</th>
+                    <th className="border border-neutral-400 px-3 py-1 text-center whitespace-nowrap">Insta</th>
+                    <th className="border border-neutral-400 px-3 py-1 text-center whitespace-nowrap">X</th>
+                    <th className="border border-neutral-400 px-3 py-1 text-center whitespace-nowrap">LinkedIn</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F0F4F3] font-medium text-brand-ink">
+                <tbody className="divide-y divide-neutral-200 font-medium text-brand-ink">
                   {filteredCampaigns.length === 0 ? (
                     <tr>
-                      <td colSpan={12} className="py-10 text-center text-[#7B8E89]">
+                      <td colSpan={26} className="py-10 text-center text-[#7B8E89]">
                         No campaigns matching the selected criteria.
                       </td>
                     </tr>
                   ) : (
                     filteredCampaigns.map((c) => (
-                      <tr key={c.id} className="hover:bg-[#F9FBFB] transition">
-                        {/* Post Date */}
-                        <td className="py-3 px-3.5 font-bold font-mono text-brand-ink">
-                          {c.postDate}
+                      <tr key={c.id} className="hover:bg-amber-50/40 transition">
+                        {/* 1. Post Date */}
+                        <td className="border border-neutral-300 px-3 py-2 font-bold font-mono text-brand-ink whitespace-nowrap">
+                          {formatDisplayDate(c.postDate)}
                         </td>
 
-                        {/* Campaign & Concept */}
-                        <td className="py-3 px-3.5 max-w-xs">
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(c)}
-                            className="font-bold text-brand-ink hover:text-brand-teal text-left truncate block max-w-xs"
-                            title={c.postConcept}
-                          >
-                            {c.postConcept}
-                          </button>
-                          {c.postContent && (
-                            <div className="text-[11px] text-[#7B8E89] truncate max-w-xs" title={c.postContent}>
-                              {c.postContent}
-                            </div>
-                          )}
+                        {/* 2. Writer */}
+                        <td className="border border-neutral-300 px-3 py-2 font-semibold text-neutral-800 whitespace-nowrap">
+                          {c.writer}
                         </td>
 
-                        {/* Platform */}
-                        <td className="py-3 px-3.5">
-                          {c.platforms.includes("Meta") || c.platforms.includes("FB") ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold text-[11px] border border-blue-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                              {c.platforms}
-                            </span>
-                          ) : c.platforms.includes("Linkedin") || c.platforms.includes("LinkedIn") || c.platforms.includes("X") ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-semibold text-[11px] border border-indigo-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
-                              {c.platforms}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold text-[11px] border border-slate-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
-                              {c.platforms}
-                            </span>
-                          )}
+                        {/* 3. Content Pillars */}
+                        <td className="border border-neutral-300 px-3 py-2 font-medium text-neutral-900 whitespace-nowrap">
+                          {c.contentPillar}
                         </td>
 
-                        {/* Pillar & Format */}
-                        <td className="py-3 px-3.5">
-                          <div className="font-semibold text-gray-800 text-[11.5px]">{c.contentPillar}</div>
-                          <div className="text-[10.5px] text-[#7B8E89]">{c.format}</div>
+                        {/* 4. Format */}
+                        <td className="border border-neutral-300 px-2.5 py-2 text-[11.5px] text-neutral-700 whitespace-nowrap">
+                          {c.format}
                         </td>
 
-                        {/* Audience */}
-                        <td className="py-3 px-3.5">
+                        {/* 5. Platforms */}
+                        <td className="border border-neutral-300 px-2.5 py-2 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                            {c.platforms}
+                          </span>
+                        </td>
+
+                        {/* 6. Audience */}
+                        <td className="border border-neutral-300 px-2.5 py-2 whitespace-nowrap">
                           <span
-                            className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold ${
+                            className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold ${
                               c.audience === "B2B"
                                 ? "bg-purple-50 text-purple-700 border border-purple-200"
                                 : "bg-emerald-50 text-emerald-700 border border-emerald-200"
@@ -653,25 +671,67 @@ function CampaignsContent() {
                           </span>
                         </td>
 
-                        {/* Writer */}
-                        <td className="py-3 px-3.5">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F2F6F5] text-[#2C4A43] text-[11px] font-semibold">
-                            {c.writer}
-                          </span>
+                        {/* 7. Post Concept */}
+                        <td className="border border-neutral-300 px-3 py-2 max-w-[280px]">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(c)}
+                            className="font-bold text-brand-ink hover:text-brand-teal text-left truncate block max-w-[280px]"
+                            title={c.postConcept}
+                          >
+                            {c.postConcept}
+                          </button>
                         </td>
 
-                        {/* Copy Review */}
-                        <td className="py-3 px-3.5 text-center">
+                        {/* 8. Sheet Link */}
+                        <td className="border border-neutral-300 px-2.5 py-2 max-w-[140px]">
+                          {c.sheetLink ? (
+                            <a
+                              href={c.sheetLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:text-blue-800 underline text-[11px] truncate block"
+                              title={c.sheetLink}
+                            >
+                              Copy Doc
+                            </a>
+                          ) : (
+                            <span className="text-neutral-400">—</span>
+                          )}
+                        </td>
+
+                        {/* 9. Worked on */}
+                        <td className="border border-neutral-300 px-2.5 py-2 text-neutral-700 font-mono text-[11.5px] whitespace-nowrap">
+                          {formatDisplayDate(c.workedOn)}
+                        </td>
+
+                        {/* 10. Status (Copy Status) */}
+                        <td className="border border-neutral-300 px-2 py-1.5 text-center">
+                          <select
+                            aria-label="Copy Status"
+                            value={c.status}
+                            onChange={(e) => handleQuickUpdate(c.id, { status: e.target.value as any })}
+                            className="h-6 px-1.5 rounded text-[10.5px] font-semibold bg-white border border-gray-300 outline-none"
+                          >
+                            <option value="Completed">Completed</option>
+                            <option value="Work in Progress">Work in Progress</option>
+                            <option value="Draft">Draft</option>
+                            <option value="Ready for Review">Ready for Review</option>
+                          </select>
+                        </td>
+
+                        {/* 11. Approval Status (Copy Approval) */}
+                        <td className="border border-neutral-300 px-2 py-1.5 text-center">
                           <select
                             aria-label="Copy Approval Status"
                             value={c.approvalStatus}
                             onChange={(e) =>
                               handleQuickUpdate(c.id, {
                                 approvalStatus: e.target.value as any,
-                                approvedOn: e.target.value === "Approved" ? new Date().toISOString().split("T")[0] : undefined,
+                                approvedOn: e.target.value === "Approved" ? (c.approvedOn || new Date().toISOString().split("T")[0]) : c.approvedOn,
                               })
                             }
-                            className={`h-7 px-2 rounded-lg border text-[10.5px] font-bold outline-none cursor-pointer ${
+                            className={`h-6 px-1.5 rounded text-[10.5px] font-bold border outline-none cursor-pointer ${
                               c.approvalStatus === "Approved"
                                 ? "bg-emerald-50 text-emerald-800 border-emerald-300"
                                 : c.approvalStatus === "Changes Requested"
@@ -686,25 +746,55 @@ function CampaignsContent() {
                           </select>
                         </td>
 
-                        {/* Designer */}
-                        <td className="py-3 px-3.5">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[#F2F6F5] text-[#2C4A43] text-[11px] font-semibold">
-                            {c.designer || "Unassigned"}
-                          </span>
+                        {/* 12. Approved On (Copy Approved On) */}
+                        <td className="border border-neutral-300 px-2.5 py-2 text-neutral-700 font-mono text-[11.5px] whitespace-nowrap">
+                          {formatDisplayDate(c.approvedOn)}
                         </td>
 
-                        {/* Creative Review */}
-                        <td className="py-3 px-3.5 text-center">
+                        {/* 13. Designer */}
+                        <td className="border border-neutral-300 px-2.5 py-2 font-semibold text-neutral-800 whitespace-nowrap">
+                          {c.designer || "Hari"}
+                        </td>
+
+                        {/* 14. Assigned On */}
+                        <td className="border border-neutral-300 px-2.5 py-2 text-neutral-700 font-mono text-[11.5px] whitespace-nowrap">
+                          {formatDisplayDate(c.assignedOn)}
+                        </td>
+
+                        {/* 15. Completed on */}
+                        <td className="border border-neutral-300 px-2.5 py-2 text-neutral-700 font-mono text-[11.5px] whitespace-nowrap">
+                          {formatDisplayDate(c.completedOn)}
+                        </td>
+
+                        {/* 16. Drive Link */}
+                        <td className="border border-neutral-300 px-2.5 py-2 max-w-[150px]">
+                          {c.driveLink ? (
+                            <a
+                              href={c.driveLink}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:text-blue-800 underline text-[11px] truncate block"
+                              title={c.driveLink}
+                            >
+                              https://drive.google.com
+                            </a>
+                          ) : (
+                            <span className="text-neutral-400">—</span>
+                          )}
+                        </td>
+
+                        {/* 17. Approval Status (Design / Creative) */}
+                        <td className="border border-neutral-300 px-2 py-1.5 text-center">
                           <select
-                            aria-label="Creative Approval Status"
-                            value={c.creativeApprovalStatus}
+                            aria-label="Design Approval Status"
+                            value={c.creativeApprovalStatus || "Pending"}
                             onChange={(e) =>
                               handleQuickUpdate(c.id, {
                                 creativeApprovalStatus: e.target.value as any,
-                                creativeApprovedOn: e.target.value === "Approved" ? new Date().toISOString().split("T")[0] : undefined,
+                                creativeApprovedOn: e.target.value === "Approved" ? (c.creativeApprovedOn || new Date().toISOString().split("T")[0]) : c.creativeApprovedOn,
                               })
                             }
-                            className={`h-7 px-2 rounded-lg border text-[10.5px] font-bold outline-none cursor-pointer ${
+                            className={`h-6 px-1.5 rounded text-[10.5px] font-bold border outline-none cursor-pointer ${
                               c.creativeApprovalStatus === "Approved"
                                 ? "bg-emerald-50 text-emerald-800 border-emerald-300"
                                 : c.creativeApprovalStatus === "Revision Needed"
@@ -719,18 +809,23 @@ function CampaignsContent() {
                           </select>
                         </td>
 
-                        {/* Post Status */}
-                        <td className="py-3 px-3.5 text-center">
+                        {/* 18. Approved On (Design / Creative) */}
+                        <td className="border border-neutral-300 px-2.5 py-2 text-neutral-700 font-mono text-[11.5px] whitespace-nowrap">
+                          {formatDisplayDate(c.creativeApprovedOn)}
+                        </td>
+
+                        {/* 19. Post Status */}
+                        <td className="border border-neutral-300 px-2 py-1.5 text-center">
                           <select
                             aria-label="Publishing Status"
                             value={c.postStatus}
                             onChange={(e) =>
                               handleQuickUpdate(c.id, {
                                 postStatus: e.target.value as any,
-                                publishedOn: e.target.value === "Live" || e.target.value === "Published" ? new Date().toISOString().split("T")[0] : undefined,
+                                publishedOn: (e.target.value === "Live" || e.target.value === "Published") ? (c.publishedOn || new Date().toISOString().split("T")[0]) : c.publishedOn,
                               })
                             }
-                            className={`h-7 px-2 rounded-lg border text-[10.5px] font-bold outline-none cursor-pointer ${
+                            className={`h-6 px-1.5 rounded text-[10.5px] font-bold border outline-none cursor-pointer ${
                               c.postStatus === "Live" || c.postStatus === "Published"
                                 ? "bg-emerald-50 text-emerald-800 border-emerald-300"
                                 : c.postStatus === "Scheduled"
@@ -747,110 +842,122 @@ function CampaignsContent() {
                           </select>
                         </td>
 
-                        {/* Assets & Links */}
-                        <td className="py-3 px-3.5 text-center">
-                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                            {c.facebookUrl && (
-                              <a
-                                href={c.facebookUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 text-[10px] font-bold border border-blue-200 transition"
-                                title="Open Facebook Post"
-                              >
-                                FB
-                              </a>
-                            )}
-                            {c.instaUrl && (
-                              <a
-                                href={c.instaUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 hover:bg-rose-100 text-[10px] font-bold border border-rose-200 transition"
-                                title="Open Instagram Post"
-                              >
-                                IG
-                              </a>
-                            )}
-                            {c.linkedinUrl && (
-                              <a
-                                href={c.linkedinUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-[10px] font-bold border border-indigo-200 transition"
-                                title="Open LinkedIn Post"
-                              >
-                                IN
-                              </a>
-                            )}
-                            {c.xUrl && (
-                              <a
-                                href={c.xUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 hover:bg-slate-200 text-[10px] font-bold border border-slate-300 transition"
-                                title="Open X Post"
-                              >
-                                X
-                              </a>
-                            )}
-                            {c.sheetLink && (
-                              <a
-                                href={c.sheetLink}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition"
-                                title="Open Copy Sheet / Doc"
-                              >
-                                <Icon name="link" size={13} />
-                              </a>
-                            )}
-                            {c.driveLink && (
-                              <a
-                                href={c.driveLink}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="p-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
-                                title="Open Creative Drive Asset"
-                              >
-                                <Icon name="external" size={13} />
-                              </a>
-                            )}
-                            {c.postUrl && !c.facebookUrl && !c.instaUrl && (
-                              <a
-                                href={c.postUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="p-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition"
-                                title="Open Live Post"
-                              >
-                                <Icon name="share" size={13} />
-                              </a>
-                            )}
-                            {!c.sheetLink && !c.driveLink && !c.postUrl && !c.facebookUrl && !c.instaUrl && (
-                              <span className="text-[11px] text-gray-300">—</span>
-                            )}
-                          </div>
+                        {/* 20. Post URL - Facebook */}
+                        <td className="border border-neutral-300 px-2.5 py-2 max-w-[150px]">
+                          {c.facebookUrl ? (
+                            <a
+                              href={c.facebookUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:text-blue-800 underline text-[11px] truncate block"
+                              title={c.facebookUrl}
+                            >
+                              {c.facebookUrl}
+                            </a>
+                          ) : c.postUrl && c.platforms.includes("FB") ? (
+                            <a
+                              href={c.postUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:text-blue-800 underline text-[11px] truncate block"
+                              title={c.postUrl}
+                            >
+                              {c.postUrl}
+                            </a>
+                          ) : (
+                            <span className="text-neutral-400">—</span>
+                          )}
                         </td>
 
-                        {/* Actions */}
-                        <td className="py-3 px-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                        {/* 21. Post URL - Insta */}
+                        <td className="border border-neutral-300 px-2.5 py-2 max-w-[150px]">
+                          {c.instaUrl ? (
+                            <a
+                              href={c.instaUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-blue-600 hover:text-blue-800 underline text-[11px] truncate block"
+                              title={c.instaUrl}
+                            >
+                              {c.instaUrl}
+                            </a>
+                          ) : (
+                            <span className="text-neutral-400">—</span>
+                          )}
+                        </td>
+
+                        {/* 22. Post URL - X */}
+                        <td className="border border-neutral-300 px-2.5 py-2 max-w-[130px]">
+                          {c.xUrl ? (
+                            <a
+                              href={c.xUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-neutral-800 hover:text-black underline text-[11px] truncate block"
+                              title={c.xUrl}
+                            >
+                              {c.xUrl}
+                            </a>
+                          ) : (
+                            <span className="text-neutral-400">—</span>
+                          )}
+                        </td>
+
+                        {/* 23. Post URL - LinkedIn */}
+                        <td className="border border-neutral-300 px-2.5 py-2 max-w-[130px]">
+                          {c.linkedinUrl ? (
+                            <a
+                              href={c.linkedinUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-indigo-600 hover:text-indigo-800 underline text-[11px] truncate block"
+                              title={c.linkedinUrl}
+                            >
+                              {c.linkedinUrl}
+                            </a>
+                          ) : c.postUrl && c.platforms.includes("Linkedin") ? (
+                            <a
+                              href={c.postUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-indigo-600 hover:text-indigo-800 underline text-[11px] truncate block"
+                              title={c.postUrl}
+                            >
+                              {c.postUrl}
+                            </a>
+                          ) : (
+                            <span className="text-neutral-400">—</span>
+                          )}
+                        </td>
+
+                        {/* 24. Published by */}
+                        <td className="border border-neutral-300 px-2.5 py-2 font-semibold text-neutral-800 whitespace-nowrap">
+                          {c.publishedBy || "—"}
+                        </td>
+
+                        {/* 25. Published on */}
+                        <td className="border border-neutral-300 px-2.5 py-2 text-neutral-700 font-mono text-[11.5px] whitespace-nowrap">
+                          {formatDisplayDate(c.publishedOn)}
+                        </td>
+
+                        {/* 26. Actions */}
+                        <td className="border border-neutral-300 px-2 py-2 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1">
                             <button
                               type="button"
                               onClick={() => openEditModal(c)}
-                              className="p-1.5 rounded-lg border border-[#E2ECE9] hover:bg-[#F2F6F5] text-[#41564F] transition"
+                              className="p-1 rounded border border-[#E2ECE9] hover:bg-[#F2F6F5] text-[#41564F] transition"
                               title="Edit Campaign Details"
                             >
-                              <Icon name="edit" size={13} />
+                              <Icon name="edit" size={12} />
                             </button>
                             <button
                               type="button"
                               onClick={() => handleDelete(c.id)}
-                              className="p-1.5 rounded-lg border border-red-200 hover:bg-red-50 text-red-600 transition"
+                              className="p-1 rounded border border-red-200 hover:bg-red-50 text-red-600 transition"
                               title="Delete Campaign"
                             >
-                              <Icon name="trash" size={13} />
+                              <Icon name="trash" size={12} />
                             </button>
                           </div>
                         </td>
@@ -1345,6 +1452,25 @@ function CampaignsContent() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
+                <Field label="Copy Worked On Date">
+                  <input
+                    type="date"
+                    className={inputCls}
+                    value={form.workedOn || ""}
+                    onChange={(e) => setForm({ ...form, workedOn: e.target.value })}
+                  />
+                </Field>
+                <Field label="Copy Approved On Date">
+                  <input
+                    type="date"
+                    className={inputCls}
+                    value={form.approvedOn || ""}
+                    onChange={(e) => setForm({ ...form, approvedOn: e.target.value })}
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <Field label="Assigned Designer">
                   <select
                     className={inputCls}
@@ -1370,6 +1496,33 @@ function CampaignsContent() {
                     <option value="Revision Needed">Revision Needed</option>
                     <option value="Not Required">Not Required</option>
                   </select>
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <Field label="Design Assigned On">
+                  <input
+                    type="date"
+                    className={inputCls}
+                    value={form.assignedOn || ""}
+                    onChange={(e) => setForm({ ...form, assignedOn: e.target.value })}
+                  />
+                </Field>
+                <Field label="Design Completed On">
+                  <input
+                    type="date"
+                    className={inputCls}
+                    value={form.completedOn || ""}
+                    onChange={(e) => setForm({ ...form, completedOn: e.target.value })}
+                  />
+                </Field>
+                <Field label="Creative Approved On">
+                  <input
+                    type="date"
+                    className={inputCls}
+                    value={form.creativeApprovedOn || ""}
+                    onChange={(e) => setForm({ ...form, creativeApprovedOn: e.target.value })}
+                  />
                 </Field>
               </div>
 
@@ -1406,6 +1559,26 @@ function CampaignsContent() {
                     placeholder="e.g. 5000"
                     value={form.budget || ""}
                     onChange={(e) => setForm({ ...form, budget: Number(e.target.value) || 0 })}
+                  />
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Published By">
+                  <input
+                    type="text"
+                    className={inputCls}
+                    placeholder="e.g. Ram"
+                    value={form.publishedBy || ""}
+                    onChange={(e) => setForm({ ...form, publishedBy: e.target.value })}
+                  />
+                </Field>
+                <Field label="Published On Date">
+                  <input
+                    type="date"
+                    className={inputCls}
+                    value={form.publishedOn || ""}
+                    onChange={(e) => setForm({ ...form, publishedOn: e.target.value })}
                   />
                 </Field>
               </div>
