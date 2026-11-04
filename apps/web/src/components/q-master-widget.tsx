@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -12,6 +12,17 @@ export function QMasterWidget() {
   const [ageLevel, setAgeLevel] = useState<"Kids" | "Junior" | "Teens">("Junior");
   const [loading, setLoading] = useState(false);
   const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+
+  // Close on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && open) {
+        setOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
 
   // Hide floating widget when on the dedicated Q-Master full-screen page
   if (pathname === "/q-master") return null;
@@ -193,18 +204,26 @@ export function QMasterWidget() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Link href="/q-master" className="rounded-lg bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-white/25 transition">
+            <div className="flex items-center gap-1.5">
+              <Link
+                href="/q-master"
+                className="rounded-lg bg-white/15 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-white/25 transition"
+              >
                 Full Screen
               </Link>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
-                className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/15 text-white/90 hover:bg-red-600/80 hover:text-white transition text-xs font-bold"
-                title="Close Q-Master"
-                aria-label="Close Q-Master"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setOpen(false);
+                }}
+                className="flex items-center gap-1 rounded-lg bg-red-600/90 hover:bg-red-600 px-2.5 py-1 text-white transition text-[11px] font-bold shadow-xs cursor-pointer"
+                title="Close Chatbot"
+                aria-label="Close Chatbot"
               >
-                ✕
+                <span className="text-xs leading-none">✕</span>
+                <span>Close</span>
               </button>
             </div>
           </div>

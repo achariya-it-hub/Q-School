@@ -111,7 +111,7 @@ export const WA_EVENTS: Record<WaEvent, WaEventDef> = {
     template: "qs_fee_reminder",
     vars: ["Name", "Amount", "Towards", "Due date", "Contact number"],
     body: "Hi {{1}}, a gentle reminder that {{2}} for {{3}} is due on {{4}}. For help with payment, call or WhatsApp {{5}}. Please ignore this if already paid.",
-    example: ["Ananya", "₹4,999", "Coding for Beginners (instalment 2)", "10 Oct 2026", "+91 90000 00000"],
+    example: ["Ananya", "₹4,999", "Coding for Beginners (instalment 2)", "10 Oct 2026", "+91 99444 54840"],
     automatic: false,
   },
   lead_welcome: {

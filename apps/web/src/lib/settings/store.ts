@@ -99,9 +99,9 @@ export const DEFAULT_SETTINGS: Settings = {
   general: {
     orgName: "Q-School",
     legalName: "Q-School Learning Pvt. Ltd.",
-    supportEmail: "hello@qschool.example",
-    supportPhone: "+91 90000 00000",
-    whatsapp: "+91 90000 00000",
+    supportEmail: "info@theqschool.com",
+    supportPhone: "+91 99444 54840",
+    whatsapp: "+91 99444 54840",
     address: "2nd Floor, 14 Anna Nagar East, Chennai 600102, Tamil Nadu",
     gstin: "",
     timezone: "Asia/Kolkata",

@@ -29,8 +29,16 @@ export function SiteFooter({ stickyCtaSpace = false }: { stickyCtaSpace?: boolea
         <div>
           <p className="text-sm font-semibold text-brand-teal500">Contact</p>
           <ul className="mt-3 space-y-2 text-sm text-white/70">
-            <li>hello@qschool.example</li>
-            <li>+91 90000 00000</li>
+            <li>
+              <a href="mailto:info@theqschool.com" className="hover:text-white transition">
+                info@theqschool.com
+              </a>
+            </li>
+            <li>
+              <a href="tel:+919944454840" className="hover:text-white transition">
+                +91 99444 54840
+              </a>
+            </li>
             <li>Mon–Sat · 9am–7pm IST</li>
           </ul>
         </div>
