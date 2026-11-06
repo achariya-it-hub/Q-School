@@ -342,9 +342,18 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
+                    isExpanded: true,
                     value: _selectedGrade,
                     decoration: _inputDecoration('Grade / Class', '', Icons.school),
-                    items: _grades.map((g) => DropdownMenuItem(value: g, child: Text(g, style: const TextStyle(fontSize: 13)))).toList(),
+                    items: _grades.map((g) => DropdownMenuItem(
+                      value: g,
+                      child: Text(
+                        g,
+                        style: const TextStyle(fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    )).toList(),
                     onChanged: (v) => setState(() => _selectedGrade = v!),
                   ),
                 ),
@@ -404,16 +413,34 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
             const _SectionHeader(number: '3', title: 'CENTRE, PROGRAM & FEE'),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
+              isExpanded: true,
               value: _selectedCentre,
               decoration: _inputDecoration('Centre Branch', '', Icons.store),
-              items: _centres.map((c) => DropdownMenuItem(value: c['id'], child: Text(c['name']!, style: const TextStyle(fontSize: 13)))).toList(),
+              items: _centres.map((c) => DropdownMenuItem(
+                value: c['id'],
+                child: Text(
+                  c['name']!,
+                  style: const TextStyle(fontSize: 13),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              )).toList(),
               onChanged: (v) => setState(() => _selectedCentre = v!),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
+              isExpanded: true,
               value: _selectedCourse,
               decoration: _inputDecoration('Course / Program', '', Icons.menu_book),
-              items: _courses.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis))).toList(),
+              items: _courses.map((c) => DropdownMenuItem(
+                value: c,
+                child: Text(
+                  c,
+                  style: const TextStyle(fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              )).toList(),
               onChanged: (v) {
                 if (v != null) {
                   setState(() {
@@ -436,13 +463,22 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
                     validator: (v) => (int.tryParse(v ?? '') ?? 0) <= 0 ? 'Enter fee' : null,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   flex: 2,
                   child: DropdownButtonFormField<String>(
+                    isExpanded: true,
                     value: _selectedPaymentMode,
                     decoration: _inputDecoration('Mode', '', Icons.payment),
-                    items: ['Cash', 'UPI', 'Card', 'Net Banking'].map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 12)))).toList(),
+                    items: ['Cash', 'UPI', 'Card', 'Net Banking'].map((m) => DropdownMenuItem(
+                      value: m,
+                      child: Text(
+                        m,
+                        style: const TextStyle(fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    )).toList(),
                     onChanged: (v) => setState(() => _selectedPaymentMode = v!),
                   ),
                 ),
@@ -512,10 +548,15 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
       labelStyle: const TextStyle(fontSize: 12, color: QS.sub),
       hintText: hint,
       hintStyle: const TextStyle(fontSize: 12, color: Colors.black26),
-      prefixIcon: Icon(icon, size: 18, color: QS.teal),
+      prefixIcon: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Icon(icon, size: 18, color: QS.teal),
+      ),
+      prefixIconConstraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+      isDense: true,
       filled: true,
       fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: QS.line)),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: QS.line)),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: QS.teal, width: 1.5)),
