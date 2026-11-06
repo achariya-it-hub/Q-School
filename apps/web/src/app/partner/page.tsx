@@ -10,6 +10,7 @@ import {
   type ConcessionType,
   type Partner,
   type PartnerAdmission,
+  type PartnerCategory,
 } from "@/lib/partners/types";
 
 const PARTNER_COURSE_FEES: Record<string, string> = {
@@ -28,8 +29,32 @@ function PartnerContent() {
   const [admissions, setAdmissions] = useState<PartnerAdmission[]>([]);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState("");
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [activeTab, setActiveTab] = useState<"dashboard" | "admit" | "history" | "payouts">("dashboard");
   const [toast, setToast] = useState("");
+
+  // Self-Service Partner Sign Up State
+  const [signupForm, setSignupForm] = useState<{
+    name: string;
+    phone: string;
+    email: string;
+    organization: string;
+    category: PartnerCategory;
+    centreId: string;
+    upiId: string;
+    code: string;
+  }>({
+    name: "",
+    phone: "",
+    email: "",
+    organization: "",
+    category: "Education Consultant",
+    centreId: "all",
+    upiId: "",
+    code: "",
+  });
+  const [signingUp, setSigningUp] = useState(false);
+  const [signupError, setSignupError] = useState("");
 
   // New Admission Form State
   const [form, setForm] = useState({
@@ -133,6 +158,70 @@ function PartnerContent() {
     setPartnerCode("");
     if (typeof window !== "undefined") {
       localStorage.removeItem("qs_partner_code");
+    }
+  };
+
+  // Self-Service Partner Sign Up Handler
+  const handlePartnerSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignupError("");
+
+    if (!signupForm.name.trim()) {
+      setSignupError("Please enter your full name.");
+      return;
+    }
+    const cleanPhone = signupForm.phone.replace(/\D/g, "");
+    if (cleanPhone.length < 10) {
+      setSignupError("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    if (!signupForm.email.trim() || !signupForm.email.includes("@")) {
+      setSignupError("Please enter a valid email address.");
+      return;
+    }
+
+    setSigningUp(true);
+    try {
+      const res = await fetch("/api/partners/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(signupForm),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.partner?.code) {
+          // Account already exists with phone/email, prepopulate and switch to login tab
+          setPartnerCode(data.partner.code);
+          setAuthMode("login");
+          showToast(`Existing partner account found! Referral code: ${data.partner.code}`);
+          return;
+        }
+        throw new Error(data.error || "Partner registration failed. Please try again.");
+      }
+
+      setPartner(data.partner);
+      setAdmissions([]);
+      setPartnerCode(data.partner.code);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("qs_partner_code", data.partner.code);
+      }
+      if (data.partner.bankDetails) {
+        setBankForm({
+          payoutMethod: "upi",
+          upiId: data.partner.bankDetails.upiId || "",
+          accountName: data.partner.bankDetails.accountName || data.partner.name || "",
+          accountNumber: "",
+          ifscCode: "",
+          bankName: "",
+          branchName: "",
+        });
+      }
+      showToast(`🎉 Welcome to Q-School, ${data.partner.name}! Your referral code is ${data.partner.code}`);
+    } catch (err) {
+      setSignupError((err as Error).message);
+    } finally {
+      setSigningUp(false);
     }
   };
 
@@ -312,53 +401,303 @@ function PartnerContent() {
           </div>
         </header>
 
-        <main className="max-w-lg mx-auto w-full px-4 py-12 flex-1 flex flex-col justify-center">
-          <div className="rounded-2xl border border-[#E2ECE9] bg-white p-7 shadow-xl">
-            <div className="text-center mb-6">
-              <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#E3F4F0] text-brand-teal mb-3">
-                <Icon name="community" size={24} />
-              </span>
-              <h2 className="text-2xl font-bold text-brand-ink">Marketer & Partner Sign-In</h2>
-              <p className="text-sm text-[#7B8E89] mt-1">
-                Enter your unique referral code to process student admissions and track your commission payouts.
-              </p>
+        <main className="max-w-xl mx-auto w-full px-4 py-8 flex-1 flex flex-col justify-center">
+          <div className="rounded-2xl border border-[#E2ECE9] bg-white p-6 sm:p-8 shadow-xl">
+            {/* Mode Switcher Tabs */}
+            <div className="flex rounded-xl bg-[#EEF5F3] p-1 mb-6 text-sm font-semibold">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode("login");
+                  setAuthError("");
+                }}
+                className={`flex-1 py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-1.5 ${
+                  authMode === "login"
+                    ? "bg-white text-brand-deep shadow-sm font-bold"
+                    : "text-[#586F68] hover:text-brand-ink"
+                }`}
+              >
+                <Icon name="checkCircle" size={16} />
+                <span>Sign In with Code</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode("signup");
+                  setSignupError("");
+                }}
+                className={`flex-1 py-2.5 rounded-lg transition-all text-center flex items-center justify-center gap-1.5 ${
+                  authMode === "signup"
+                    ? "bg-white text-brand-deep shadow-sm font-bold"
+                    : "text-[#586F68] hover:text-brand-ink"
+                }`}
+              >
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Become a Partner (Sign Up)</span>
+              </button>
             </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                loginWithCode(partnerCode);
-              }}
-              className="space-y-4"
-            >
-              {authError && (
-                <div className="rounded-xl bg-[#FCEDED] p-3 text-[13px] font-medium text-[#B42E2E]">
-                  {authError}
-                </div>
-              )}
-
+            {authMode === "login" ? (
+              /* ─── TAB 1: LOGIN WITH REFERRAL CODE ─── */
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[#41564F] mb-1.5">
-                  Partner Referral Code
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. MKT-BALA or ACH-PUDU"
-                  value={partnerCode}
-                  onChange={(e) => setPartnerCode(e.target.value.toUpperCase())}
-                  required
-                  className="w-full h-12 px-4 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-base font-mono font-bold tracking-wider text-brand-deep uppercase placeholder:normal-case placeholder:font-normal placeholder:tracking-normal focus:border-brand-teal focus:bg-white focus:outline-none"
-                />
-              </div>
+                <div className="text-center mb-6">
+                  <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#E3F4F0] text-brand-teal mb-3">
+                    <Icon name="community" size={24} />
+                  </span>
+                  <h2 className="text-2xl font-bold text-brand-ink">Marketer & Partner Sign-In</h2>
+                  <p className="text-sm text-[#7B8E89] mt-1">
+                    Enter your unique referral code to process student admissions and track your commission payouts.
+                  </p>
+                </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full h-12 rounded-xl bg-brand-deep text-white font-semibold shadow hover:bg-[#04332D] transition flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {loading ? "Verifying…" : "Access Marketer Portal →"}
-              </button>
-            </form>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    loginWithCode(partnerCode);
+                  }}
+                  className="space-y-4"
+                >
+                  {authError && (
+                    <div className="rounded-xl bg-[#FCEDED] p-3 text-[13px] font-medium text-[#B42E2E]">
+                      {authError}
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#41564F] mb-1.5">
+                      Partner Referral Code
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. MKT-BALA or ACH-PUDU"
+                      value={partnerCode}
+                      onChange={(e) => setPartnerCode(e.target.value.toUpperCase())}
+                      required
+                      className="w-full h-12 px-4 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-base font-mono font-bold tracking-wider text-brand-deep uppercase placeholder:normal-case placeholder:font-normal placeholder:tracking-normal focus:border-brand-teal focus:bg-white focus:outline-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full h-12 rounded-xl bg-brand-deep text-white font-semibold shadow hover:bg-[#04332D] transition flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {loading ? "Verifying…" : "Access Marketer Portal →"}
+                  </button>
+
+                  <div className="pt-2 text-center">
+                    <p className="text-xs text-[#7B8E89]">
+                      Don&apos;t have a partner code yet?{" "}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthMode("signup");
+                          setSignupError("");
+                        }}
+                        className="font-semibold text-brand-teal hover:underline ml-1"
+                      >
+                        Register as a Partner &rarr;
+                      </button>
+                    </p>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              /* ─── TAB 2: SELF-SERVICE PARTNER SIGNUP ─── */
+              <div>
+                <div className="text-center mb-5">
+                  <span className="inline-flex items-center justify-center h-12 w-12 rounded-2xl bg-[#E3F4F0] text-brand-teal mb-2.5">
+                    <Icon name="trophy" size={24} />
+                  </span>
+                  <h2 className="text-2xl font-bold text-brand-ink">Join Q-School Partner Network</h2>
+                  <p className="text-xs sm:text-sm text-[#7B8E89] mt-1">
+                    Earn 10% commission on every student referral with real-time tracking, marketing links, and direct payouts.
+                  </p>
+                </div>
+
+                {/* Perk highlight banner */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+                  <div className="rounded-lg bg-[#F2FAF7] p-2 text-center border border-[#DCEDE8]">
+                    <span className="block text-xs font-bold text-brand-deep">10% Commission</span>
+                    <span className="text-[10px] text-[#7B8E89]">Instant per admit</span>
+                  </div>
+                  <div className="rounded-lg bg-[#F2FAF7] p-2 text-center border border-[#DCEDE8]">
+                    <span className="block text-xs font-bold text-brand-deep">Referral Link</span>
+                    <span className="text-[10px] text-[#7B8E89]">Custom QR & code</span>
+                  </div>
+                  <div className="rounded-lg bg-[#F2FAF7] p-2 text-center border border-[#DCEDE8]">
+                    <span className="block text-xs font-bold text-brand-deep">Direct Payouts</span>
+                    <span className="text-[10px] text-[#7B8E89]">UPI / Bank transfer</span>
+                  </div>
+                  <div className="rounded-lg bg-[#F2FAF7] p-2 text-center border border-[#DCEDE8]">
+                    <span className="block text-xs font-bold text-brand-deep">Mobile ERP</span>
+                    <span className="text-[10px] text-[#7B8E89]">Live admissions feed</span>
+                  </div>
+                </div>
+
+                <form onSubmit={handlePartnerSignup} className="space-y-3.5">
+                  {signupError && (
+                    <div className="rounded-xl bg-[#FCEDED] p-3 text-[13px] font-medium text-[#B42E2E]">
+                      {signupError}
+                    </div>
+                  )}
+
+                  {/* Full Name */}
+                  <div>
+                    <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                      Full Name <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Balasubramanian or Dr. Meenakshi"
+                      value={signupForm.name}
+                      onChange={(e) => setSignupForm({ ...signupForm, name: e.target.value })}
+                      required
+                      className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm text-brand-ink focus:border-brand-teal focus:bg-white focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Phone & Email Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                        Mobile Number (10 Digits) <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        placeholder="e.g. 9876543210"
+                        value={signupForm.phone}
+                        onChange={(e) => setSignupForm({ ...signupForm, phone: e.target.value })}
+                        required
+                        className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm text-brand-ink focus:border-brand-teal focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                        Email Address <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="e.g. partner@example.com"
+                        value={signupForm.email}
+                        onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })}
+                        required
+                        className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm text-brand-ink focus:border-brand-teal focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Category & Preferred Centre Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                        Partner Category
+                      </label>
+                      <select
+                        value={signupForm.category}
+                        onChange={(e) =>
+                          setSignupForm({ ...signupForm, category: e.target.value as PartnerCategory })
+                        }
+                        className="w-full h-11 px-3 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm text-brand-ink focus:border-brand-teal focus:bg-white focus:outline-none"
+                      >
+                        <option value="Education Consultant">Education Consultant</option>
+                        <option value="School Partner">School Partner</option>
+                        <option value="Trainer / HOC">Trainer / Centre Head (HOC)</option>
+                        <option value="Parent Ambassador">Parent Ambassador</option>
+                        <option value="Marketing Team">Marketing Team</option>
+                        <option value="Campus Ambassador">Campus Ambassador</option>
+                        <option value="Affiliate">Affiliate / Influencer</option>
+                        <option value="Agent">Agent</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                        Preferred Centre
+                      </label>
+                      <select
+                        value={signupForm.centreId}
+                        onChange={(e) => setSignupForm({ ...signupForm, centreId: e.target.value })}
+                        className="w-full h-11 px-3 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm text-brand-ink focus:border-brand-teal focus:bg-white focus:outline-none"
+                      >
+                        <option value="all">All Centres (Pan India / Global)</option>
+                        {ADMISSION_CENTRES.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Organization & UPI ID Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                        School / Organization <span className="text-[#94A6A1] font-normal">(Optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Cambridge Academy or Self"
+                        value={signupForm.organization}
+                        onChange={(e) => setSignupForm({ ...signupForm, organization: e.target.value })}
+                        className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm text-brand-ink focus:border-brand-teal focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                        UPI ID for Payouts <span className="text-[#94A6A1] font-normal">(Optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. yourname@okhdfcbank"
+                        value={signupForm.upiId}
+                        onChange={(e) => setSignupForm({ ...signupForm, upiId: e.target.value })}
+                        className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm text-brand-ink focus:border-brand-teal focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Requested Custom Referral Code (Optional) */}
+                  <div>
+                    <label className="block text-xs font-semibold text-[#41564F] mb-1">
+                      Custom Referral Code <span className="text-[#94A6A1] font-normal">(Optional — auto-generated if blank)</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. MKT-BALA or ACH-PUDU"
+                      value={signupForm.code}
+                      onChange={(e) => setSignupForm({ ...signupForm, code: e.target.value.toUpperCase() })}
+                      className="w-full h-11 px-3.5 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm font-mono uppercase text-brand-deep focus:border-brand-teal focus:bg-white focus:outline-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={signingUp}
+                    className="w-full h-12 rounded-xl bg-gradient-to-r from-[#06473E] to-[#0D9488] text-white font-semibold shadow hover:opacity-95 transition flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+                  >
+                    {signingUp ? "Enrolling Partner…" : "Register as Partner & Get Referral Link →"}
+                  </button>
+
+                  <div className="pt-2 text-center">
+                    <p className="text-xs text-[#7B8E89]">
+                      Already registered?{" "}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthMode("login");
+                          setAuthError("");
+                        }}
+                        className="font-semibold text-brand-teal hover:underline ml-1"
+                      >
+                        Sign in with your referral code &rarr;
+                      </button>
+                    </p>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
         </main>
 

@@ -103,6 +103,45 @@ class PartnerApiService {
     return list;
   }
 
+  /// Register a new partner (self-service signup)
+  Future<Map<String, dynamic>> signupPartner({
+    required String name,
+    required String phone,
+    required String email,
+    String? organization,
+    String? category,
+    String? centreId,
+    String? upiId,
+    String? requestedCode,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/api/partners/signup');
+    final res = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'name': name.trim(),
+        'phone': phone.trim(),
+        'email': email.trim().toLowerCase(),
+        'organization': organization?.trim() ?? '',
+        'category': category ?? 'Education Consultant',
+        'centreId': centreId ?? 'all',
+        'upiId': upiId?.trim() ?? '',
+        'code': requestedCode?.trim().toUpperCase() ?? '',
+      }),
+    );
+
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode != 200 || data['ok'] != true) {
+      throw Exception(data['error'] ?? 'Partner registration failed');
+    }
+
+    final partner = Partner.fromJson(data['partner']);
+    return {
+      'partner': partner,
+      'admissions': <PartnerAdmission>[],
+    };
+  }
+
   /// Update partner payout bank details
   Future<Partner> updateBankDetails({
     required String code,
