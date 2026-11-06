@@ -1056,6 +1056,25 @@ function QVerseSection() {
             </div>
           ))}
         </div>
+
+        {/* Brochure Page 15 Closing Statement */}
+        <div className="mt-12 rounded-3xl bg-gradient-to-r from-[#054038] via-[#04332D] to-[#054038] p-8 text-center text-white shadow-xl border border-white/10">
+          <p className="text-xs sm:text-sm uppercase tracking-widest text-[#2BD6B4] font-extrabold">HOLISTIC LEARNING FOR A BRIGHTER TOMORROW</p>
+          <p className="mt-2 text-xl sm:text-2xl font-black tracking-wide">
+            LEARN BETTER · THINK BIGGER · BECOME FUTURE-READY
+          </p>
+          <p className="mt-2 text-xs sm:text-sm text-white/80">
+            For children aged 6–14 years · 48 Classes Per Annum · 9 Experiential Learning Centres
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link href="#centres" className="btn-3d btn-3d-mint text-xs sm:text-sm font-bold px-6 py-2.5 rounded-xl">
+              Locate Your Nearest Centre →
+            </Link>
+            <Link href="#demo" className="btn-3d btn-3d-glass text-xs sm:text-sm font-bold px-6 py-2.5 rounded-xl">
+              Book a Free Demo Class
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );

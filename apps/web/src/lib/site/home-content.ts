@@ -132,7 +132,21 @@ export const BLANK_SLIDE: HeroSlide = {
 };
 
 export const DEFAULT_HOME: HomeContent = {
-  sections: (Object.keys(SECTION_META) as SectionKey[]).map((key) => ({ key, visible: true })),
+  sections: [
+    { key: "hero", visible: true },
+    { key: "stats", visible: true },
+    { key: "subjects", visible: true },
+    { key: "formats", visible: false },
+    { key: "programs", visible: true },
+    { key: "how", visible: false },
+    { key: "live", visible: false },
+    { key: "why", visible: false },
+    { key: "centres", visible: true },
+    { key: "pricing", visible: false },
+    { key: "testimonials", visible: true },
+    { key: "faq", visible: true },
+    { key: "demo", visible: true },
+  ],
   hero: {
     interval: 7,
     slides: [
@@ -232,18 +246,18 @@ export const DEFAULT_HOME: HomeContent = {
   },
   subjects: {
     items: [
-      { label: "FOCUS & ATTENTION", count: "01", color: "#0E937E" },
-      { label: "MEMORY & LEARNING", count: "02", color: "#5B6CF0" },
-      { label: "THINKING & REASONING", count: "03", color: "#F29A2E" },
-      { label: "CREATIVITY & INNOVATION", count: "04", color: "#E2557A" },
-      { label: "CONFIDENT COMMUNICATION", count: "05", color: "#2BD6B4" },
-      { label: "PROBLEM SOLVING", count: "06", color: "#054038" },
-      { label: "QUANTUM HABITS", count: "07", color: "#6B2A6E" },
-      { label: "EMOTIONAL STRENGTH", count: "08", color: "#E0782F" },
-      { label: "ADAPTABILITY", count: "09", color: "#3C7DBF" },
-      { label: "COLLABORATIVE LEADERSHIP", count: "10", color: "#4CAF6E" },
+      { label: "FOCUS", count: "01", color: "#0E937E" },
+      { label: "LEARN", count: "02", color: "#5B6CF0" },
+      { label: "THINK", count: "03", color: "#F29A2E" },
+      { label: "CREATE", count: "04", color: "#E2557A" },
+      { label: "COMMUNICATE", count: "05", color: "#2BD6B4" },
+      { label: "ADAPT", count: "06", color: "#054038" },
+      { label: "SOLVE", count: "07", color: "#3C7DBF" },
+      { label: "LEAD", count: "08", color: "#4CAF6E" },
+      { label: "ENGINEERING THE NEO SAPIENS", count: "6–14Y", color: "#FFC845" },
       { label: "Q 5D™ XYZTP FRAMEWORK", count: "5D", color: "#0E937E" },
-      { label: "ENGINEERING THE NEO SAPIENS", count: "6-14Y", color: "#FFC845" },
+      { label: "AI VS. HI", count: "TRANSFORM", color: "#2BD6B4" },
+      { label: "48 CLASSES PER ANNUM", count: "CONTINUOUS", color: "#E2557A" },
     ],
   },
   formats: {
