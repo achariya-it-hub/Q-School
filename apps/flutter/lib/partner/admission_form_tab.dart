@@ -454,7 +454,6 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
             Row(
               children: [
                 Expanded(
-                  flex: 3,
                   child: TextFormField(
                     controller: _feeController,
                     keyboardType: TextInputType.number,
@@ -463,9 +462,8 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
                     validator: (v) => (int.tryParse(v ?? '') ?? 0) <= 0 ? 'Enter fee' : null,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
-                  flex: 2,
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
                     value: _selectedPaymentMode,

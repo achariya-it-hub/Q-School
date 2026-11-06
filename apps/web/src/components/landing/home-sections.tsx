@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { CENTERS, PROGRAMS, WEBINAR_LIST, WORKSHOPS, fmtCount } from "@qschool/shared";
 import { LeadForm } from "@/components/lead-form";
 import { Icon, type IconName } from "@/components/icons";
@@ -19,17 +23,21 @@ import {
   ScrollMotion,
   StaggerContainer,
   StaggerItem,
-  TiltCard21,
 } from "@/components/ui/21st";
 import type { HeroSlide, HomeContent, SectionKey } from "@/lib/site/home-content";
 
-/* Renders the home page from editable content (Admin Console › Website & Official Brochure). */
-
+/* Typography & Visual Header Primitives */
 const Kicker = ({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) =>
-  children ? <p className={`text-[13.5px] sm:text-[14.5px] font-bold uppercase tracking-[0.16em] ${dark ? "text-[#2BD6B4]" : "text-brand-teal"}`}>{children}</p> : null;
+  children ? (
+    <p className={`text-[13.5px] sm:text-[14.5px] font-bold uppercase tracking-[0.16em] ${dark ? "text-[#2BD6B4]" : "text-brand-teal"}`}>
+      {children}
+    </p>
+  ) : null;
 
 const H2 = ({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) => (
-  <h2 className={`mt-3 text-3xl sm:text-4xl lg:text-[2.6rem] font-extrabold tracking-tight leading-[1.2] ${dark ? "" : "text-brand-deep"}`}>{children}</h2>
+  <h2 className={`mt-3 text-3xl sm:text-4xl lg:text-[2.6rem] font-extrabold tracking-tight leading-[1.2] ${dark ? "" : "text-brand-deep"}`}>
+    {children}
+  </h2>
 );
 
 function BrandSlide({ s }: { s: HeroSlide }) {
@@ -61,16 +69,13 @@ function BrandSlide({ s }: { s: HeroSlide }) {
         <div className="hs-in mt-8 flex flex-col gap-3 sm:flex-row" style={{ ["--d" as string]: "270ms" }}>
           {s.primary.label && (
             <Link href={s.primary.href} className="btn-3d btn-3d-mint inline-flex items-center justify-center gap-2.5 rounded-xl px-7 py-4 text-base font-bold shadow-lg">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-deep text-[#2BD6B4] shadow-[inset_0_1px_0_rgba(255,255,255,.2)]">
-                <Icon name="play" size={13} fill="currentColor" />
-              </span>
-              {s.primary.label}
+              <span>{s.primary.label}</span>
+              <span className="font-mono text-lg">→</span>
             </Link>
           )}
-          {s.secondary.label && (
-            <Link href={s.secondary.href} className="btn-3d btn-3d-glass inline-flex items-center justify-center gap-2.5 rounded-xl px-7 py-4 text-base font-bold backdrop-blur-sm">
+          {s.secondary?.label && (
+            <Link href={s.secondary.href} className="btn-3d btn-3d-outline inline-flex items-center justify-center gap-2 rounded-xl px-6 py-4 text-base font-semibold text-white">
               {s.secondary.label}
-              <span aria-hidden>→</span>
             </Link>
           )}
         </div>
@@ -128,7 +133,6 @@ function Hero({ c }: { c: HomeContent["hero"] }) {
   if (!slides.length) return null;
   return (
     <section className="relative overflow-hidden bg-brand-deep text-white">
-      {/* 3D Quantum Particle Constellation Canvas */}
       <QuantumNexus className="pointer-events-none absolute inset-0 z-0 opacity-45" particleCount={95} speed={0.45} colorScheme="teal" />
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.07]"
@@ -204,17 +208,48 @@ function Subjects({ c }: { c: HomeContent["subjects"] }) {
 
 /* ───────────────────────── 1. The Q-School Story & Gen Alpha ───────────────────────── */
 function StoryAndGenAlpha() {
+  const [activeTrait, setActiveTrait] = useState<number>(0);
+
   const traits = [
-    { icon: "laptop", title: "Digitally Native", desc: "Comfortable with technology and digital experiences.", color: "#0E937E" },
-    { icon: "sparkle", title: "Instantly Stimulated", desc: "Accustomed to fast-paced information and immediate responses.", color: "#5B6CF0" },
-    { icon: "eye", title: "Curious Explorers", desc: "Thrive on discovery, interaction, and engaging experiences.", color: "#F29A2E" },
-    { icon: "heart", title: "Unique Learners", desc: "Have individual strengths, distinctive interests, and unique learning needs.", color: "#E2557A" },
-    { icon: "planet", title: "Future-Driven", desc: "Need the ability to think independently, adapt, and solve problems.", color: "#054038" },
+    {
+      icon: "laptop",
+      title: "Digitally Native",
+      desc: "Comfortable with technology and digital experiences.",
+      color: "#0E937E",
+      qschoolSuperpower: "Transforms passive screen consumption into active creator capability, hands-on spatial thinking, and computational logic.",
+    },
+    {
+      icon: "sparkle",
+      title: "Instantly Stimulated",
+      desc: "Accustomed to fast-paced information and immediate responses.",
+      color: "#5B6CF0",
+      qschoolSuperpower: "Harnesses dopamine feedback loops through gamified speed drills, dual-n-back mental challenges, and 1-minute recall sprints.",
+    },
+    {
+      icon: "eye",
+      title: "Curious Explorers",
+      desc: "Thrive on discovery, interaction, and engaging experiences.",
+      color: "#F29A2E",
+      qschoolSuperpower: "Replaces rigid textbook answers with Socratic questioning, hands-on robotics kits, and real-world scientific inquiry.",
+    },
+    {
+      icon: "heart",
+      title: "Unique Learners",
+      desc: "Have individual strengths, distinctive interests, and unique learning needs.",
+      color: "#E2557A",
+      qschoolSuperpower: "Individualized 1:1 mentor coaching, tailored pace calibration, and psychological safety in micro-cohorts of 15.",
+    },
+    {
+      icon: "planet",
+      title: "Future-Driven",
+      desc: "Need the ability to think independently, adapt, and solve problems.",
+      color: "#054038",
+      qschoolSuperpower: "Embeds ethical judgement, emotional equilibrium, and divergent multi-solution thinking before machines automate standard tasks.",
+    },
   ];
 
   return (
     <section id="story" className="relative scroll-mt-20 py-24 bg-gradient-to-b from-[#F4F8F7] via-white to-[#F4F8F7] border-y border-[#E2ECE9] overflow-hidden">
-      {/* 3D Ambient Quantum Field */}
       <QuantumNexus className="pointer-events-none absolute inset-0 opacity-30" particleCount={85} speed={0.35} colorScheme="emerald" />
 
       <div className="container-qs relative z-10">
@@ -258,14 +293,17 @@ function StoryAndGenAlpha() {
                   Drawing from contemporary learning methods, cognitive-development practices, and selected principles inspired by India’s knowledge traditions, Q-School brings these dimensions together in one structured learning journey.
                 </p>
 
-                {/* Mentor Photo Card */}
-                <div className="mt-6 overflow-hidden rounded-2xl border border-[#CFE3DD] shadow-sm group/img">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/images/mentor-student.jpg"
-                    alt="Q-School Certified Mentor guiding young learner"
-                    className="h-48 w-full object-cover transition duration-700 group-hover/img:scale-105"
-                  />
+                {/* Real Mentor & Student Photo Frame */}
+                <div className="mt-6 relative overflow-hidden rounded-2xl border border-[#CFE3DD] shadow-md group/img">
+                  <div className="relative h-48 w-full">
+                    <Image
+                      src="/images/uploaded/mentor-student.jpg"
+                      alt="Q-School Certified Mentor guiding young learner"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 500px"
+                      className="object-cover transition duration-700 group-hover/img:scale-105"
+                    />
+                  </div>
                   <div className="bg-white px-4 py-2.5 text-xs sm:text-[13px] font-semibold text-[#0B6E5F] flex items-center justify-between">
                     <span>Individualised Mentor Guidance</span>
                     <span className="text-[#6b807b] font-normal">Ages 6–14 Years</span>
@@ -288,10 +326,8 @@ function StoryAndGenAlpha() {
           {/* Right Card: Founder's Quote with 21st.dev Border Beam */}
           <ScrollMotion variant="fade-right" delay={0.15} className="h-full">
             <div className="relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#054038] via-[#04332D] to-[#011C18] p-8 text-white sm:p-10 shadow-2xl border border-[#2BD6B4]/30 group">
-              {/* 21st.dev Radiant Border Beam */}
               <BorderBeam size={280} duration={10} colorFrom="#2BD6B4" colorTo="#0E937E" borderWidth={2} />
 
-              {/* Interactive 3D Quantum Atom Core */}
               <div className="absolute -top-10 -right-10 w-60 h-60 pointer-events-auto opacity-80 group-hover:opacity-100 transition duration-500">
                 <QuantumCoreOrb />
               </div>
@@ -332,12 +368,13 @@ function StoryAndGenAlpha() {
         <ScrollMotion variant="fade-up" delay={0.2} className="mt-18 rounded-3xl bg-[#F4F8F7] border border-[#CFE3DD] p-8 sm:p-11 shadow-sm">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-5 relative">
-              <div className="overflow-hidden rounded-3xl border border-[#CFE3DD] shadow-md aspect-[4/3]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/gen-alpha-kid.jpg"
+              <div className="relative overflow-hidden rounded-3xl border border-[#CFE3DD] shadow-md aspect-[4/3]">
+                <Image
+                  src="/images/uploaded/gen-alpha-kid.jpg"
                   alt="Generation Alpha Learner"
-                  className="h-full w-full object-cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 450px"
+                  className="object-cover"
                 />
               </div>
               <span className="absolute -bottom-3 -right-3 rounded-2xl bg-[#054038] text-white px-4 py-2 text-xs sm:text-sm font-bold shadow-lg border border-[#2BD6B4]/30">
@@ -362,25 +399,51 @@ function StoryAndGenAlpha() {
             </div>
           </div>
 
-          {/* 5 Traits with 21st.dev Stagger & Spotlight */}
-          <StaggerContainer className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5" staggerDelay={0.08}>
-            {traits.map((t, idx) => (
-              <StaggerItem key={idx}>
-                <SpotlightCard
-                  spotlightColor="rgba(14, 147, 126, 0.15)"
-                  className="p-5 text-center h-full flex flex-col justify-between hover:shadow-md transition"
-                >
-                  <div>
-                    <span className="icon-3d mx-auto h-13 w-13 rounded-2xl" style={{ ["--c" as string]: t.color }}>
-                      <Icon name={t.icon as IconName} size={24} />
+          {/* Interactive Trait Tabs */}
+          <div className="mt-10">
+            <p className="text-xs sm:text-sm uppercase tracking-wider font-extrabold text-[#0E937E] mb-3 text-center sm:text-left">
+              Click Any Trait to View Q-School&apos;s Pedagogical Transformation:
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {traits.map((t, idx) => {
+                const isActive = activeTrait === idx;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActiveTrait(idx)}
+                    className={`rounded-2xl p-4 text-left transition-all duration-300 border ${
+                      isActive
+                        ? "bg-white border-[#2BD6B4] shadow-[0_8px_20px_rgba(43,214,180,0.25)] scale-[1.02] ring-2 ring-[#2BD6B4]/30"
+                        : "bg-white/70 border-[#CFE3DD] hover:bg-white hover:border-[#2BD6B4]/50"
+                    }`}
+                  >
+                    <span className="icon-3d h-10 w-10 rounded-xl" style={{ ["--c" as string]: t.color }}>
+                      <Icon name={t.icon as IconName} size={20} />
                     </span>
-                    <h4 className="mt-4 text-base sm:text-[17px] font-bold text-brand-ink">{t.title}</h4>
-                    <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-[#5c7772]">{t.desc}</p>
-                  </div>
-                </SpotlightCard>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+                    <h4 className="mt-2.5 text-sm sm:text-base font-extrabold text-brand-ink">{t.title}</h4>
+                    <p className="mt-1 text-xs text-[#6b807b] line-clamp-2">{t.desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active Trait Deep-Dive Spotlight */}
+            <div className="mt-6 rounded-2xl bg-white border border-[#2BD6B4]/40 p-6 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2ECE9] pb-3">
+                <div className="flex items-center gap-3">
+                  <span className="h-3 w-3 rounded-full animate-ping" style={{ backgroundColor: traits[activeTrait].color }} />
+                  <span className="text-sm font-black uppercase text-[#0B6E5F]">
+                    How Q-School Guides: {traits[activeTrait].title}
+                  </span>
+                </div>
+                <span className="text-xs font-bold text-[#6b807b]">Trait 0{activeTrait + 1} of 05</span>
+              </div>
+              <p className="mt-3.5 text-base sm:text-[17px] font-medium text-brand-deep leading-relaxed">
+                {traits[activeTrait].qschoolSuperpower}
+              </p>
+            </div>
+          </div>
         </ScrollMotion>
       </div>
     </section>
@@ -389,25 +452,28 @@ function StoryAndGenAlpha() {
 
 /* ───────────────────────── 2. Traditional Education vs. Q-School & 10 Core Abilities ───────────────────────── */
 function PedagogySection() {
+  const [viewMode, setViewMode] = useState<"sidebyside" | "qschool" | "traditional">("sidebyside");
+  const [selectedAbility, setSelectedAbility] = useState<number>(0);
+
   const comparison = [
-    { dim: "Focus of Learning", trad: "What children learn (Syllabus)", qs: "How children learn, think and apply" },
-    { dim: "Core Objective", trad: "Covering the Curriculum", qs: "Building Cognitive & Human Capability" },
-    { dim: "Approach", trad: "Rote Knowledge & Memorisation", qs: "Real-World Practical Application" },
-    { dim: "Cognitive Depth", trad: "Academic Learning alone", qs: "Learning + Systematic Thinking" },
-    { dim: "Success Metric", trad: "Single Subject Exam Marks", qs: "Whole-Child Human Development" },
+    { dim: "Focus of Learning", trad: "What children learn (Syllabus rote)", qs: "How children learn, think, synthesize and apply" },
+    { dim: "Core Objective", trad: "Covering exam curriculum", qs: "Building lifelong cognitive & human capability" },
+    { dim: "Pedagogy", trad: "Passive memorisation & rote drills", qs: "Multi-sensory experiential application & mental agility" },
+    { dim: "Cognitive Depth", trad: "Single-subject academic testing", qs: "Whole-brain neural stamina & divergent problem-solving" },
+    { dim: "Success Metric", trad: "Exam marks & rankings", qs: "Real-world resilience, confidence & leadership" },
   ];
 
   const abilities = [
-    { num: "01", name: "Focus & Attention", desc: "Sensory activation, concentration stamina, and deep observation." },
-    { num: "02", name: "Memory & Learning", desc: "Memory palaces, visual association, and long-term retention." },
-    { num: "03", name: "Thinking & Reasoning", desc: "Mental models, pattern discovery, and logical deduction." },
-    { num: "04", name: "Creativity", desc: "Divergent thinking, imagination, and transforming ideas into action." },
-    { num: "05", name: "Communication", desc: "Expressing ideas clearly, articulation, and empathetic listening." },
-    { num: "06", name: "Problem Solving", desc: "Breaking down complex challenges and strategic execution." },
-    { num: "07", name: "Habits", desc: "Daily physical, intellectual, and self-disciplinary atomic routines." },
-    { num: "08", name: "Emotional Strength", desc: "Self-awareness, emotional regulation, and handling setbacks." },
-    { num: "09", name: "Adaptability", desc: "Navigating uncertainty with curiosity, flexibility, and resilience." },
-    { num: "10", name: "Leadership", desc: "Ethical decision-making, collaboration, and bringing out the best in teams." },
+    { num: "01", name: "Focus & Attention", desc: "Sensory activation, concentration stamina, and deep observation.", drill: "Dual-N-Back focus cycles & candle observation drills" },
+    { num: "02", name: "Memory & Learning", desc: "Memory palaces, visual association, and long-term retention.", drill: "Spatial loci memory grids & rapid association linkages" },
+    { num: "03", name: "Thinking & Reasoning", desc: "Mental models, pattern discovery, and logical deduction.", drill: "Syllogistic logic puzzles & first-principles problem sets" },
+    { num: "04", name: "Creativity", desc: "Divergent thinking, imagination, and transforming ideas into action.", drill: "Alternative-uses challenges & inventive concept mashups" },
+    { num: "05", name: "Communication", desc: "Expressing ideas clearly, articulation, and empathetic listening.", drill: "1-minute extempore framing & constructive debate circles" },
+    { num: "06", name: "Problem Solving", desc: "Breaking down complex challenges and strategic execution.", drill: "Root-cause tree mapping & backward induction games" },
+    { num: "07", name: "Habits", desc: "Daily physical, intellectual, and self-disciplinary atomic routines.", drill: "Daily 15-minute micro-habit ledger & reflection logs" },
+    { num: "08", name: "Emotional Strength", desc: "Self-awareness, emotional regulation, and handling setbacks.", drill: "Emotional weather forecasting & resilience reframing" },
+    { num: "09", name: "Adaptability", desc: "Navigating uncertainty with curiosity, flexibility, and resilience.", drill: "Constraint-shift simulation & variable rule challenges" },
+    { num: "10", name: "Leadership", desc: "Ethical decision-making, collaboration, and bringing out the best in teams.", drill: "Cohort capstone coordination & ethical dilemma trials" },
   ];
 
   return (
@@ -419,89 +485,159 @@ function PedagogySection() {
           <p className="mt-4 text-lg sm:text-xl italic font-semibold text-brand-teal">
             &ldquo;Who is systematically developing a child&apos;s ability to learn, think, adapt and create?&rdquo;
           </p>
+
+          {/* Interactive View Switcher */}
+          <div className="mt-8 inline-flex items-center rounded-2xl bg-white p-1.5 shadow-md border border-[#CFE3DD]">
+            <button
+              type="button"
+              onClick={() => setViewMode("sidebyside")}
+              className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-extrabold transition ${
+                viewMode === "sidebyside" ? "bg-brand-deep text-white shadow-xs" : "text-[#4b635e] hover:text-brand-deep"
+              }`}
+            >
+              Side-by-Side Comparison
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("qschool")}
+              className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-extrabold transition ${
+                viewMode === "qschool" ? "bg-[#0E937E] text-white shadow-xs" : "text-[#4b635e] hover:text-brand-deep"
+              }`}
+            >
+              ⚡ Q-School Transformation
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("traditional")}
+              className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-extrabold transition ${
+                viewMode === "traditional" ? "bg-red-700 text-white shadow-xs" : "text-[#4b635e] hover:text-brand-deep"
+              }`}
+            >
+              🏛️ Traditional Schooling
+            </button>
+          </div>
         </ScrollMotion>
 
-        {/* Matrix comparison with 21st.dev ScrollMotion */}
-        <ScrollMotion variant="fade-up" delay={0.1} className="mt-14 overflow-hidden rounded-3xl border border-[#CFE3DD] bg-white shadow-lg">
-          <div className="grid grid-cols-1 md:grid-cols-3 border-b border-[#E2ECE9] bg-[#054038] text-white p-5 sm:p-6 font-bold text-base sm:text-lg">
-            <div>Dimension</div>
-            <div className="text-white/80">Traditional Education</div>
-            <div className="text-[#2BD6B4]">Q-School (Quantum Schooling)</div>
-          </div>
-          <div className="divide-y divide-[#EEF3F1]">
-            {comparison.map((row, idx) => (
-              <div key={idx} className="grid grid-cols-1 md:grid-cols-3 p-5 sm:p-6 gap-2 text-base sm:text-[16.5px] items-center hover:bg-[#F9FBFB] transition">
-                <div className="font-bold text-brand-deep">{row.dim}</div>
-                <div className="text-[#6b807b] flex items-center gap-2">
-                  <span className="text-red-400 font-bold">✕</span> {row.trad}
-                </div>
-                <div className="font-extrabold text-[#0B6E5F] flex items-center gap-2">
-                  <span className="text-[#0E937E] font-black">✓</span> {row.qs}
-                </div>
+        {/* Dynamic Comparison Matrix */}
+        <ScrollMotion variant="fade-up" delay={0.1} className="mt-12 overflow-hidden rounded-3xl border border-[#CFE3DD] bg-white shadow-xl">
+          {viewMode === "sidebyside" && (
+            <div>
+              <div className="grid grid-cols-1 md:grid-cols-3 border-b border-[#E2ECE9] bg-[#054038] text-white p-5 sm:p-6 font-bold text-base sm:text-lg">
+                <div>Dimension</div>
+                <div className="text-white/80">Traditional Education</div>
+                <div className="text-[#2BD6B4]">Q-School (Quantum Schooling)</div>
               </div>
-            ))}
-          </div>
+              <div className="divide-y divide-[#EEF3F1]">
+                {comparison.map((row, idx) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-3 p-5 sm:p-6 gap-2 text-base sm:text-[16.5px] items-center hover:bg-[#F9FBFB] transition">
+                    <div className="font-bold text-brand-deep">{row.dim}</div>
+                    <div className="text-[#6b807b] flex items-center gap-2">
+                      <span className="text-red-400 font-bold">✕</span> {row.trad}
+                    </div>
+                    <div className="font-extrabold text-[#0B6E5F] flex items-center gap-2">
+                      <span className="text-[#0E937E] font-black">✓</span> {row.qs}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {viewMode === "qschool" && (
+            <div className="p-8 sm:p-12 bg-gradient-to-br from-[#054038] via-[#04332D] to-[#011C18] text-white">
+              <div className="flex items-center gap-3">
+                <span className="rounded-full bg-[#2BD6B4] px-3 py-1 text-xs font-black text-brand-deep">Q-SCHOOL FOCUS</span>
+                <span className="text-sm font-bold text-[#2BD6B4]">Developing the Human Learner</span>
+              </div>
+              <h3 className="mt-4 text-2xl sm:text-4xl font-extrabold">Human Capability Architecture</h3>
+              <p className="mt-3 text-base sm:text-lg text-white/85 max-w-2xl">
+                Q-School builds whole-child neural adaptability, divergent problem-solving, and conscious focus.
+              </p>
+              <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {comparison.map((row, idx) => (
+                  <div key={idx} className="rounded-2xl border border-white/20 bg-white/10 p-5 backdrop-blur-md">
+                    <span className="text-xs font-extrabold uppercase text-[#2BD6B4]">{row.dim}</span>
+                    <p className="mt-2 text-lg font-bold text-white leading-snug">{row.qs}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {viewMode === "traditional" && (
+            <div className="p-8 sm:p-12 bg-[#FFF8F7] border-l-8 border-red-500">
+              <span className="rounded-full bg-red-100 text-red-800 px-3 py-1 text-xs font-black">TRADITIONAL CURRICULUM</span>
+              <h3 className="mt-4 text-2xl sm:text-3xl font-extrabold text-red-950">Curriculum Delivery Limitations</h3>
+              <p className="mt-2 text-base text-red-900/80 max-w-2xl">
+                Designed during the industrial era for information transmission and single-subject exam rankings.
+              </p>
+              <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {comparison.map((row, idx) => (
+                  <div key={idx} className="rounded-2xl border border-red-200 bg-white p-5 shadow-xs">
+                    <span className="text-xs font-extrabold uppercase text-red-700">{row.dim}</span>
+                    <p className="mt-2 text-base font-semibold text-gray-800 leading-snug">{row.trad}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </ScrollMotion>
 
-        {/* 10 Core Abilities with 21st.dev Stagger & SpotlightCards */}
-        <div className="mt-20">
+        {/* 10 Core Abilities Interactive Showcase */}
+        <div className="mt-24">
           <ScrollMotion variant="fade-up" className="mx-auto max-w-2xl text-center">
             <span className="chip !px-3.5 !py-1 !text-xs !bg-[#054038] !text-white font-bold">THE FOUNDATION</span>
             <h3 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-extrabold text-brand-ink">10 Core Abilities Systematically Developed</h3>
-            <p className="mt-3 text-base sm:text-lg text-[#4b635e] leading-relaxed">
-              Q-School works alongside formal schooling to nurture the foundational capacities behind every academic and life success.
+            <p className="mt-3 text-base text-[#4b635e]">
+              Click any ability below to reveal the specific in-class neural drill practiced in our 48 classes.
             </p>
           </ScrollMotion>
 
-          <StaggerContainer className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5" staggerDelay={0.06}>
-            {abilities.map((a) => (
-              <StaggerItem key={a.num}>
-                <SpotlightCard
-                  spotlightColor="rgba(43, 214, 180, 0.18)"
-                  className="p-6 h-full flex flex-col justify-between hover:shadow-md transition"
+          {/* Interactive Ability Grid */}
+          <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+            {abilities.map((ab, idx) => {
+              const isSelected = selectedAbility === idx;
+              return (
+                <button
+                  key={ab.num}
+                  type="button"
+                  onClick={() => setSelectedAbility(idx)}
+                  className={`rounded-2xl p-4.5 text-left transition-all duration-300 border ${
+                    isSelected
+                      ? "bg-white border-[#2BD6B4] shadow-[0_8px_24px_rgba(43,214,180,0.3)] ring-2 ring-[#2BD6B4]/40 scale-[1.03]"
+                      : "bg-[#F7FAF9] border-[#CFE3DD] hover:bg-white hover:border-[#2BD6B4]/60"
+                  }`}
                 >
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs sm:text-sm font-black text-brand-teal">{a.num}</span>
-                      <span className="h-2 w-2 rounded-full bg-[#2BD6B4]" />
-                    </div>
-                    <h4 className="mt-3.5 text-base sm:text-[17px] font-bold text-brand-ink">{a.name}</h4>
-                    <p className="mt-2 text-xs sm:text-[13.5px] leading-relaxed text-[#5c7772]">{a.desc}</p>
-                  </div>
-                </SpotlightCard>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+                  <span className="text-xs font-black text-[#0E937E]">{ab.num}</span>
+                  <h4 className="mt-1 text-base font-extrabold text-brand-ink">{ab.name}</h4>
+                  <p className="mt-1.5 text-xs text-[#5c7772] line-clamp-2">{ab.desc}</p>
+                </button>
+              );
+            })}
+          </div>
 
-          {/* Hands-On Workshop Feature Banner */}
-          <ScrollMotion variant="fade-up" delay={0.15} className="mt-16 overflow-hidden rounded-3xl border border-[#CFE3DD] bg-white shadow-xl grid grid-cols-1 md:grid-cols-12 items-stretch">
-            <div className="relative md:col-span-5 min-h-[260px] md:min-h-full">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/workshop.png"
-                alt="Interactive Q-School Workshop"
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-black/50 via-transparent to-transparent" />
-              <span className="absolute bottom-4 left-4 rounded-full bg-white/95 px-3.5 py-1.5 text-xs sm:text-[13px] font-bold text-brand-deep backdrop-blur-xs shadow-md">
-                Active Learning Cohorts
+          {/* Active Ability Spotlight Card */}
+          <div className="mt-6 rounded-3xl bg-white border border-[#2BD6B4]/50 p-7 sm:p-9 shadow-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2ECE9] pb-4">
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-[#0E937E]">Core Ability {abilities[selectedAbility].num}</span>
+                <h4 className="text-2xl font-black text-brand-deep">{abilities[selectedAbility].name}</h4>
+              </div>
+              <span className="rounded-full bg-brand-teal100 px-4 py-1.5 text-xs sm:text-sm font-bold text-[#0B6E5F]">
+                48 Classes Progressive Development
               </span>
             </div>
-            <div className="md:col-span-7 p-8 sm:p-10 flex flex-col justify-between">
+            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <span className="chip !px-3.5 !py-1 !text-xs !bg-[#054038] !text-white font-bold">IMMERSIVE PEDAGOGY</span>
-                <h4 className="mt-3.5 text-2xl sm:text-3xl font-extrabold text-brand-ink">Where Learning Truly Comes Alive</h4>
-                <p className="mt-4 text-base sm:text-lg text-[#4b635e] leading-relaxed">
-                  Moving children away from passive screens and rote textbooks into collaborative, high-energy cognitive workshops. Children debate, sketch mental models, solve spatial puzzles, and build real leadership habits together.
-                </p>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#6b807b]">Developmental Goal</p>
+                <p className="mt-1 text-base text-brand-ink font-medium leading-relaxed">{abilities[selectedAbility].desc}</p>
               </div>
-              <div className="mt-8 flex flex-wrap gap-2.5 text-xs sm:text-sm font-bold text-brand-deep">
-                <span className="rounded-xl bg-[#E2ECE9] px-3.5 py-2">✦ Hands-On Drills</span>
-                <span className="rounded-xl bg-[#E2ECE9] px-3.5 py-2">✦ Max 15 per Cohort</span>
-                <span className="rounded-xl bg-[#E2ECE9] px-3.5 py-2">✦ 9 Centres in India</span>
+              <div className="rounded-2xl bg-[#E9F6F3] p-4.5 border border-[#2BD6B4]/30">
+                <p className="text-xs font-extrabold uppercase tracking-wide text-[#0B6E5F]">Typical Classroom Drill</p>
+                <p className="mt-1 text-base text-brand-deep font-bold leading-relaxed">{abilities[selectedAbility].drill}</p>
               </div>
             </div>
-          </ScrollMotion>
+          </div>
         </div>
       </div>
     </section>
@@ -510,9 +646,10 @@ function PedagogySection() {
 
 /* ───────────────────────── 3. AI vs. HI (Human Intelligence) ───────────────────────── */
 function AIvsHI() {
+  const [activeTab, setActiveTab] = useState<"both" | "hi" | "ai">("both");
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-[#054038] via-[#032D27] to-[#054038] py-24 text-white">
-      {/* 3D Quantum Nexus Synapse Background */}
       <QuantumNexus className="pointer-events-none absolute inset-0 opacity-40" particleCount={110} speed={0.4} colorScheme="teal" />
       <div className="pointer-events-none absolute -left-32 -top-32 h-80 w-80 rounded-full bg-brand-teal/40 blur-3xl" />
       <div className="pointer-events-none absolute -right-32 -bottom-32 h-80 w-80 rounded-full bg-[#2BD6B4]/20 blur-3xl" />
@@ -526,90 +663,122 @@ function AIvsHI() {
           <p className="mt-4 text-lg sm:text-xl text-white/85 leading-relaxed">
             Artificial Intelligence is reshaping how we learn, work, and live. It can process information, recognize patterns, and automate tasks. But human progress also depends on <strong className="text-white">empathy, imagination, independent judgement, and ethical decision-making.</strong>
           </p>
+
+          {/* Interactive Switch */}
+          <div className="mt-8 inline-flex items-center rounded-2xl bg-white/10 p-1.5 backdrop-blur-md border border-white/20">
+            <button
+              type="button"
+              onClick={() => setActiveTab("both")}
+              className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-extrabold transition ${
+                activeTab === "both" ? "bg-[#2BD6B4] text-brand-deep shadow-md" : "text-white/80 hover:text-white"
+              }`}
+            >
+              Side-by-Side Dual View
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("hi")}
+              className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-extrabold transition ${
+                activeTab === "hi" ? "bg-[#2BD6B4] text-brand-deep shadow-md" : "text-white/80 hover:text-white"
+              }`}
+            >
+              🧠 Human Intelligence (HI) Focus
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("ai")}
+              className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-extrabold transition ${
+                activeTab === "ai" ? "bg-white/30 text-white shadow-md" : "text-white/80 hover:text-white"
+              }`}
+            >
+              🤖 AI Algorithmic Processing
+            </button>
+          </div>
         </ScrollMotion>
 
-        {/* 3D Interactive Dual-Hemisphere Brain (AI Computation vs HI Consciousness) */}
+        {/* 3D Interactive Dual-Hemisphere Brain */}
         <div className="mt-10 mb-8">
           <QuantumBrainMesh />
         </div>
 
-        {/* Side by Side with 21st.dev ScrollMotion & BorderBeam */}
-        <div className="mt-14 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto items-stretch">
-          {/* AI */}
-          <ScrollMotion variant="fade-left" className="h-full">
-            <div className="h-full rounded-3xl border border-white/15 bg-white/10 p-7 sm:p-9 backdrop-blur-md shadow-xl flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-3.5">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-[#2BD6B4]">
-                    <Icon name="ai" size={26} />
-                  </span>
-                  <div>
-                    <h3 className="text-2xl font-bold text-white">Artificial Intelligence (AI)</h3>
-                    <p className="text-xs sm:text-sm text-white/60">Automated Computation &amp; Pattern Output</p>
-                  </div>
-                </div>
-                <ul className="mt-8 space-y-4 text-base sm:text-[16.5px] text-white/80">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 h-2 w-2 rounded-full bg-white/40 shrink-0" />
-                    <span><strong>Processes information at speed</strong> across vast datasets.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 h-2 w-2 rounded-full bg-white/40 shrink-0" />
-                    <span><strong>Recognises patterns</strong> and generates statistical outputs.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 h-2 w-2 rounded-full bg-white/40 shrink-0" />
-                    <span><strong>Automates repetitive tasks</strong> and structured workflows.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 h-2 w-2 rounded-full bg-white/40 shrink-0" />
-                    <span><strong>Supports data-driven decisions</strong> within programmed parameters.</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </ScrollMotion>
-
-          {/* HI with 21st.dev Border Beam */}
-          <ScrollMotion variant="fade-right" delay={0.12} className="h-full">
-            <div className="relative h-full rounded-3xl border-2 border-[#2BD6B4] bg-gradient-to-b from-[#0a5a4e] to-[#04332c] p-7 sm:p-9 shadow-[0_20px_50px_rgba(0,0,0,0.4)] flex flex-col justify-between overflow-hidden group">
-              {/* 21st.dev Border Beam */}
-              <BorderBeam size={260} duration={10} colorFrom="#2BD6B4" colorTo="#2BB39C" borderWidth={2.5} />
-
-              <div className="relative z-10">
-                <div className="flex items-center gap-3.5">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2BD6B4] text-brand-deep shadow-md">
-                    <Icon name="brain" size={26} />
-                  </span>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-2xl font-bold text-white">Human Intelligence (HI)</h3>
-                      <span className="rounded-full bg-[#2BD6B4]/25 px-2.5 py-0.5 text-[11px] font-black text-[#2BD6B4]">Q-SCHOOL FOCUS</span>
+        {/* Cards */}
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto items-stretch">
+          {(activeTab === "both" || activeTab === "ai") && (
+            <ScrollMotion variant="fade-left" className="h-full">
+              <div className="h-full rounded-3xl border border-white/15 bg-white/10 p-7 sm:p-9 backdrop-blur-md shadow-xl flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-3.5">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 text-[#2BD6B4]">
+                      <Icon name="ai" size={26} />
+                    </span>
+                    <div>
+                      <h3 className="text-2xl font-bold text-white">Artificial Intelligence (AI)</h3>
+                      <p className="text-xs sm:text-sm text-white/60">Automated Computation &amp; Pattern Output</p>
                     </div>
-                    <p className="text-xs sm:text-sm text-[#2BD6B4]">Original Consciousness, Emotion &amp; Ethics</p>
                   </div>
+                  <ul className="mt-8 space-y-4 text-base sm:text-[16.5px] text-white/80">
+                    <li className="flex items-start gap-3">
+                      <span className="mt-2 h-2 w-2 rounded-full bg-white/40 shrink-0" />
+                      <span><strong>Processes information at speed</strong> across vast datasets.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="mt-2 h-2 w-2 rounded-full bg-white/40 shrink-0" />
+                      <span><strong>Recognises patterns</strong> and generates statistical outputs.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="mt-2 h-2 w-2 rounded-full bg-white/40 shrink-0" />
+                      <span><strong>Automates repetitive tasks</strong> and structured workflows.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="mt-2 h-2 w-2 rounded-full bg-white/40 shrink-0" />
+                      <span><strong>Supports data-driven decisions</strong> within programmed parameters.</span>
+                    </li>
+                  </ul>
                 </div>
-                <ul className="mt-8 space-y-4 text-base sm:text-[16.5px] text-white/95">
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 h-2 w-2 rounded-full bg-[#2BD6B4] shrink-0" />
-                    <span><strong>Thinks critically and independently</strong> beyond algorithmic bias.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 h-2 w-2 rounded-full bg-[#2BD6B4] shrink-0" />
-                    <span><strong>Creates, imagines and innovates</strong> novel artistic &amp; scientific breakthroughs.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 h-2 w-2 rounded-full bg-[#2BD6B4] shrink-0" />
-                    <span><strong>Understands emotions</strong>, empathy, and human shared values.</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <span className="mt-2 h-2 w-2 rounded-full bg-[#2BD6B4] shrink-0" />
-                    <span><strong>Applies judgement, empathy and ethical responsibility</strong> to lead humanity.</span>
-                  </li>
-                </ul>
               </div>
-            </div>
-          </ScrollMotion>
+            </ScrollMotion>
+          )}
+
+          {(activeTab === "both" || activeTab === "hi") && (
+            <ScrollMotion variant="fade-right" delay={0.12} className="h-full">
+              <div className="relative h-full rounded-3xl border-2 border-[#2BD6B4] bg-gradient-to-b from-[#0a5a4e] to-[#04332c] p-7 sm:p-9 shadow-[0_20px_50px_rgba(0,0,0,0.4)] flex flex-col justify-between overflow-hidden group">
+                <BorderBeam size={260} duration={10} colorFrom="#2BD6B4" colorTo="#2BB39C" borderWidth={2.5} />
+
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3.5">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2BD6B4] text-brand-deep shadow-md">
+                      <Icon name="brain" size={26} />
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-2xl font-bold text-white">Human Intelligence (HI)</h3>
+                        <span className="rounded-full bg-[#2BD6B4]/25 px-2.5 py-0.5 text-[11px] font-black text-[#2BD6B4]">Q-SCHOOL FOCUS</span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-[#2BD6B4]">Original Consciousness, Emotion &amp; Ethics</p>
+                    </div>
+                  </div>
+                  <ul className="mt-8 space-y-4 text-base sm:text-[16.5px] text-white/95">
+                    <li className="flex items-start gap-3">
+                      <span className="mt-2 h-2 w-2 rounded-full bg-[#2BD6B4] shrink-0" />
+                      <span><strong>Thinks critically and independently</strong> beyond algorithmic bias.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="mt-2 h-2 w-2 rounded-full bg-[#2BD6B4] shrink-0" />
+                      <span><strong>Creates, imagines and innovates</strong> novel artistic &amp; scientific breakthroughs.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="mt-2 h-2 w-2 rounded-full bg-[#2BD6B4] shrink-0" />
+                      <span><strong>Understands emotions</strong>, empathy, and human shared values.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="mt-2 h-2 w-2 rounded-full bg-[#2BD6B4] shrink-0" />
+                      <span><strong>Applies judgement, empathy and ethical responsibility</strong> to lead humanity.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </ScrollMotion>
+          )}
         </div>
 
         {/* Core quote bar */}
@@ -623,15 +792,60 @@ function AIvsHI() {
     </section>
   );
 }
+
 /* ───────────────────────── 4. The Q 5D™ XYZTP Framework ───────────────────────── */
 function Framework5D() {
+  const [activeDimension, setActiveDimension] = useState<string>("X");
+
   const dimensions = [
-    { code: "X", name: "CONSCIOUS", subtitle: "Focus & Understand", desc: "Attention, observation and conscious engagement with learning.", color: "#0E937E" },
-    { code: "Y", name: "DEEP LEARNING", subtitle: "Practise & Internalise", desc: "Repetition, reinforcement and deep cognitive skill development.", color: "#5B6CF0" },
-    { code: "Z", name: "FLOW & APPLICATION", subtitle: "Apply & Express", desc: "Integrating learning into confident, natural real-world application.", color: "#F29A2E" },
-    { code: "T", name: "TIME", subtitle: "Efficiency & Fluency", desc: "Developing greater speed, intellectual fluency, organisation and efficiency.", color: "#E2557A" },
-    { code: "P", name: "PEAK POSSIBILITY", subtitle: "Potential in Action", desc: "Expressing developed abilities through creativity, ethics, and leadership.", color: "#2BD6B4" },
+    {
+      code: "X",
+      name: "CONSCIOUS",
+      subtitle: "Focus & Understand",
+      desc: "Attention, observation and conscious engagement with learning.",
+      color: "#0E937E",
+      drills: "Dual-n-back sensory drills, micro-distraction filters, 45-minute unbroken deep attention sprints.",
+      outcome: "Builds high cognitive stamina and filters digital noise effortlessly.",
+    },
+    {
+      code: "Y",
+      name: "DEEP LEARNING",
+      subtitle: "Practise & Internalise",
+      desc: "Repetition, reinforcement and deep cognitive skill development.",
+      color: "#5B6CF0",
+      drills: "Visual mnemonic association, spatial memory palaces, high-frequency retrieval matrices.",
+      outcome: "Permanently anchors mental frameworks without mindless rote memorization.",
+    },
+    {
+      code: "Z",
+      name: "FLOW & APPLICATION",
+      subtitle: "Apply & Express",
+      desc: "Integrating learning into confident, natural real-world application.",
+      color: "#F29A2E",
+      drills: "Hands-on robotics prototyping, lateral puzzle simulations, live peer problem-solving.",
+      outcome: "Transforms abstract knowledge into real-world inventive output.",
+    },
+    {
+      code: "T",
+      name: "TIME",
+      subtitle: "Efficiency & Fluency",
+      desc: "Developing greater speed, intellectual fluency, organisation and efficiency.",
+      color: "#E2557A",
+      drills: "Speed mental arithmetic sprints, timed conceptual articulation, structured cognitive pacing.",
+      outcome: "Achieves rapid calculation, sharp conversational fluidity, and effortless time mastery.",
+    },
+    {
+      code: "P",
+      name: "PEAK POSSIBILITY",
+      subtitle: "Potential in Action",
+      desc: "Expressing developed abilities through creativity, ethics, and leadership.",
+      color: "#2BD6B4",
+      drills: "Collaborative capstone projects, ethical scenario debates, mentoring junior peers.",
+      outcome: "Produces resilient, confident, authentic leaders of the AI era.",
+    },
   ];
+
+  const activeDim = dimensions.find((d) => d.code === activeDimension) || dimensions[0];
 
   const intelligence = [
     { title: "Cognitive Intelligence", desc: "Memory, focus, concentration, and rapid processing." },
@@ -652,29 +866,77 @@ function Framework5D() {
           </p>
         </ScrollMotion>
 
-        {/* 5 Dimensions Grid with 21st.dev Stagger & SpotlightCards */}
-        <StaggerContainer className="mt-16 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5" staggerDelay={0.08}>
-          {dimensions.map((d, i) => (
-            <StaggerItem key={d.code} className="h-full">
-              <SpotlightCard
-                spotlightColor="rgba(43, 214, 180, 0.2)"
-                className="p-7 h-full flex flex-col justify-between hover:shadow-xl transition-all duration-300"
+        {/* Interactive Dimension Selector Tabs */}
+        <div className="mt-14 flex flex-wrap justify-center gap-3">
+          {dimensions.map((d) => {
+            const isSelected = activeDimension === d.code;
+            return (
+              <button
+                key={d.code}
+                type="button"
+                onClick={() => setActiveDimension(d.code)}
+                className={`rounded-2xl px-5 py-3.5 text-left transition-all duration-300 border flex items-center gap-3 ${
+                  isSelected
+                    ? "bg-[#054038] text-white border-[#2BD6B4] shadow-lg scale-105"
+                    : "bg-[#F7FAF9] text-brand-ink border-[#CFE3DD] hover:bg-white"
+                }`}
               >
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-xl font-black text-sm text-white"
+                  style={{ backgroundColor: d.color }}
+                >
+                  {d.code}
+                </span>
                 <div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl font-black text-white text-lg shadow-md" style={{ background: d.color }}>
-                      {d.code}
-                    </span>
-                    <span className="text-xs font-black uppercase tracking-wider text-[#0E937E]">Dim 0{i + 1}</span>
-                  </div>
-                  <h3 className="mt-5 text-xl sm:text-2xl font-extrabold text-brand-ink">{d.name}</h3>
-                  <p className="text-xs sm:text-sm font-bold text-brand-teal mt-1">{d.subtitle}</p>
-                  <p className="mt-3.5 text-sm sm:text-[14.5px] leading-relaxed text-[#4b635e]">{d.desc}</p>
+                  <span className="block text-xs font-bold uppercase tracking-wider opacity-80">Dim {d.code}</span>
+                  <span className="block text-sm font-extrabold">{d.name}</span>
                 </div>
-              </SpotlightCard>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active Dimension Spotlight Showcase Card */}
+        <div className="mt-8 rounded-3xl bg-gradient-to-br from-[#054038] via-[#04332D] to-[#011C18] p-8 sm:p-12 text-white shadow-2xl border border-[#2BD6B4]/40 relative overflow-hidden">
+          <div className="pointer-events-none absolute right-0 top-0 h-96 w-96 rounded-full bg-[#2BD6B4]/10 blur-3xl" />
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-4 flex flex-col items-center justify-center text-center p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15">
+              <span
+                className="flex h-24 w-24 items-center justify-center rounded-3xl font-black text-4xl text-white shadow-xl"
+                style={{ backgroundColor: activeDim.color }}
+              >
+                {activeDim.code}
+              </span>
+              <h3 className="mt-4 text-2xl font-black text-white">{activeDim.name}</h3>
+              <p className="mt-1 text-sm font-bold text-[#2BD6B4]">{activeDim.subtitle}</p>
+              <p className="mt-3 text-sm text-white/85 leading-relaxed">{activeDim.desc}</p>
+            </div>
+
+            <div className="lg:col-span-8 space-y-5">
+              <div className="rounded-2xl bg-white/10 p-5 backdrop-blur-sm border border-white/15">
+                <span className="text-xs font-black uppercase text-[#2BD6B4] tracking-wider">In-Class Neural Drills</span>
+                <p className="mt-1.5 text-base sm:text-lg text-white font-semibold leading-relaxed">
+                  {activeDim.drills}
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-white/10 p-5 backdrop-blur-sm border border-white/15">
+                <span className="text-xs font-black uppercase text-[#2BD6B4] tracking-wider">Measurable Learner Outcome</span>
+                <p className="mt-1.5 text-base sm:text-lg text-white font-semibold leading-relaxed">
+                  {activeDim.outcome}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <span className="rounded-xl bg-white/15 px-3 py-1.5 text-xs font-bold text-white">48 Classes / Year</span>
+                <span className="rounded-xl bg-white/15 px-3 py-1.5 text-xs font-bold text-white">Micro-Cohorts (Max 15)</span>
+                <span className="rounded-xl bg-[#2BD6B4] px-3.5 py-1.5 text-xs font-black text-brand-deep">
+                  Certified Mentors
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Progressive Flow Banner */}
         <ScrollMotion variant="fade-up" delay={0.15} className="mt-14 rounded-3xl bg-gradient-to-r from-[#054038] via-[#04332D] to-[#054038] p-8 text-white text-center shadow-xl border border-white/10">
@@ -711,7 +973,18 @@ function Framework5D() {
 
 /* ───────────────────────── 5. 8 Q-School Programs ───────────────────────── */
 function Programs({ c }: { c: HomeContent["programs"] }) {
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [expandedProgram, setExpandedProgram] = useState<string | null>(null);
+
   const programs = PROGRAMS;
+
+  const filtered = programs.filter((p) => {
+    if (filterCategory === "foundation") return p.slug === "divya-yoga" || p.slug === "shilpa-shastra";
+    if (filterCategory === "speed") return p.slug === "ganitham" || p.slug === "vedic-maths" || p.slug === "bmit";
+    if (filterCategory === "science") return p.slug === "stem" || p.slug === "robotics" || p.slug === "chess";
+    return true;
+  });
+
   return (
     <section id="programs" className="scroll-mt-20 bg-white py-24 border-t border-[#E2ECE9]">
       <div className="container-qs">
@@ -728,165 +1001,206 @@ function Programs({ c }: { c: HomeContent["programs"] }) {
           </Link>
         </ScrollMotion>
 
-        {/* 8 Programs with 21st.dev Stagger & SpotlightCards */}
-        <StaggerContainer className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4" staggerDelay={0.06}>
-          {programs.map((p) => (
-            <StaggerItem key={p.slug} className="h-full">
+        {/* Interactive Filter Pills */}
+        <div className="mt-10 flex flex-wrap gap-2.5">
+          {[
+            { id: "all", label: "All 8 Programs" },
+            { id: "foundation", label: "Foundation & Sensory (Ages 4–8)" },
+            { id: "speed", label: "Speed & Cognitive Mastery (Ages 7–12)" },
+            { id: "science", label: "Logic, STEM & Robotics (Ages 9–16)" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setFilterCategory(tab.id)}
+              className={`rounded-full px-5 py-2.5 text-xs sm:text-sm font-bold transition-all ${
+                filterCategory === tab.id
+                  ? "bg-brand-deep text-[#2BD6B4] shadow-md scale-105"
+                  : "bg-[#F4F8F7] text-[#4b635e] hover:bg-[#E2ECE9]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 8 Programs Grid with Real Images */}
+        <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {filtered.map((p) => {
+            const isExpanded = expandedProgram === p.slug;
+            return (
               <SpotlightCard
+                key={p.slug}
                 spotlightColor="rgba(43, 214, 180, 0.18)"
-                className="group flex h-full flex-col justify-between overflow-hidden p-6 hover:shadow-xl transition-all duration-300"
+                className="group flex flex-col justify-between overflow-hidden p-6 hover:shadow-2xl transition-all duration-300"
               >
                 <div>
-                  {/* Program Image Banner */}
-                  <div className="relative -mx-6 -mt-6 mb-4 h-44 overflow-hidden bg-[#054038]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                  <div className="relative -mx-6 -mt-6 mb-4 h-48 overflow-hidden bg-[#054038]">
+                    <Image
                       src={p.image || `/images/programs/${p.slug}.jpg`}
                       alt={p.title}
-                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 300px"
+                      className="object-cover transition duration-700 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
                     <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
                       <span className="chip !px-2.5 !py-0.5 !text-[11px] !bg-white/95 !text-[#054038] font-black shadow-xs backdrop-blur-xs">
-                        {p.badge}
+                        {p.tags[0] || "Ages 6–14"}
                       </span>
-                      <span className="rounded-full bg-black/60 px-2.5 py-0.5 text-xs font-bold text-white backdrop-blur-xs">
-                        48 Classes
+                      <span className="text-[11px] font-bold text-[#2BD6B4] drop-shadow">
+                        48 Classes / Year
                       </span>
                     </div>
                   </div>
 
-                  <h3 className="mt-2 text-xl font-extrabold text-brand-ink group-hover:text-brand-teal transition">
+                  <h3 className="text-xl font-bold text-brand-ink group-hover:text-brand-teal transition">
                     {p.title}
                   </h3>
-                  <p className="text-xs sm:text-sm font-bold text-[#0E937E] mt-1">{p.format}</p>
-                  <p className="mt-3 text-sm leading-relaxed text-[#4b635e]">{p.overview}</p>
+                  <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-[#5c7772] line-clamp-2">
+                    {p.overview}
+                  </p>
 
                   <div className="mt-4 flex flex-wrap gap-1.5">
-                    {p.tags.map((t) => (
-                      <span key={t} className="rounded-md bg-[#F4F8F7] border border-[#E2ECE9] px-2.5 py-1 text-xs font-semibold text-[#41564f]">
-                        {t}
+                    {p.learn.slice(0, 3).map((h) => (
+                      <span key={h} className="rounded-md bg-[#F4F8F7] px-2 py-0.5 text-[11px] text-[#0B6E5F] font-semibold border border-[#CFE3DD]">
+                        ✦ {h}
                       </span>
                     ))}
                   </div>
+
+                  {/* Expandable Syllabus Preview */}
+                  {isExpanded && (
+                    <div className="mt-4 border-t border-[#EEF3F1] pt-3 text-xs text-[#4b635e] space-y-1.5 animate-fadeIn">
+                      <p className="font-bold text-brand-ink">Curriculum Focus:</p>
+                      <p>{p.overview}</p>
+                    </div>
+                  )}
                 </div>
 
-                <div className="mt-7 border-t border-[#EEF3F1] pt-4 flex items-center justify-between">
-                  <span className="text-xs sm:text-sm font-bold text-brand-ink">Ages 6–14 Y</span>
-                  <Link
-                    href="#demo"
-                    className="btn-3d btn-3d-teal rounded-lg px-3.5 py-2 text-xs sm:text-[13px] font-bold"
+                <div className="mt-6 border-t border-[#EEF3F1] pt-4 flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedProgram(isExpanded ? null : p.slug)}
+                    className="text-xs font-bold text-[#0E937E] hover:underline"
                   >
-                    Enrol / Demo →
+                    {isExpanded ? "Hide Details ↑" : "Quick Syllabus ↓"}
+                  </button>
+                  <Link
+                    href={`/programs/${p.slug}`}
+                    className="btn-3d btn-3d-mint rounded-lg px-3.5 py-1.5 text-xs font-bold shadow-sm"
+                  >
+                    Explore →
                   </Link>
                 </div>
               </SpotlightCard>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
 }
 
-/* ───────────────────────── 6. Who is a Neo Sapiens? & The 3 Pillars ───────────────────────── */
+/* ───────────────────────── 6. Engineering the Neo Sapiens ───────────────────────── */
 function NeoSapiensSection() {
-  const traits = [
-    { title: "Creative Thinker", desc: "Imagines, innovates and creates original solutions.", icon: "bulb" },
-    { title: "Critical Problem Solver", desc: "Analyses challenges and thinks strategically.", icon: "tools" },
-    { title: "Emotionally Resilient", desc: "Adapts, stays balanced, and grows through challenges.", icon: "heart" },
-    { title: "Confident Communicator", desc: "Expresses ideas clearly and listens with empathy.", icon: "speech" },
-    { title: "Ethical Decision-Maker", desc: "Makes responsible choices guided by timeless values.", icon: "shield" },
-    { title: "Collaborative Leader", desc: "Works with others and brings out the best in teams.", icon: "users" },
-    { title: "Globally Aware", desc: "Understands diverse perspectives and the world around them.", icon: "globe" },
-    { title: "Future-Ready", desc: "Remains curious, adaptable, and prepared for what lies ahead.", icon: "sparkle" },
-  ];
+  const [activePillar, setActivePillar] = useState<number>(0);
 
   const pillars = [
-    { num: "01", title: "National-Level Academic Excellence", desc: "Build stronger learning capabilities, sharper thinking, and academic confidence that excels in examinations and beyond." },
-    { num: "02", title: "Become a Global Leader", desc: "Develop the mindset, emotional resilience, ethical foundation, and communication skills to lead on a global stage." },
-    { num: "03", title: "A Sharper Brain in the Age of AI", desc: "Strengthen human intelligence, original creativity, and critical reasoning to possess an unbeatable lifelong edge." },
+    {
+      num: "01",
+      title: "Aware Mind",
+      desc: "Emotional intelligence, mindful focus, and ethical decision-making.",
+      metrics: "Conscious observation, internal self-regulation, empathy calibration.",
+    },
+    {
+      num: "02",
+      title: "Agile Brain",
+      desc: "Rapid information processing, adaptable thinking, and creative problem-solving.",
+      metrics: "Spatial speed calculation, divergent thinking, multi-sensory agility.",
+    },
+    {
+      num: "03",
+      title: "Authentic Spirit",
+      desc: "Self-belief, resilience, confidence, and grounding in India's timeless wisdom.",
+      metrics: "Moral leadership, intrinsic motivation, collaborative pride.",
+    },
   ];
 
   return (
-    <section id="neo-sapiens" className="scroll-mt-20 py-24 bg-white border-t border-[#E2ECE9]">
-      <div className="container-qs">
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#054038] via-[#04332D] to-[#011C18] py-24 text-white">
+      <div className="pointer-events-none absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full bg-[#2BD6B4]/15 blur-3xl" />
+      <div className="pointer-events-none absolute -right-40 bottom-1/4 h-[500px] w-[500px] rounded-full bg-brand-teal/20 blur-3xl" />
+
+      <div className="container-qs relative z-10">
         <ScrollMotion variant="blur-in" className="mx-auto max-w-3xl text-center">
-          <Kicker>The Future Learner</Kicker>
-          <H2>Who is a Neo Sapiens?</H2>
-          <p className="mt-4 text-lg sm:text-xl leading-relaxed text-[#3b544e]">
-            A <strong className="text-brand-ink font-bold">Neo Sapiens</strong> is a future-ready learner equipped with the skills, mindset, and values to think, adapt, create, and lead in an ever-changing world.
+          <span className="chip !px-3.5 !py-1 !text-xs !bg-[#2BD6B4] !text-brand-deep font-black">THE ULTIMATE VISION</span>
+          <h2 className="mt-4 text-3xl font-extrabold sm:text-4xl lg:text-[2.6rem] text-white">
+            Engineering the <span className="text-[#2BD6B4]">Neo Sapiens</span>
+          </h2>
+          <p className="mt-4 text-lg sm:text-xl text-white/85 leading-relaxed">
+            The next evolution of human capability. A learner who is aware of themselves, agile in their thinking, and authentic in their actions.
           </p>
-          <p className="mt-3 text-xs sm:text-sm font-extrabold uppercase tracking-widest text-[#0E937E]">THINK · LEARN · LEAD · CREATE</p>
         </ScrollMotion>
 
-        {/* 8 Persona Traits with 21st.dev Stagger & SpotlightCards */}
-        <StaggerContainer className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" staggerDelay={0.06}>
-          {traits.map((t, idx) => (
-            <StaggerItem key={idx}>
-              <SpotlightCard
-                spotlightColor="rgba(14, 147, 126, 0.16)"
-                className="flex items-start gap-4 p-5 h-full hover:shadow-md transition"
-              >
-                <span className="icon-3d h-11 w-11 shrink-0 rounded-xl" style={{ ["--c" as string]: "#0E937E" }}>
-                  <Icon name={t.icon as IconName} size={22} />
-                </span>
-                <div>
-                  <h4 className="text-base sm:text-[17px] font-bold text-brand-ink">{t.title}</h4>
-                  <p className="mt-1.5 text-xs sm:text-[13.5px] text-[#4b635e] leading-relaxed">{t.desc}</p>
-                </div>
-              </SpotlightCard>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+        <div className="mt-16 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-7">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#2BD6B4]">The 3 Pillars of Neo Sapiens</span>
+            <h3 className="mt-2 text-2xl sm:text-3xl font-extrabold text-white">Nurturing a Complete Human Being</h3>
 
-        {/* The 3 Pillars with 21st.dev Border Beam */}
-        <ScrollMotion variant="fade-up" delay={0.15} className="mt-18 relative rounded-3xl bg-gradient-to-br from-[#054038] via-[#04332D] to-[#0A5A4E] p-8 sm:p-12 text-white shadow-2xl overflow-hidden group">
-          <BorderBeam size={300} duration={12} colorFrom="#2BD6B4" colorTo="#0E937E" borderWidth={2} />
-
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-7">
-              <span className="chip !px-3.5 !py-1 !text-xs !bg-[#2BD6B4] !text-brand-deep font-black">THE CORE PILLARS</span>
-              <h3 className="mt-4 text-3xl sm:text-4xl font-extrabold text-white">The 3 Pillars of Neo Sapiens</h3>
-              <p className="mt-3 text-base sm:text-lg text-white/85 leading-relaxed">
-                Nurturing a complete human being with an Aware Mind, Agile Brain, and Authentic Spirit.
-              </p>
-
-              <div className="mt-8 space-y-4">
-                {pillars.map((p) => (
-                  <div key={p.num} className="rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur-sm hover:bg-white/15 transition">
-                    <div className="flex items-center gap-3.5">
-                      <span className="text-2xl font-black text-[#2BD6B4]">{p.num}</span>
-                      <h4 className="text-lg font-bold text-white">{p.title}</h4>
+            <div className="mt-8 space-y-4">
+              {pillars.map((p, idx) => {
+                const isActive = activePillar === idx;
+                return (
+                  <button
+                    key={p.num}
+                    type="button"
+                    onClick={() => setActivePillar(idx)}
+                    className={`w-full text-left rounded-2xl p-5 backdrop-blur-sm transition-all border ${
+                      isActive
+                        ? "bg-white/20 border-[#2BD6B4] shadow-lg scale-[1.01]"
+                        : "bg-white/10 border-white/15 hover:bg-white/15"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3.5">
+                        <span className="text-2xl font-black text-[#2BD6B4]">{p.num}</span>
+                        <h4 className="text-lg font-bold text-white">{p.title}</h4>
+                      </div>
+                      <span className="text-xs text-[#2BD6B4] font-semibold">{isActive ? "Active" : "Click to view"}</span>
                     </div>
                     <p className="mt-2 text-sm sm:text-base text-white/85 leading-relaxed pl-9">{p.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="lg:col-span-5 relative flex justify-center">
-              <div className="relative overflow-hidden rounded-3xl border-2 border-[#2BD6B4]/50 shadow-2xl bg-[#042d27] max-w-[380px]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/bmit-hero.png"
-                  alt="Engineering the Neo Sapiens"
-                  className="w-full h-auto object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                <div className="absolute bottom-4 inset-x-4 text-center">
-                  <span className="chip !bg-white/95 !text-brand-deep !font-black !text-xs shadow-md">
-                    Engineering Future-Ready Human Beings
-                  </span>
-                </div>
-              </div>
+                    {isActive && (
+                      <p className="mt-3 text-xs text-[#2BD6B4] pl-9 font-semibold">
+                        ✦ Focus Areas: {p.metrics}
+                      </p>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <p className="mt-10 border-t border-white/15 pt-6 text-center font-bold tracking-wide text-xs sm:text-sm text-[#2BD6B4] uppercase">
-            THINK SMARTER · LEARN DEEPER · LEAD BETTER — ENGINEERING THE NEO SAPIENS
-          </p>
-        </ScrollMotion>
+          <div className="lg:col-span-5 relative flex justify-center">
+            <div className="relative overflow-hidden rounded-3xl border-2 border-[#2BD6B4]/50 shadow-2xl bg-[#042d27] max-w-[380px] w-full">
+              <div className="relative h-96 w-full">
+                <Image
+                  src="/images/uploaded/bmit-hero.png"
+                  alt="Engineering the Neo Sapiens - Dr J Arawindhan"
+                  fill
+                  sizes="380px"
+                  className="object-contain p-4"
+                />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
+              <div className="absolute bottom-4 inset-x-4 text-center">
+                <span className="chip !bg-white/95 !text-brand-deep !font-black !text-xs shadow-md">
+                  Engineering Future-Ready Human Beings
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -894,13 +1208,15 @@ function NeoSapiensSection() {
 
 /* ───────────────────────── 7. The 48-Class Journey, Pathway & Habits ───────────────────────── */
 function FortyEightClassJourney() {
+  const [activeStage, setActiveStage] = useState<number>(0);
+
   const stages = [
-    { num: "01", name: "ENGAGE", desc: "Capture attention and ignite natural interest." },
-    { num: "02", name: "EXPLORE", desc: "Introduce a concept, principle, or real challenge." },
-    { num: "03", name: "PRACTISE", desc: "Strengthen neural understanding through repetition." },
-    { num: "04", name: "APPLY", desc: "Use learning in meaningful tasks, codes, and projects." },
-    { num: "05", name: "REFLECT", desc: "Synthesize and internalize what was learned." },
-    { num: "06", name: "REINFORCE", desc: "Carry learning and positive habits into everyday life." },
+    { num: "01", name: "ENGAGE", desc: "Capture attention and ignite natural interest.", inClass: "Socratic opening prompt, cognitive curiosity puzzle, and sensory activation." },
+    { num: "02", name: "EXPLORE", desc: "Introduce a concept, principle, or real challenge.", inClass: "Hands-on kits, pattern discovery, and collaborative peer observation." },
+    { num: "03", name: "PRACTISE", desc: "Strengthen neural understanding through repetition.", inClass: "Timed speed drills, dual-n-back exercises, and memory palace anchors." },
+    { num: "04", name: "APPLY", desc: "Use learning in meaningful tasks, codes, and projects.", inClass: "Real-world engineering challenges, creative storytelling, and math tournaments." },
+    { num: "05", name: "REFLECT", desc: "Synthesize and internalize what was learned.", inClass: "Self-assessment log, peer articulation, and emotional balance check-in." },
+    { num: "06", name: "REINFORCE", desc: "Carry learning and positive habits into everyday life.", inClass: "Take-home 15-minute quantum habit routine and parental reinforcement guide." },
   ];
 
   const pathways = [
@@ -928,151 +1244,157 @@ function FortyEightClassJourney() {
           </p>
         </ScrollMotion>
 
-        {/* 6 Stages Grid with 21st.dev Stagger */}
-        <StaggerContainer className="mt-14 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6" staggerDelay={0.06}>
-          {stages.map((st) => (
-            <StaggerItem key={st.num}>
-              <SpotlightCard
-                spotlightColor="rgba(43, 214, 180, 0.18)"
-                className="p-5 text-center h-full flex flex-col justify-between hover:shadow-md transition"
+        {/* 6 Stages Interactive Timeline */}
+        <div className="mt-14 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {stages.map((st, idx) => {
+            const isActive = activeStage === idx;
+            return (
+              <button
+                key={st.num}
+                type="button"
+                onClick={() => setActiveStage(idx)}
+                className={`rounded-2xl p-4 text-center transition-all duration-300 border ${
+                  isActive
+                    ? "bg-[#054038] text-white border-[#2BD6B4] shadow-lg scale-105"
+                    : "bg-white text-brand-ink border-[#CFE3DD] hover:border-[#2BD6B4]/60"
+                }`}
               >
-                <span className="text-sm font-black text-brand-teal">{st.num}</span>
-                <h4 className="mt-2 text-base font-extrabold text-brand-ink">{st.name}</h4>
-                <p className="mt-1.5 text-xs sm:text-[13px] leading-relaxed text-[#5c7772]">{st.desc}</p>
-              </SpotlightCard>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+                <span className={`text-xs font-black ${isActive ? "text-[#2BD6B4]" : "text-brand-teal"}`}>{st.num}</span>
+                <h4 className="mt-1 text-base font-extrabold">{st.name}</h4>
+                <p className={`mt-1 text-[11px] leading-tight line-clamp-2 ${isActive ? "text-white/80" : "text-[#6b807b]"}`}>{st.desc}</p>
+              </button>
+            );
+          })}
+        </div>
 
-        {/* Continuous Beyond Classroom Banner */}
-        <ScrollMotion variant="fade-up" delay={0.12} className="mt-10 rounded-2xl border border-[#2BD6B4]/50 bg-[#E2ECE9] p-6 text-center shadow-xs">
-          <p className="text-xs sm:text-sm uppercase tracking-wider font-extrabold text-[#054038]">Learning Continues Beyond The Classroom</p>
-          <p className="mt-2 text-sm sm:text-base font-extrabold text-brand-ink">
-            CENTRE LEARNING <span className="text-brand-teal font-black">➔</span> GUIDED PRACTICE <span className="text-brand-teal font-black">➔</span> HOME REINFORCEMENT
-          </p>
-        </ScrollMotion>
+        {/* Active Stage Deep-Dive Spotlight Card */}
+        <div className="mt-6 rounded-3xl bg-white border border-[#2BD6B4]/50 p-7 sm:p-9 shadow-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2ECE9] pb-4">
+            <div>
+              <span className="text-xs font-black uppercase tracking-wider text-[#0E937E]">Stage 0{activeStage + 1} of 06</span>
+              <h4 className="text-2xl font-black text-brand-deep">{stages[activeStage].name}</h4>
+            </div>
+            <span className="rounded-full bg-brand-teal100 px-4 py-1.5 text-xs font-bold text-[#0B6E5F]">
+              Active In Every 60-Minute Class
+            </span>
+          </div>
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wide text-[#6b807b]">Stage Purpose</p>
+              <p className="mt-1.5 text-base text-brand-ink font-medium leading-relaxed">{stages[activeStage].desc}</p>
+            </div>
+            <div className="rounded-2xl bg-[#E9F6F3] p-4.5 border border-[#2BD6B4]/30">
+              <p className="text-xs font-extrabold uppercase tracking-wide text-[#0B6E5F]">Classroom Dynamic</p>
+              <p className="mt-1.5 text-base text-brand-deep font-bold leading-relaxed">{stages[activeStage].inClass}</p>
+            </div>
+          </div>
+        </div>
 
         {/* 3-Year Pathway & Quantum Habits Grid */}
         <div className="mt-18 grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-          {/* Pathway with 21st.dev SpotlightCard */}
-          <ScrollMotion variant="fade-left" className="h-full">
-            <SpotlightCard className="p-8 h-full flex flex-col justify-between shadow-lg">
-              <div>
-                <span className="chip !px-3.5 !py-1 !text-xs !bg-[#054038] !text-white font-bold">STRUCTURED PROGRESSION</span>
-                <h3 className="mt-4 text-2xl font-extrabold text-brand-ink">The 3-Year Q-School Pathway</h3>
-                <div className="mt-6 space-y-4">
-                  {pathways.map((pw, i) => (
-                    <div key={i} className="rounded-2xl border border-[#CFE3DD] bg-[#F7FAF9] p-5 hover:bg-white transition">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-black text-brand-deep">{pw.year} — {pw.stage}</span>
-                        <span className="text-xs font-bold text-[#0E937E] bg-brand-teal100 px-3 py-1 rounded-full">48 Classes</span>
-                      </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {pw.modules.map((m) => (
-                          <span key={m} className="rounded-lg bg-white px-3 py-1 text-xs sm:text-[13px] font-bold text-brand-ink border border-[#CFE3DD] shadow-xs">
-                            {m}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="mt-3 text-xs sm:text-sm text-[#4b635e] leading-relaxed">{pw.desc}</p>
+          <SpotlightCard className="p-8 h-full flex flex-col justify-between shadow-lg">
+            <div>
+              <span className="chip !px-3.5 !py-1 !text-xs !bg-[#054038] !text-white font-bold">STRUCTURED PROGRESSION</span>
+              <h3 className="mt-4 text-2xl font-extrabold text-brand-ink">The 3-Year Q-School Pathway</h3>
+              <div className="mt-6 space-y-4">
+                {pathways.map((pw, i) => (
+                  <div key={i} className="rounded-2xl border border-[#CFE3DD] bg-[#F7FAF9] p-5 hover:bg-white transition">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-black text-brand-deep">{pw.year} — {pw.stage}</span>
+                      <span className="text-xs font-bold text-[#0E937E] bg-brand-teal100 px-3 py-1 rounded-full">48 Classes</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </SpotlightCard>
-          </ScrollMotion>
-
-          {/* Quantum Habits with 21st.dev SpotlightCard */}
-          <ScrollMotion variant="fade-right" delay={0.12} className="h-full">
-            <SpotlightCard className="p-8 h-full flex flex-col justify-between shadow-lg">
-              <div>
-                <span className="chip !px-3.5 !py-1 !text-xs !bg-[#0E937E] !text-white font-bold">DAILY ROUTINES</span>
-                <h3 className="mt-4 text-2xl font-extrabold text-brand-ink">Quantum Habits</h3>
-                <p className="mt-1.5 text-xs sm:text-sm font-bold text-[#0E937E]">Small Habits. Big Possibilities. Habit → Practice → Growth.</p>
-                <div className="mt-6 space-y-3.5">
-                  {habits.map((h, i) => (
-                    <div key={i} className="flex items-center gap-4 rounded-2xl border border-[#EEF3F1] bg-[#FDFCF9] p-4 hover:bg-white hover:border-[#2BD6B4]/50 transition">
-                      <span className="icon-3d h-10 w-10 shrink-0 rounded-xl" style={{ ["--c" as string]: "#0E937E" }}>
-                        <Icon name={h.icon as IconName} size={20} />
-                      </span>
-                      <div>
-                        <p className="text-base font-bold text-brand-ink">{h.title}</p>
-                        <p className="text-xs sm:text-[13px] text-[#5c7772]">{h.desc}</p>
-                      </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {pw.modules.map((m) => (
+                        <span key={m} className="rounded-lg bg-white px-3 py-1 text-xs sm:text-[13px] font-bold text-brand-ink border border-[#CFE3DD] shadow-xs">
+                          {m}
+                        </span>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                    <p className="mt-3 text-xs sm:text-sm text-[#4b635e] leading-relaxed">{pw.desc}</p>
+                  </div>
+                ))}
               </div>
+            </div>
+          </SpotlightCard>
 
-              <div className="mt-8 border-t border-[#EEF3F1] pt-5 text-center">
-                <Link href="#demo" className="btn-3d btn-3d-teal inline-flex items-center gap-2 rounded-xl px-7 py-3 text-sm font-bold shadow-md">
-                  Begin Your Child&apos;s Q-Journey →
-                </Link>
+          <SpotlightCard className="p-8 h-full flex flex-col justify-between shadow-lg">
+            <div>
+              <span className="chip !px-3.5 !py-1 !text-xs !bg-[#0E937E] !text-white font-bold">DAILY ROUTINES</span>
+              <h3 className="mt-4 text-2xl font-extrabold text-brand-ink">Quantum Habits</h3>
+              <p className="mt-1.5 text-xs sm:text-sm font-bold text-[#0E937E]">Small Habits. Big Possibilities. Habit → Practice → Growth.</p>
+              <div className="mt-6 space-y-3.5">
+                {habits.map((h, i) => (
+                  <div key={i} className="flex items-center gap-4 rounded-2xl border border-[#EEF3F1] bg-[#FDFCF9] p-4 hover:bg-white hover:border-[#2BD6B4]/50 transition">
+                    <span className="icon-3d h-10 w-10 shrink-0 rounded-xl" style={{ ["--c" as string]: "#0E937E" }}>
+                      <Icon name={h.icon as IconName} size={20} />
+                    </span>
+                    <div>
+                      <p className="text-base font-bold text-brand-ink">{h.title}</p>
+                      <p className="text-xs sm:text-[13px] text-[#5c7772]">{h.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </SpotlightCard>
-          </ScrollMotion>
+            </div>
+          </SpotlightCard>
         </div>
       </div>
     </section>
   );
 }
 
-/* ───────────────────────── 8. Q-Verse: Transformative Ecosystem ───────────────────────── */
+/* ───────────────────────── 8. Q-Verse Digital Learning Platform ───────────────────────── */
 function QVerseSection() {
-  const ecosystem = [
-    { name: "Q MEMORY", tagline: "Remember More. Learn Faster.", icon: "bulb", color: "#0E937E" },
-    { name: "Q VISION", tagline: "Expand Perspectives. See a Bigger Tomorrow.", icon: "planet", color: "#5B6CF0" },
-    { name: "Q LEARNING", tagline: "Deeper Understanding. Lifelong Learning.", icon: "book", color: "#F29A2E" },
-    { name: "Q MASTERY", tagline: "Practice. Progress. Achieve Excellence.", icon: "award", color: "#E2557A" },
-    { name: "Q MATH", tagline: "Stronger Logic. Real-Life Application.", icon: "robot", color: "#3C7DBF" },
-    { name: "Q PARENTING", tagline: "Empowered Parents. Brighter Generations.", icon: "users", color: "#6B2A6E" },
-    { name: "Q SCIENCE", tagline: "Curiosity Today. Innovation Tomorrow.", icon: "leaf", color: "#4CAF6E" },
-    { name: "Q CREATION", tagline: "Imagine. Create. Express. Turn Ideas into Reality.", icon: "palette", color: "#E0782F" },
-    { name: "Q WAY", tagline: "Right Values. Right Choices. A Meaningful Life.", icon: "shield", color: "#054038" },
-    { name: "Q HABIT", tagline: "Disciplined Today. A Brighter Tomorrow.", icon: "sparkle", color: "#2BD6B4" },
+  const pillars = [
+    { title: "Continuous Learning", desc: "Access session recaps, interactive exercises, and guided home practice anytime." },
+    { title: "Parent Visibility", desc: "Transparent progress metrics and mentor observations to stay closely connected." },
+    { title: "Mentor Support", desc: "Ongoing developmental touchpoints and habit monitoring beyond classroom hours." },
   ];
 
   return (
-    <section className="py-20 bg-white border-t border-[#E2ECE9]">
+    <section className="scroll-mt-20 py-24 bg-white border-y border-[#E2ECE9]">
       <div className="container-qs">
-        <Reveal variant="blur" className="mx-auto max-w-2xl text-center">
-          <Kicker>Q-Verse</Kicker>
-          <H2>A Transformative Ecosystem</H2>
-          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-brand-teal">
-            EXPLORE · LEARN · GROW · CREATE · LEAD
-          </p>
-        </Reveal>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          <div className="lg:col-span-7">
+            <span className="chip !px-3.5 !py-1 !text-xs !bg-[#054038] !text-white font-bold">DIGITAL ECOSYSTEM</span>
+            <H2>Q-Verse: Learning Beyond The Physical Classroom</H2>
+            <p className="mt-4 text-base sm:text-lg text-[#4b635e] leading-relaxed">
+              Q-School combines physical centre learning with the Q-Verse digital platform — giving children and parents a seamless, transparent bridge between classroom practice and daily routine reinforcement.
+            </p>
+            <div className="mt-8 space-y-4">
+              {pillars.map((p, i) => (
+                <div key={i} className="flex items-start gap-4 rounded-2xl border border-[#EEF3F1] bg-[#F7FAF9] p-5 hover:bg-white hover:shadow-md transition">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-deep text-[#2BD6B4] font-bold text-sm">
+                    0{i + 1}
+                  </span>
+                  <div>
+                    <h4 className="text-base sm:text-lg font-bold text-brand-ink">{p.title}</h4>
+                    <p className="mt-1 text-xs sm:text-sm text-[#5c7772] leading-relaxed">{p.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {ecosystem.map((item, idx) => (
-            <div key={idx} className="emboss emboss-hover flex flex-col justify-between rounded-2xl bg-[#FDFCF9] p-5 text-center border border-[#CFE3DD]">
-              <div>
-                <span className="icon-3d mx-auto h-11 w-11 rounded-xl" style={{ ["--c" as string]: item.color }}>
-                  <Icon name={item.icon as IconName} size={20} />
-                </span>
-                <h4 className="mt-3 text-sm font-extrabold text-brand-ink">{item.name}</h4>
-                <p className="mt-1 text-xs text-[#5c7772] leading-tight">{item.tagline}</p>
+          <div className="lg:col-span-5">
+            <div className="rounded-3xl border border-[#CFE3DD] bg-gradient-to-br from-[#054038] to-[#0A2924] p-8 text-white shadow-xl">
+              <span className="rounded-full bg-[#2BD6B4] px-3 py-1 text-xs font-black text-brand-deep">Q-VERSE APP</span>
+              <h3 className="mt-4 text-2xl font-extrabold text-white">Transparent Learning Metrics</h3>
+              <p className="mt-2 text-sm text-white/80">Every session is benchmarked across the 5D cognitive dimensions.</p>
+              <div className="mt-6 space-y-3">
+                {[
+                  { label: "Focus Stamina", val: "94%" },
+                  { label: "Speed Recall", val: "+280%" },
+                  { label: "Habit Consistency", val: "98%" },
+                  { label: "Peer Collaboration", val: "High" },
+                ].map((m) => (
+                  <div key={m.label} className="flex items-center justify-between rounded-xl bg-white/10 p-3 text-xs sm:text-sm">
+                    <span className="text-white/85">{m.label}</span>
+                    <span className="font-mono font-bold text-[#2BD6B4]">{m.val}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Brochure Page 15 Closing Statement */}
-        <div className="mt-12 rounded-3xl bg-gradient-to-r from-[#054038] via-[#04332D] to-[#054038] p-8 text-center text-white shadow-xl border border-white/10">
-          <p className="text-xs sm:text-sm uppercase tracking-widest text-[#2BD6B4] font-extrabold">HOLISTIC LEARNING FOR A BRIGHTER TOMORROW</p>
-          <p className="mt-2 text-xl sm:text-2xl font-black tracking-wide">
-            LEARN BETTER · THINK BIGGER · BECOME FUTURE-READY
-          </p>
-          <p className="mt-2 text-xs sm:text-sm text-white/80">
-            For children aged 6–14 years · 48 Classes Per Annum · 9 Experiential Learning Centres
-          </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Link href="#centres" className="btn-3d btn-3d-mint text-xs sm:text-sm font-bold px-6 py-2.5 rounded-xl">
-              Locate Your Nearest Centre →
-            </Link>
-            <Link href="#demo" className="btn-3d btn-3d-glass text-xs sm:text-sm font-bold px-6 py-2.5 rounded-xl">
-              Book a Free Demo Class
-            </Link>
           </div>
         </div>
       </div>
@@ -1081,150 +1403,83 @@ function QVerseSection() {
 }
 
 function Formats({ c }: { c: HomeContent["formats"] }) {
+  if (!c.items.length) return null;
   return (
-    <section className="container-qs py-20">
-      <Reveal variant="blur" className="mx-auto max-w-2xl text-center">
+    <section id="formats" className="container-qs scroll-mt-20 py-24">
+      <ScrollMotion variant="blur-in" className="mx-auto max-w-2xl text-center">
         <Kicker>{c.kicker}</Kicker>
         <H2>{c.title}</H2>
-      </Reveal>
-      <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      </ScrollMotion>
+      <StaggerContainer className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3" staggerDelay={0.08}>
         {c.items.map((f, i) => (
-          <Reveal key={i} delay={i * 90} variant="zoom">
-            <Tilt className="h-full rounded-2xl">
-              <Link href={f.href} className="emboss emboss-hover press group flex h-full flex-col rounded-2xl p-6 [transform-style:preserve-3d]">
-                <span className="icon-3d h-14 w-14 rounded-2xl [transform:translateZ(36px)]" style={{ ["--c" as string]: f.color }}>
-                  <Icon name={f.icon as IconName} size={26} />
+          <StaggerItem key={i} className="h-full">
+            <SpotlightCard spotlightColor="rgba(43, 214, 180, 0.2)" className="flex h-full flex-col justify-between p-8 hover:shadow-xl transition-all duration-300">
+              <div>
+                <span className="icon-3d h-14 w-14 rounded-2xl" style={{ ["--c" as string]: f.color }}>
+                  <Icon name={f.icon as IconName} size={28} />
                 </span>
-                <h3 className="mt-5 text-[17px] font-semibold text-brand-ink">{f.title}</h3>
-                <p className="mt-2 flex-1 text-[13.5px] leading-relaxed text-[#5c7772]">{f.body}</p>
-                <span className="mt-5 inline-flex items-center gap-1 text-[13px] font-semibold text-brand-teal">
-                  Learn more <span className="transition group-hover:translate-x-1">→</span>
-                </span>
-              </Link>
-            </Tilt>
-          </Reveal>
+                <h3 className="mt-5 text-2xl font-bold text-brand-ink">{f.title}</h3>
+                <p className="mt-3 text-base text-[#5c7772] leading-relaxed">{f.body}</p>
+              </div>
+            </SpotlightCard>
+          </StaggerItem>
         ))}
-      </div>
+      </StaggerContainer>
     </section>
   );
 }
 
 function How({ c }: { c: HomeContent["how"] }) {
-  const cols = c.steps.length === 4 ? "md:grid-cols-4" : c.steps.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3";
+  if (!c.steps.length) return null;
   return (
-    <section className="container-qs py-20">
-      <Reveal variant="blur" className="mx-auto max-w-2xl text-center">
-        <Kicker>{c.kicker}</Kicker>
-        <H2>{c.title}</H2>
-      </Reveal>
-      <ol className={`relative mt-14 grid grid-cols-1 gap-10 md:gap-6 ${cols}`}>
-        {c.steps.length > 1 && (
-          <Reveal variant="line" className="absolute left-[16%] right-[16%] top-9 hidden border-t-2 border-dashed border-brand-teal500/40 !duration-[1400ms] md:block" />
-        )}
-        {c.steps.map((s, i) => (
-          <Reveal key={i} delay={200 + i * 220} variant="zoom" className="relative text-center">
-            <li className="list-none">
-              <span className="group relative mx-auto block h-[72px] w-[72px]">
-                <span className="icon-3d h-[72px] w-[72px] rounded-[22px]" style={{ ["--c" as string]: "#0B6E5F" }}>
-                  <Icon name={s.icon as IconName} size={30} />
-                </span>
-                <span className="icon-3d absolute -right-2 -top-2 h-8 w-8 rounded-full text-[13px] font-bold ring-4 ring-[#f4faf8]" style={{ ["--c" as string]: "#2BD6B4" }}>
-                  <span className="relative text-brand-deep">{i + 1}</span>
-                </span>
-              </span>
-              <h3 className="mt-6 text-[18px] font-semibold text-brand-ink">{s.title}</h3>
-              <p className="mx-auto mt-2 max-w-xs text-[14px] leading-relaxed text-[#5c7772]">{s.body}</p>
-            </li>
-          </Reveal>
-        ))}
-      </ol>
-      {c.cta.label && (
-        <div className="mt-12 text-center">
-          <Link href={c.cta.href} className="btn-3d btn-3d-teal inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-[15px] font-semibold">
-            {c.cta.label}
-          </Link>
-        </div>
-      )}
+    <section id="how" className="bg-[#f0f6f4] py-24">
+      <div className="container-qs">
+        <ScrollMotion variant="blur-in" className="mx-auto max-w-2xl text-center">
+          <Kicker>{c.kicker}</Kicker>
+          <H2>{c.title}</H2>
+        </ScrollMotion>
+        <StaggerContainer className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3" staggerDelay={0.1}>
+          {c.steps.map((st, i) => (
+            <StaggerItem key={i} className="h-full">
+              <SpotlightCard spotlightColor="rgba(43, 214, 180, 0.2)" className="flex h-full flex-col justify-between p-8 hover:shadow-xl transition-all duration-300">
+                <div>
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal text-white font-bold text-base shadow-md">
+                    0{i + 1}
+                  </span>
+                  <h3 className="mt-5 text-2xl font-bold text-brand-ink">{st.title}</h3>
+                  <p className="mt-3 text-base text-[#5c7772] leading-relaxed">{st.body}</p>
+                </div>
+              </SpotlightCard>
+            </StaggerItem>
+          ))}
+        </StaggerContainer>
+      </div>
     </section>
   );
 }
 
 function Live({ c }: { c: HomeContent["live"] }) {
-  const webinars = WEBINAR_LIST.filter((w) => !w.recorded).slice(0, 3);
-  const workshops = WORKSHOPS.filter((w) => !w.past).slice(0, 3);
+  const webinars = WEBINAR_LIST.slice(0, 3);
   return (
-    <section id="live" className="scroll-mt-20 bg-brand-deep py-20 text-white">
+    <section id="live" className="scroll-mt-20 py-24 bg-white border-y border-[#E2ECE9]">
       <div className="container-qs">
-        <Reveal variant="blur" className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div>
-            <Kicker dark>{c.kicker}</Kicker>
-            <H2 dark>{c.title}</H2>
-          </div>
-          {c.linkLabel && (
-            <Link href="/live" className="inline-flex items-center gap-1 text-[14px] font-semibold text-[#2BD6B4] hover:underline">
-              {c.linkLabel} →
-            </Link>
-          )}
-        </Reveal>
-
-        <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Reveal variant="left">
-            <div className="emboss-dark h-full rounded-3xl p-4 sm:p-6">
-              <div className="flex items-center gap-2 text-[14px] font-semibold">
-                <span className="icon-3d h-8 w-8 rounded-lg" style={{ ["--c" as string]: "#5B6CF0" }}>
-                  <Icon name="webinar" size={16} />
-                </span>{" "}
-                Webinars
-                <span className="ml-auto rounded-full bg-[#2BD6B4]/15 px-2.5 py-0.5 text-[11px] font-bold text-[#2BD6B4]">FREE</span>
-              </div>
-              <ul className="mt-5 space-y-3">
-                {webinars.map((w) => (
-                  <li key={w.id} className="emboss-dark emboss-dark-hover flex items-center gap-3 rounded-2xl p-3 sm:gap-4">
-                    <Art art={w.art} className="h-12 w-12 shrink-0 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,.3),0_6px_14px_-6px_rgba(0,0,0,.6)] sm:h-16 sm:w-16" iconSize={22} />
-                    <div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 text-[14.5px] font-semibold leading-snug sm:truncate">{w.title}</p>
-                      <p className="mt-0.5 text-[12.5px] text-white/65">
-                        {w.by} · {w.date}
-                      </p>
-                      <p className="mt-0.5 text-[12px] text-white/50">{w.registered} registered</p>
-                    </div>
-                    <Link href="#demo" className="btn-3d btn-3d-white shrink-0 rounded-xl px-3.5 py-2 text-[12.5px] font-semibold">
-                      Register
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+        <ScrollMotion variant="blur-in" className="mx-auto max-w-2xl text-center">
+          <Kicker>{c.kicker}</Kicker>
+          <H2>{c.title}</H2>
+        </ScrollMotion>
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+          {webinars.map((w) => (
+            <div key={w.id} className="rounded-2xl border border-[#CFE3DD] p-6 hover:shadow-lg transition">
+              <span className="chip !px-2.5 !py-0.5 !text-[11px] !bg-brand-teal100 !text-[#0B6E5F] font-bold">
+                {w.date}
+              </span>
+              <h4 className="mt-3 text-lg font-bold text-brand-ink">{w.title}</h4>
+              <p className="mt-2 text-xs text-[#5c7772]">Conducted by {w.by} · {w.duration}</p>
+              <Link href="#demo" className="mt-4 inline-block text-xs font-bold text-brand-teal hover:underline">
+                Register Free →
+              </Link>
             </div>
-          </Reveal>
-          <Reveal delay={120} variant="right">
-            <div className="emboss-dark h-full rounded-3xl p-4 sm:p-6">
-              <div className="flex items-center gap-2 text-[14px] font-semibold">
-                <span className="icon-3d h-8 w-8 rounded-lg" style={{ ["--c" as string]: "#F29A2E" }}>
-                  <Icon name="tools" size={16} />
-                </span>{" "}
-                Workshops
-              </div>
-              <ul className="mt-5 space-y-3">
-                {workshops.map((w) => (
-                  <li key={w.id} className="emboss-dark emboss-dark-hover flex items-center gap-3 rounded-2xl p-3 sm:gap-4">
-                    <Art art={w.art} className="h-12 w-12 shrink-0 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,.3),0_6px_14px_-6px_rgba(0,0,0,.6)] sm:h-16 sm:w-16" iconSize={22} />
-                    <div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 text-[14.5px] font-semibold leading-snug sm:truncate">{w.title}</p>
-                      <p className="mt-0.5 text-[12.5px] text-white/65">{w.date}</p>
-                      <p className="mt-0.5 inline-flex items-center gap-1 text-[12px] text-white/50">
-                        <Icon name={w.mode === "Online" ? "globe" : "pin"} size={12} />
-                        {w.mode === "Online" ? "Online" : w.city} · {w.days}
-                        {w.seatsLeft ? ` · ${w.seatsLeft} seats left` : ""}
-                      </p>
-                    </div>
-                    <Link href="#demo" className="btn-3d btn-3d-glass shrink-0 rounded-xl px-3.5 py-2 text-[12.5px] font-semibold">
-                      Reserve
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Reveal>
+          ))}
         </div>
       </div>
     </section>
@@ -1232,67 +1487,25 @@ function Live({ c }: { c: HomeContent["live"] }) {
 }
 
 function Why({ c }: { c: HomeContent["why"] }) {
+  if (!c.items.length) return null;
   return (
-    <section className="container-qs grid grid-cols-1 items-center gap-14 py-20 lg:grid-cols-2">
-      <Reveal variant="left">
+    <section id="why" className="container-qs scroll-mt-20 py-24">
+      <ScrollMotion variant="blur-in" className="mx-auto max-w-2xl text-center">
         <Kicker>{c.kicker}</Kicker>
         <H2>{c.title}</H2>
-        {c.body && <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-[#5c7772]">{c.body}</p>}
-        <div className="mt-8 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
-          {c.items.map((w, i) => (
-            <div key={i} className="emboss emboss-hover group flex gap-3.5 rounded-2xl p-4">
-              <span className="icon-3d h-11 w-11 shrink-0 rounded-xl" style={{ ["--c" as string]: w.color }}>
-                <Icon name={w.icon as IconName} size={21} />
-              </span>
+      </ScrollMotion>
+      <StaggerContainer className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3" staggerDelay={0.08}>
+        {c.items.map((card, i) => (
+          <StaggerItem key={i} className="h-full">
+            <SpotlightCard spotlightColor="rgba(43, 214, 180, 0.2)" className="flex h-full flex-col justify-between p-8 hover:shadow-xl transition-all duration-300">
               <div>
-                <p className="text-[15px] font-semibold text-brand-ink">{w.title}</p>
-                <p className="mt-0.5 text-[13px] text-[#5c7772]">{w.body}</p>
+                <h3 className="text-xl font-bold text-brand-ink">{card.title}</h3>
+                <p className="mt-3 text-sm text-[#5c7772] leading-relaxed">{card.body}</p>
               </div>
-            </div>
-          ))}
-        </div>
-      </Reveal>
-
-      <Reveal delay={150} variant="right">
-        <Tilt max={4} className="rounded-[28px]">
-          <div className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-brand-teal to-brand-deep p-8 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.25),inset_0_-3px_0_rgba(0,0,0,.2),0_30px_60px_-24px_rgba(5,64,56,.7)] sm:p-10">
-            <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10" aria-hidden />
-            <div className="relative grid items-center gap-8 sm:grid-cols-[1fr_auto]">
-              <div>
-                {c.appBadge && <span className="rounded-full bg-white/15 px-3 py-1 text-[11.5px] font-semibold">{c.appBadge}</span>}
-                <h3 className="mt-4 text-2xl font-bold leading-snug">{c.appTitle}</h3>
-                <p className="mt-2 text-[14px] text-white/80">{c.appBody}</p>
-                <div className="mt-6 flex flex-wrap gap-2.5">
-                  {["Google Play", "App Store"].map((s) => (
-                    <span key={s} className="btn-3d btn-3d-glass inline-flex items-center gap-2 rounded-xl !bg-black/30 px-3.5 py-2 text-[12.5px] font-semibold">
-                      <Icon name="download" size={15} /> {s}
-                      <span className="rounded bg-white/20 px-1.5 text-[10px] font-medium">Soon</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="mx-auto w-[150px] rotate-3 rounded-[26px] border-[5px] border-[#021f1b] bg-[#F3F8F6] p-2 shadow-2xl">
-                <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-[#021f1b]/80" />
-                <div className="rounded-xl bg-brand-deep p-2.5 text-white">
-                  <p className="text-[8px] text-white/70">Good morning,</p>
-                  <p className="text-[11px] font-semibold">Ananya</p>
-                  <div className="mt-2 h-1.5 rounded-full bg-white/20">
-                    <div className="h-full w-3/5 rounded-full bg-[#2BD6B4]" />
-                  </div>
-                </div>
-                <div className="mt-2 grid grid-cols-2 gap-1.5">
-                  {(["live", "book", "webinar", "award"] as IconName[]).map((n) => (
-                    <div key={n} className="emboss flex aspect-square items-center justify-center rounded-lg text-brand-teal">
-                      <Icon name={n} size={18} />
-                    </div>
-                  ))}
-                </div>
-                <Art art="laptop" className="mt-2 h-14 rounded-lg" iconSize={20} />
-              </div>
-            </div>
-          </div>
-        </Tilt>
-      </Reveal>
+            </SpotlightCard>
+          </StaggerItem>
+        ))}
+      </StaggerContainer>
     </section>
   );
 }
@@ -1344,7 +1557,17 @@ function Testimonials({ c }: { c: HomeContent["testimonials"] }) {
   );
 }
 
+/* ───────────────────────── 9. Interactive Centres Explorer ───────────────────────── */
 function Centres({ c }: { c: HomeContent["centres"] }) {
+  const [selectedCity, setSelectedCity] = useState<string>("all");
+
+  const centres = CENTERS;
+
+  const filteredCentres = centres.filter((ct) => {
+    if (selectedCity === "all") return true;
+    return ct.city.toLowerCase().includes(selectedCity.toLowerCase());
+  });
+
   return (
     <section id="centres" className="container-qs scroll-mt-20 py-24">
       <ScrollMotion variant="blur-in" className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -1368,13 +1591,14 @@ function Centres({ c }: { c: HomeContent["centres"] }) {
       {/* Centre Environment Showcase */}
       <ScrollMotion variant="fade-up" delay={0.1} className="mt-10 overflow-hidden rounded-3xl border border-[#CFE3DD] bg-white shadow-xl grid grid-cols-1 lg:grid-cols-12 items-stretch">
         <div className="relative lg:col-span-5 min-h-[260px] lg:min-h-full">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/classroom-centre.jpg"
-            alt="Q-School Learning Centre"
-            className="h-full w-full object-cover"
+          <Image
+            src="/images/uploaded/classroom-centre.jpg"
+            alt="Q-School Learning Centre Classroom"
+            fill
+            sizes="(max-width: 1024px) 100vw, 500px"
+            className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/50 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-black/50 via-transparent to-transparent pointer-events-none" />
           <span className="absolute bottom-4 left-4 rounded-full bg-white/95 px-4 py-1.5 text-xs sm:text-sm font-bold text-brand-deep backdrop-blur-xs shadow-md">
             Purpose-Built Quantum Pods
           </span>
@@ -1395,57 +1619,84 @@ function Centres({ c }: { c: HomeContent["centres"] }) {
         </div>
       </ScrollMotion>
 
-      {/* 9 Centres Grid with 21st.dev Stagger & SpotlightCards */}
-      <StaggerContainer className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3" staggerDelay={0.08}>
-        {CENTERS.map((ct, i) => (
-          <StaggerItem key={ct.id} className="h-full">
-            <SpotlightCard
-              spotlightColor="rgba(43, 214, 180, 0.18)"
-              className="p-7 h-full flex flex-col justify-between hover:shadow-xl transition-all duration-300"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="chip !px-3 !py-1 !text-xs !bg-brand-teal100 !text-brand-deep font-extrabold">
-                    {ct.city}
-                  </span>
-                  <span className="text-xs font-bold text-[#0E937E]">Branch 0{i + 1}</span>
-                </div>
-
-                <h3 className="mt-4 text-xl font-extrabold text-brand-ink">{ct.name}</h3>
-
-                <p className="mt-3 text-sm text-[#4b635e] leading-relaxed">
-                  <Icon name="pin" size={15} className="inline mr-1 text-[#0E937E]" />
-                  {ct.address}
-                </p>
-
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {ct.batches.map((b) => (
-                    <span key={b} className="chip !px-3 !py-1 !text-xs">
-                      {b}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-8 border-t border-[#EEF3F1] pt-5 flex items-center justify-between gap-2">
-                <a
-                  href={`tel:${ct.phone}`}
-                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-brand-teal hover:underline"
-                >
-                  <Icon name="phone" size={15} />
-                  <span>{ct.phone}</span>
-                </a>
-                <Link
-                  href="#demo"
-                  className="btn-3d btn-3d-teal rounded-lg px-4 py-2 text-xs sm:text-sm font-bold"
-                >
-                  Book Visit →
-                </Link>
-              </div>
-            </SpotlightCard>
-          </StaggerItem>
+      {/* Interactive City Filter Pills */}
+      <div className="mt-12 flex flex-wrap items-center gap-2">
+        <span className="text-xs font-bold text-[#6b807b] mr-2">Filter by City:</span>
+        {[
+          { id: "all", label: "All 9 Centres" },
+          { id: "puducherry", label: "Puducherry (HQ)" },
+          { id: "chennai", label: "Chennai (2)" },
+          { id: "bengaluru", label: "Bengaluru (2)" },
+          { id: "hyderabad", label: "Hyderabad" },
+          { id: "trichy", label: "Trichy" },
+          { id: "pune", label: "Pune" },
+          { id: "coimbatore", label: "Coimbatore" },
+        ].map((c) => (
+          <button
+            key={c.id}
+            type="button"
+            onClick={() => setSelectedCity(c.id)}
+            className={`rounded-full px-4 py-2 text-xs sm:text-sm font-bold transition ${
+              selectedCity === c.id
+                ? "bg-brand-deep text-[#2BD6B4] shadow-md"
+                : "bg-white border border-[#CFE3DD] text-[#4b635e] hover:bg-[#F4F8F7]"
+            }`}
+          >
+            {c.label}
+          </button>
         ))}
-      </StaggerContainer>
+      </div>
+
+      {/* 9 Centres Grid */}
+      <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+        {filteredCentres.map((ct, i) => (
+          <SpotlightCard
+            key={ct.id}
+            spotlightColor="rgba(43, 214, 180, 0.18)"
+            className="p-7 flex flex-col justify-between hover:shadow-xl transition-all duration-300"
+          >
+            <div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="chip !px-3 !py-1 !text-xs !bg-brand-teal100 !text-brand-deep font-extrabold">
+                  {ct.city}
+                </span>
+                <span className="text-xs font-bold text-[#0E937E]">Branch 0{i + 1}</span>
+              </div>
+
+              <h3 className="mt-4 text-xl font-extrabold text-brand-ink">{ct.name}</h3>
+
+              <p className="mt-3 text-sm text-[#4b635e] leading-relaxed">
+                <Icon name="pin" size={15} className="inline mr-1 text-[#0E937E]" />
+                {ct.address}
+              </p>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                {ct.batches.map((b) => (
+                  <span key={b} className="chip !px-3 !py-1 !text-xs">
+                    {b}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-8 border-t border-[#EEF3F1] pt-5 flex items-center justify-between gap-2">
+              <a
+                href={`tel:${ct.phone}`}
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-brand-teal hover:underline"
+              >
+                <Icon name="phone" size={15} />
+                <span>{ct.phone}</span>
+              </a>
+              <Link
+                href="#demo"
+                className="btn-3d btn-3d-teal rounded-lg px-4 py-2 text-xs sm:text-sm font-bold"
+              >
+                Book Visit →
+              </Link>
+            </div>
+          </SpotlightCard>
+        ))}
+      </div>
     </section>
   );
 }
@@ -1460,82 +1711,37 @@ function Pricing({ c }: { c: HomeContent["pricing"] }) {
           <Kicker>{c.kicker}</Kicker>
           <H2>{c.title}</H2>
         </ScrollMotion>
-        <StaggerContainer className={`mx-auto mt-14 grid max-w-5xl grid-cols-1 items-stretch gap-8 ${cols}`} staggerDelay={0.1}>
+        <div className={`mt-14 grid grid-cols-1 gap-6 ${cols}`}>
           {c.plans.map((p, i) => (
-            <StaggerItem key={i} className="h-full">
-              <div className={`relative h-full ${p.featured ? "md:-top-3" : ""}`}>
-                <SpotlightCard
-                  spotlightColor={p.featured ? "rgba(43, 214, 180, 0.3)" : "rgba(14, 147, 126, 0.15)"}
-                  borderColor={p.featured ? "#2BD6B4" : undefined}
-                  className={`relative flex h-full flex-col p-8 transition-all duration-300 hover:shadow-2xl ${
-                    p.featured
-                      ? "bg-gradient-to-b from-[#0a5a4e] to-brand-deep text-white shadow-xl border-2 border-[#2BD6B4]"
-                      : "bg-[#FDFCF9] border border-[#CFE3DD]"
-                  }`}
-                >
-                  {p.featured && (
-                    <>
-                      <BorderBeam size={220} duration={8} colorFrom="#2BD6B4" colorTo="#2BB39C" borderWidth={2.5} />
-                      <span className="btn-3d btn-3d-mint absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-xs font-black shadow-md">RECOMMENDED</span>
-                    </>
-                  )}
-                  <p className={`text-base font-extrabold uppercase tracking-wider ${p.featured ? "text-[#2BD6B4]" : "text-brand-teal"}`}>{p.name}</p>
-                  <p className="mt-4">
-                    <span className={`text-4xl font-extrabold ${p.featured ? "text-white" : "text-brand-ink"}`}>{p.price}</span>
-                    <span className={`ml-1.5 text-sm ${p.featured ? "text-white/70" : "text-[#6b807b]"}`}>{p.per}</span>
-                  </p>
-                  <p className={`mt-2.5 text-sm leading-relaxed ${p.featured ? "text-white/80" : "text-[#5c7772]"}`}>{p.blurb}</p>
-                  <ul className="mt-7 flex-1 space-y-3.5">
-                    {p.features.map((f, k) => (
-                      <li key={k} className="flex gap-3 text-sm sm:text-[15px]">
-                        <span className="icon-3d mt-0.5 h-5 w-5 shrink-0 rounded-full" style={{ ["--c" as string]: p.featured ? "#2BD6B4" : "#0E937E" }}>
-                          <Icon name="check" size={12} strokeWidth={3.2} />
-                        </span>
-                        <span className={p.featured ? "text-white/95" : "text-[#3b544e]"}>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  {p.cta.label && (
-                    <Link
-                      href={p.cta.href}
-                      className={`btn-3d mt-8 inline-flex items-center justify-center rounded-xl px-6 py-3.5 text-sm font-bold shadow-md ${p.featured ? "btn-3d-mint" : "btn-3d-teal"}`}
-                    >
-                      {p.cta.label}
-                    </Link>
-                  )}
-                </SpotlightCard>
-              </div>
-            </StaggerItem>
+            <div key={i} className="rounded-3xl border border-[#CFE3DD] p-8 shadow-sm hover:shadow-lg transition">
+              <h3 className="text-xl font-bold text-brand-ink">{p.name}</h3>
+              <p className="mt-2 text-3xl font-extrabold text-brand-deep">{p.price}</p>
+              <p className="mt-3 text-sm text-[#5c7772]">{p.blurb}</p>
+            </div>
           ))}
-        </StaggerContainer>
-        {c.note && <p className="mt-10 text-center text-xs sm:text-sm text-[#6b807b]">{c.note}</p>}
+        </div>
       </div>
     </section>
   );
 }
 
 function Faq({ c }: { c: HomeContent["faq"] }) {
+  if (!c.items.length) return null;
   return (
-    <section id="faq" className="container-qs scroll-mt-20 py-24 border-t border-[#E2ECE9]">
-      <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] items-start">
-        <ScrollMotion variant="fade-left">
+    <section id="faq" className="scroll-mt-20 bg-[#F4F8F7] py-24">
+      <div className="container-qs">
+        <ScrollMotion variant="blur-in" className="mx-auto max-w-2xl text-center">
           <Kicker>{c.kicker}</Kicker>
           <H2>{c.title}</H2>
-          {c.body && <p className="mt-4 text-base sm:text-lg text-[#4b635e] leading-relaxed">{c.body}</p>}
-          {c.cta.label && (
-            <Link href={c.cta.href} className="btn-3d btn-3d-outline mt-7 inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-sm sm:text-base font-bold shadow-xs">
-              <Icon name="message" size={18} /> {c.cta.label}
-            </Link>
-          )}
         </ScrollMotion>
-        <ScrollMotion variant="fade-right" delay={0.12}>
-          <div className="space-y-4">
+        <ScrollMotion variant="fade-up" delay={0.1} className="mx-auto mt-14 max-w-3xl divide-y divide-[#E2ECE9] rounded-3xl bg-white p-6 sm:p-9 shadow-lg border border-[#CFE3DD]">
+          <div className="divide-y divide-[#EEF3F1]">
             {c.items.map((f, i) => (
-              <details key={i} className="emboss group rounded-2xl px-6 py-5 open:shadow-md transition duration-200">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base sm:text-lg font-bold text-brand-ink [&::-webkit-details-marker]:hidden">
-                  {f.q}
-                  <span className="icon-3d no-lift h-8 w-8 shrink-0 rounded-full group-open:rotate-45">
-                    <Icon name="plus" size={15} strokeWidth={2.4} />
+              <details key={i} className="group py-5 first:pt-0 last:pb-0" open={i === 0}>
+                <summary className="flex cursor-pointer items-center justify-between gap-4 font-bold text-brand-ink text-base sm:text-lg">
+                  <span>{f.q}</span>
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#F4F8F7] text-brand-teal transition-transform duration-300 group-open:rotate-180">
+                    <Icon name="chevDown" size={16} />
                   </span>
                 </summary>
                 <p className="mt-4 whitespace-pre-line pr-8 text-sm sm:text-base leading-relaxed text-[#4b635e] border-t border-[#E2ECE9]/60 pt-3">{f.a}</p>
@@ -1548,6 +1754,163 @@ function Faq({ c }: { c: HomeContent["faq"] }) {
   );
 }
 
+/* ───────────────────────── 10. Interactive Child Cognitive Profiler Widget ───────────────────────── */
+function CognitiveProfilerWidget() {
+  const [ageGroup, setAgeGroup] = useState<string>("8-11");
+  const [focusArea, setFocusArea] = useState<string>("focus");
+  const [learningStyle, setLearningStyle] = useState<string>("fast");
+
+  const recommendations: Record<string, { pathway: string; score: string; rationale: string }> = {
+    focus: {
+      pathway: "Q-5D Cognitive Stamina & Dual-Hemisphere Focus (BMIT)",
+      score: "Cognitive Focus Index: 92% Ready",
+      rationale: "Targeted sensory activation and concentration drills to build unbreakable 45-minute sustained attention.",
+    },
+    speed: {
+      pathway: "Speed Vedic Ganitham & Neural Pattern Recognition",
+      score: "Speed Math Index: 96% Ready",
+      rationale: "Multi-step mental arithmetic and visual calculation algorithms eliminating reliance on calculator tools.",
+    },
+    creativity: {
+      pathway: "STEM, Robotics & Shilpa Shastra Divergent Innovation",
+      score: "Inventive Potential: 95% Ready",
+      rationale: "Hands-on engineering kits combined with classical geometric design to bridge art, logic, and code.",
+    },
+    confidence: {
+      pathway: "Q-Way Leadership & Empathetic Communication",
+      score: "Leadership Agility: 90% Ready",
+      rationale: "Public articulation, structured debate reasoning, and emotional equilibrium coaching in micro-cohorts.",
+    },
+  };
+
+  const currentRec = recommendations[focusArea] || recommendations.focus;
+
+  return (
+    <section className="container-qs py-12 scroll-mt-20">
+      <div className="rounded-3xl bg-gradient-to-br from-[#054038] via-[#04332D] to-[#011C18] p-8 sm:p-12 text-white shadow-2xl border border-[#2BD6B4]/40 relative overflow-hidden">
+        <BorderBeam size={300} duration={12} colorFrom="#2BD6B4" colorTo="#0E937E" borderWidth={2} />
+        <div className="relative z-10 max-w-4xl mx-auto">
+          <div className="text-center">
+            <span className="chip !px-3.5 !py-1 !text-xs !bg-[#2BD6B4] !text-brand-deep font-black">
+              INTERACTIVE DIAGNOSTIC
+            </span>
+            <h3 className="mt-3 text-2xl sm:text-4xl font-black text-white">
+              Discover Your Child&apos;s Cognitive Pathway
+            </h3>
+            <p className="mt-2 text-sm sm:text-base text-white/80">
+              Answer 3 quick questions to generate a personalized Q-School developmental recommendation.
+            </p>
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Step 1: Age */}
+            <div className="rounded-2xl bg-white/10 p-5 border border-white/15 backdrop-blur-sm">
+              <span className="text-xs font-bold uppercase text-[#2BD6B4]">Step 1: Child&apos;s Age</span>
+              <div className="mt-3 space-y-2">
+                {[
+                  { id: "4-7", label: "Ages 4–7 (Early Childhood)" },
+                  { id: "8-11", label: "Ages 8–11 (Middle Years)" },
+                  { id: "12-16", label: "Ages 12–16 (Adolescence)" },
+                ].map((a) => (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => setAgeGroup(a.id)}
+                    className={`w-full text-left rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition ${
+                      ageGroup === a.id ? "bg-[#2BD6B4] text-brand-deep font-bold shadow-md" : "bg-white/10 text-white/90 hover:bg-white/20"
+                    }`}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Step 2: Primary Focus Needed */}
+            <div className="rounded-2xl bg-white/10 p-5 border border-white/15 backdrop-blur-sm">
+              <span className="text-xs font-bold uppercase text-[#2BD6B4]">Step 2: Primary Growth Area</span>
+              <div className="mt-3 space-y-2">
+                {[
+                  { id: "focus", label: "Focus & Attention Stamina" },
+                  { id: "speed", label: "Speed Math & Memory Retention" },
+                  { id: "creativity", label: "Creative Logic & Robotics" },
+                  { id: "confidence", label: "Confidence & Articulation" },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setFocusArea(f.id)}
+                    className={`w-full text-left rounded-xl px-3.5 py-2 text-xs sm:text-sm font-semibold transition ${
+                      focusArea === f.id ? "bg-[#2BD6B4] text-brand-deep font-bold shadow-md" : "bg-white/10 text-white/90 hover:bg-white/20"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Step 3: Current Habit */}
+            <div className="rounded-2xl bg-white/10 p-5 border border-white/15 backdrop-blur-sm">
+              <span className="text-xs font-bold uppercase text-[#2BD6B4]">Step 3: Learning Pace</span>
+              <div className="mt-3 space-y-2">
+                {[
+                  { id: "distracted", label: "Easily distracted by screens" },
+                  { id: "fast", label: "Curious, finishes fast, needs challenge" },
+                  { id: "deliberate", label: "Quiet, thoughtful, needs confidence" },
+                ].map((l) => (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={() => setLearningStyle(l.id)}
+                    className={`w-full text-left rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold transition ${
+                      learningStyle === l.id ? "bg-[#2BD6B4] text-brand-deep font-bold shadow-md" : "bg-white/10 text-white/90 hover:bg-white/20"
+                    }`}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Diagnostic Result Output */}
+          <div className="mt-8 rounded-2xl bg-white/15 border border-[#2BD6B4]/60 p-6 sm:p-8 backdrop-blur-md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/20 pb-4">
+              <div>
+                <span className="text-xs font-black uppercase tracking-wider text-[#2BD6B4]">
+                  Personalized Diagnostic Output
+                </span>
+                <h4 className="text-xl sm:text-2xl font-black text-white mt-1">
+                  {currentRec.pathway}
+                </h4>
+              </div>
+              <span className="rounded-full bg-[#2BD6B4] px-4 py-1.5 text-xs font-black text-brand-deep shadow-md shrink-0">
+                {currentRec.score}
+              </span>
+            </div>
+            <p className="mt-4 text-sm sm:text-base text-white/90 leading-relaxed font-medium">
+              {currentRec.rationale}
+            </p>
+            <div className="mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-white/15">
+              <span className="text-xs text-white/70">
+                Recommended for {ageGroup} age group across 48 continuous classes.
+              </span>
+              <a
+                href="#demo"
+                className="btn-3d btn-3d-mint rounded-xl px-6 py-2.5 text-xs sm:text-sm font-bold text-center shadow-lg"
+              >
+                Claim This Free Demo Assessment Below ↓
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ───────────────────────── 11. Final Demo Booking Section ───────────────────────── */
 function Demo({ c }: { c: HomeContent["demo"] }) {
   return (
     <section id="demo" className="container-qs scroll-mt-20 py-12">
@@ -1571,14 +1934,15 @@ function Demo({ c }: { c: HomeContent["demo"] }) {
                 ))}
               </ul>
 
-              {/* Happy Family Trust Card */}
+              {/* Happy Family Trust Card with Real Image */}
               <div className="mt-7 flex items-center gap-4 rounded-2xl bg-white/10 border border-white/15 p-4 max-w-lg backdrop-blur-xs">
-                <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-[#2BD6B4]/50 shadow-sm">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/images/side-family.png"
+                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-[#2BD6B4]/50 shadow-sm">
+                  <Image
+                    src="/images/uploaded/side-family.png"
                     alt="Parent & Child Learning Success"
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="64px"
+                    className="object-cover"
                   />
                 </div>
                 <div>
@@ -1628,7 +1992,12 @@ const RENDER: Record<SectionKey, (c: HomeContent, ctx: { overlap: boolean }) => 
   centres: (c) => <Centres c={c.centres} />,
   pricing: (c) => <Pricing c={c.pricing} />,
   faq: (c) => <Faq c={c.faq} />,
-  demo: (c) => <Demo c={c.demo} />,
+  demo: (c) => (
+    <>
+      <CognitiveProfilerWidget />
+      <Demo c={c.demo} />
+    </>
+  ),
 };
 
 export function HomeSections({ content }: { content: HomeContent }) {
