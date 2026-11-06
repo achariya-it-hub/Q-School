@@ -466,7 +466,9 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
                 Expanded(
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
+                    isDense: true,
                     value: _selectedPaymentMode,
+                    icon: const Icon(Icons.arrow_drop_down, size: 20, color: QS.sub),
                     decoration: _inputDecoration('Mode', '', Icons.payment),
                     items: ['Cash', 'UPI', 'Card', 'Net Banking'].map((m) => DropdownMenuItem(
                       value: m,
