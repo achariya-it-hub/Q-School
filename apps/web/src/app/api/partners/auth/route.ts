@@ -1,10 +1,44 @@
-import { getPartnerByCode, listPartnerAdmissions, recordPartnerClick } from "@/lib/partners/store";
+import {
+  getPartnerByCode,
+  getPartnerByEmail,
+  listPartnerAdmissions,
+  recordPartnerClick,
+} from "@/lib/partners/store";
 import { jsonWithCors, handleCorsOptions } from "@/lib/cors";
 
 export const dynamic = "force-dynamic";
 
 export async function OPTIONS() {
   return handleCorsOptions();
+}
+
+async function verifyGoogleEmail(idToken?: string, accessToken?: string): Promise<string | null> {
+  if (idToken) {
+    const r = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`,
+      { cache: "no-store" },
+    );
+    if (!r.ok) return null;
+    const data = (await r.json()) as { email?: string; email_verified?: string | boolean };
+    if (data.email && (data.email_verified === true || data.email_verified === "true")) {
+      return data.email.trim().toLowerCase();
+    }
+    return null;
+  }
+
+  if (accessToken) {
+    const r = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+    });
+    if (!r.ok) return null;
+    const data = (await r.json()) as { email?: string; email_verified?: boolean };
+    if (data.email && data.email_verified !== false) {
+      return data.email.trim().toLowerCase();
+    }
+  }
+
+  return null;
 }
 
 export async function GET(req: Request) {
@@ -34,11 +68,47 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    let body: any = {};
+    let body: Record<string, unknown> = {};
     try {
-      body = await req.json();
+      body = (await req.json()) as Record<string, unknown>;
     } catch {
       body = {};
+    }
+
+    // Google OAuth login lookup by verified Gmail
+    const idToken = typeof body?.idToken === "string" ? body.idToken : undefined;
+    const accessToken = typeof body?.accessToken === "string" ? body.accessToken : undefined;
+    if (idToken || accessToken) {
+      const verifiedEmail = await verifyGoogleEmail(idToken, accessToken);
+      if (!verifiedEmail) {
+        return jsonWithCors(
+          { error: "Invalid or expired Google sign-in token." },
+          { status: 401 },
+        );
+      }
+
+      const partner = await getPartnerByEmail(verifiedEmail);
+      if (!partner) {
+        return jsonWithCors(
+          {
+            ok: false,
+            notRegistered: true,
+            email: verifiedEmail,
+            error: `No partner account found for ${verifiedEmail}. Complete quick partner registration to get your referral code.`,
+          },
+          { status: 404 },
+        );
+      }
+
+      if (partner.status !== "active") {
+        return jsonWithCors(
+          { error: "This partner account is inactive. Please contact management." },
+          { status: 403 },
+        );
+      }
+
+      const admissions = await listPartnerAdmissions(partner.id);
+      return jsonWithCors({ ok: true, partner, admissions });
     }
 
     const code = body?.code;
@@ -48,11 +118,17 @@ export async function POST(req: Request) {
 
     const partner = await getPartnerByCode(code);
     if (!partner) {
-      return jsonWithCors({ error: "Invalid partner code. Check your code or contact admin." }, { status: 404 });
+      return jsonWithCors(
+        { error: "Invalid partner code. Check your code or contact admin." },
+        { status: 404 },
+      );
     }
 
     if (partner.status !== "active") {
-      return jsonWithCors({ error: "This partner code is inactive. Please contact management." }, { status: 403 });
+      return jsonWithCors(
+        { error: "This partner code is inactive. Please contact management." },
+        { status: 403 },
+      );
     }
 
     const admissions = await listPartnerAdmissions(partner.id);

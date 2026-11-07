@@ -80,6 +80,15 @@ export async function getPartnerByCode(code: string): Promise<Partner | null> {
   return INITIAL_PARTNERS.find((p) => p.code.toUpperCase() === cleanCode) || null;
 }
 
+export async function getPartnerByEmail(email: string): Promise<Partner | null> {
+  const cleanEmail = email.trim().toLowerCase();
+  if (!cleanEmail) return null;
+  const partners = await listPartners();
+  const found = partners.find((p) => p.email.trim().toLowerCase() === cleanEmail);
+  if (found) return found;
+  return INITIAL_PARTNERS.find((p) => p.email.trim().toLowerCase() === cleanEmail) || null;
+}
+
 function generatePartnerCode(name: string, existing: Partner[]): string {
   const prefix = name
     .trim()

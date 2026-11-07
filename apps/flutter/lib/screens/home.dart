@@ -81,49 +81,62 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(width: 12),
-                const Avatar(name: 'Alex Johnson', size: 40),
+                ValueListenableBuilder<AuthUser?>(
+                  valueListenable: currentUser,
+                  builder: (_, auth, __) => Avatar(
+                    name: auth?.name ?? 'Alex Johnson',
+                    photoUrl: auth?.photoUrl,
+                    size: 40,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 22),
 
             // Greeting Section
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Good morning,',
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    color: QS.sub,
-                    fontWeight: FontWeight.w600,
+            ValueListenableBuilder<AuthUser?>(
+              valueListenable: currentUser,
+              builder: (_, auth, __) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Good morning,',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      color: QS.sub,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                SizedBox(height: 2),
-                Row(
-                  children: [
-                    Text(
-                      'Alex ',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: QS.ink,
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          '${auth?.firstName ?? 'Alex'} ',
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            color: QS.ink,
+                          ),
+                        ),
                       ),
-                    ),
-                    Text(
-                      '☀️',
-                      style: TextStyle(fontSize: 22),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Keep learning, keep growing',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: QS.sub,
+                      const Text(
+                        '☀️',
+                        style: TextStyle(fontSize: 22),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Keep learning, keep growing',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: QS.sub,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 22),
 

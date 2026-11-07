@@ -63,6 +63,44 @@ class PartnerApiService {
     }
   }
 
+  /// Authenticate/lookup partner by verified Google OAuth tokens
+  Future<Map<String, dynamic>> loginWithGoogle({
+    String? idToken,
+    String? accessToken,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/api/partners/auth');
+    final res = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'idToken': idToken,
+        'accessToken': accessToken,
+      }),
+    );
+
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode == 404 && data['notRegistered'] == true) {
+      return {
+        'notRegistered': true,
+        'email': data['email'],
+      };
+    }
+    if (res.statusCode != 200 || data['ok'] != true) {
+      throw Exception(data['error'] ?? 'Partner Google sign-in failed');
+    }
+
+    final partner = Partner.fromJson(data['partner']);
+    final admissionsList = (data['admissions'] as List? ?? [])
+        .map((a) => PartnerAdmission.fromJson(a))
+        .toList();
+
+    return {
+      'notRegistered': false,
+      'partner': partner,
+      'admissions': admissionsList,
+    };
+  }
+
   /// Make direct student admission (persists to ERP students.json & CRM)
   Future<Map<String, dynamic>> submitAdmission(NewAdmissionRequest req) async {
     final uri = Uri.parse('$_baseUrl/api/partners/admissions');

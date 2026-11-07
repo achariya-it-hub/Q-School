@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../data.dart';
+import '../services/google_auth_service.dart';
 import '../theme.dart';
 import '../widgets/brand_logo.dart';
+import '../widgets/google_logo.dart';
 import '../widgets/kit.dart';
 import '../partner/api_service.dart';
 import '../partner/models.dart';
@@ -18,8 +20,106 @@ class _LoginScreenState extends State<LoginScreen> {
   int _selectedRole = 0; // 0: Student, 1: Teacher, 2: Admin, 3: Partner
   bool _securePassword = true;
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  String get _roleKey {
+    switch (_selectedRole) {
+      case 1:
+        return 'teacher';
+      case 2:
+        return 'admin';
+      case 3:
+        return 'partner';
+      default:
+        return 'student';
+    }
+  }
+
+  Future<void> _onGoogleSignIn() async {
+    if (_isGoogleLoading || _isLoading) return;
+    setState(() => _isGoogleLoading = true);
+
+    try {
+      final outcome = await GoogleAuthService.instance.signInWithGmail(
+        role: _roleKey,
+      );
+      if (!mounted || outcome == null) return;
+
+      if (_selectedRole == 3) {
+        if (outcome.partner != null) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => PartnerShell(
+                partner: outcome.partner!,
+                initialAdmissions: outcome.admissions,
+              ),
+            ),
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Signed in with Gmail as Partner (${outcome.partner!.code})'),
+              backgroundColor: QS.deep,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gmail verified (${outcome.user.email}). Complete partner setup below.'),
+              backgroundColor: QS.teal,
+            ),
+          );
+          _openPartnerSignupSheet(
+            context,
+            initialName: outcome.user.name,
+            initialEmail: outcome.user.email,
+          );
+        }
+        return;
+      }
+
+      if (_selectedRole == 0) {
+        userRole.value = UserRole.student;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Signed in with Gmail: ${outcome.user.email}'),
+            backgroundColor: QS.deep,
+          ),
+        );
+        Navigator.of(context).pushNamed('/interests');
+      } else if (_selectedRole == 1) {
+        userRole.value = UserRole.teacher;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Signed in as Educator: ${outcome.user.email}'),
+            backgroundColor: QS.deep,
+          ),
+        );
+        Navigator.of(context).pushNamedAndRemoveUntil('/app', (_) => false);
+      } else {
+        userRole.value = UserRole.admin;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Signed in as Admin: ${outcome.user.email}'),
+            backgroundColor: QS.deep,
+          ),
+        );
+        Navigator.of(context).pushNamedAndRemoveUntil('/app', (_) => false);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.redAccent,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
+    }
+  }
 
   void _selectRole(int index) {
     setState(() {
@@ -327,24 +427,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Social Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _socialButton(
-                        icon: Icons.g_mobiledata_rounded,
-                        label: 'Google',
-                        iconColor: const Color(0xFFEA4335),
-                        onTap: _onLogin,
-                      ),
-                      const SizedBox(width: 16),
-                      _socialButton(
-                        icon: Icons.apple,
-                        label: 'Apple',
-                        iconColor: Colors.black,
-                        onTap: _onLogin,
-                      ),
-                    ],
+                  // Social Buttons — Primary Sign in with Gmail + Apple
+                  GmailSignInButton(
+                    loading: _isGoogleLoading,
+                    label: _selectedRole == 3
+                        ? 'Sign in with Gmail (Partner)'
+                        : 'Sign in with Gmail',
+                    onTap: _onGoogleSignIn,
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: _socialButton(
+                      icon: Icons.apple,
+                      label: 'Continue with Apple',
+                      iconColor: Colors.black,
+                      onTap: _onLogin,
+                    ),
                   ),
                 ],
               ),
@@ -430,7 +528,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 118,
+        width: double.infinity,
         height: 46,
         decoration: BoxDecoration(
           color: Colors.white,
@@ -447,12 +545,12 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 24, color: iconColor),
+            Icon(icon, size: 22, color: iconColor),
             const SizedBox(width: 8),
             Text(
               label,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 13.5,
                 fontWeight: FontWeight.w700,
                 color: QS.ink,
               ),
@@ -463,27 +561,43 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _openPartnerSignupSheet(BuildContext context) {
+  void _openPartnerSignupSheet(
+    BuildContext context, {
+    String? initialName,
+    String? initialEmail,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => const _PartnerSignupSheet(),
+      builder: (ctx) => PartnerSignupSheet(
+        initialName: initialName,
+        initialEmail: initialEmail,
+      ),
     );
   }
 }
 
-class _PartnerSignupSheet extends StatefulWidget {
-  const _PartnerSignupSheet();
+class PartnerSignupSheet extends StatefulWidget {
+  const PartnerSignupSheet({
+    super.key,
+    this.initialName,
+    this.initialEmail,
+  });
+
+  final String? initialName;
+  final String? initialEmail;
 
   @override
-  State<_PartnerSignupSheet> createState() => _PartnerSignupSheetState();
+  State<PartnerSignupSheet> createState() => _PartnerSignupSheetState();
 }
 
-class _PartnerSignupSheetState extends State<_PartnerSignupSheet> {
-  final _nameCtrl = TextEditingController();
+class _PartnerSignupSheetState extends State<PartnerSignupSheet> {
+  late final TextEditingController _nameCtrl =
+      TextEditingController(text: widget.initialName ?? '');
   final _phoneCtrl = TextEditingController();
-  final _emailCtrl = TextEditingController();
+  late final TextEditingController _emailCtrl =
+      TextEditingController(text: widget.initialEmail ?? '');
   final _orgCtrl = TextEditingController();
   final _upiCtrl = TextEditingController();
   final _codeCtrl = TextEditingController();

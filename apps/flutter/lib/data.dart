@@ -8,6 +8,31 @@ enum UserRole { student, teacher, admin }
 /// Currently active user role (student, teacher, admin)
 final userRole = ValueNotifier<UserRole>(UserRole.student);
 
+/// Authenticated user session (populated by Gmail Sign-In or manual login)
+class AuthUser {
+  final String id;
+  final String name;
+  final String email;
+  final String? photoUrl;
+  final String provider; // 'google' | 'password'
+
+  const AuthUser({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.photoUrl,
+    this.provider = 'google',
+  });
+
+  String get firstName {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return 'Learner';
+    return trimmed.split(RegExp(r'\s+')).first;
+  }
+}
+
+final currentUser = ValueNotifier<AuthUser?>(null);
+
 /// Artwork keys — each maps to a gradient + glyph (see widgets/kit.dart → ArtThumb).
 enum Art { bulb, laptop, pencil, planet, leader, palette, robot, ai, heart, speech, python, leaf, building }
 

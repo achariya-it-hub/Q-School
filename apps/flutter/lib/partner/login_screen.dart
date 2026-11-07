@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import '../screens/login.dart';
+import '../services/google_auth_service.dart';
 import '../theme.dart';
+import '../widgets/google_logo.dart';
 import 'api_service.dart';
 import 'models.dart';
 import 'partner_shell.dart';
@@ -14,7 +17,56 @@ class PartnerLoginScreen extends StatefulWidget {
 class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
   final _codeController = TextEditingController();
   bool _loading = false;
+  bool _googleLoading = false;
   String _errorMessage = '';
+
+  Future<void> _loginWithGmail() async {
+    if (_googleLoading || _loading) return;
+    setState(() {
+      _googleLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final outcome = await GoogleAuthService.instance.signInWithGmail(role: 'partner');
+      if (!mounted || outcome == null) return;
+
+      if (outcome.partner != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PartnerShell(
+              partner: outcome.partner!,
+              initialAdmissions: outcome.admissions,
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gmail verified (${outcome.user.email}). Complete partner registration below.'),
+            backgroundColor: QS.teal,
+          ),
+        );
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent,
+          builder: (_) => PartnerSignupSheet(
+            initialName: outcome.user.name,
+            initialEmail: outcome.user.email,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+      });
+    } finally {
+      if (mounted) setState(() => _googleLoading = false);
+    }
+  }
 
   Future<void> _login(String code) async {
     final cleanCode = code.trim().toUpperCase();
@@ -281,6 +333,32 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                               ],
                             ),
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Text(
+                            'OR',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.45),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    GmailSignInButton(
+                      loading: _googleLoading,
+                      label: 'Sign in with Gmail',
+                      darkSurface: true,
+                      onTap: _loginWithGmail,
                     ),
                   ],
                 ),

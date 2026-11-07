@@ -185,18 +185,29 @@ class ArtThumb extends StatelessWidget {
 }
 
 class Avatar extends StatelessWidget {
-  const Avatar({super.key, required this.name, this.size = 40, this.ring = true});
+  const Avatar({
+    super.key,
+    required this.name,
+    this.photoUrl,
+    this.size = 40,
+    this.ring = true,
+  });
+
   final String name;
+  final String? photoUrl;
   final double size;
   final bool ring;
 
   String get initials {
     final parts = name.split(' ').where((w) => w.isNotEmpty).toList();
+    if (parts.isEmpty) return 'QS';
     return parts.take(2).map((w) => w[0].toUpperCase()).join();
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasPhoto = photoUrl != null && photoUrl!.trim().isNotEmpty;
+
     return Container(
       width: size,
       height: size,
@@ -217,13 +228,27 @@ class Avatar extends StatelessWidget {
           ),
         ],
       ),
-      child: Text(
-        initials,
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w900,
-          fontSize: size * 0.38,
-        ),
+      child: hasPhoto
+          ? ClipOval(
+              child: Image.network(
+                photoUrl!,
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _initialsText(),
+              ),
+            )
+          : _initialsText(),
+    );
+  }
+
+  Widget _initialsText() {
+    return Text(
+      initials,
+      style: TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w900,
+        fontSize: size * 0.38,
       ),
     );
   }

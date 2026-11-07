@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../data.dart';
+import '../services/google_auth_service.dart';
 import '../theme.dart';
 import '../widgets/brand_logo.dart';
+import '../widgets/google_logo.dart';
 import '../widgets/kit.dart';
 
 class SignupScreen extends StatefulWidget {
@@ -14,6 +17,7 @@ class _SignupScreenState extends State<SignupScreen> {
   int _selectedRole = 0; // 0: Student, 1: Teacher
   bool _agreed = true;
   bool _securePassword = true;
+  bool _isGoogleLoading = false;
 
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -21,7 +25,55 @@ class _SignupScreenState extends State<SignupScreen> {
   final _passwordController = TextEditingController();
 
   void _onSignUp() {
+    userRole.value = _selectedRole == 1 ? UserRole.teacher : UserRole.student;
+    if (_nameController.text.trim().isNotEmpty || _emailController.text.trim().isNotEmpty) {
+      currentUser.value = AuthUser(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: _nameController.text.trim().isNotEmpty
+            ? _nameController.text.trim()
+            : 'Q-School Learner',
+        email: _emailController.text.trim().isNotEmpty
+            ? _emailController.text.trim().toLowerCase()
+            : 'learner@qschool.edu',
+        provider: 'password',
+      );
+    }
     Navigator.of(context).pushNamed('/interests');
+  }
+
+  Future<void> _onGoogleSignUp() async {
+    if (_isGoogleLoading) return;
+    setState(() => _isGoogleLoading = true);
+
+    try {
+      final roleStr = _selectedRole == 1 ? 'teacher' : 'student';
+      final outcome = await GoogleAuthService.instance.signInWithGmail(role: roleStr);
+      if (!mounted || outcome == null) return;
+
+      userRole.value = _selectedRole == 1 ? UserRole.teacher : UserRole.student;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Account connected via Gmail: ${outcome.user.email}'),
+          backgroundColor: QS.deep,
+        ),
+      );
+      if (_selectedRole == 1) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/app', (_) => false);
+      } else {
+        Navigator.of(context).pushNamed('/interests');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.redAccent,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
+    }
   }
 
   @override
@@ -252,24 +304,18 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Social Buttons (Google & Apple)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _socialButton(
-                  icon: Icons.g_mobiledata_rounded,
-                  label: 'Google',
-                  iconColor: const Color(0xFFEA4335),
-                  onTap: _onSignUp,
-                ),
-                const SizedBox(width: 16),
-                _socialButton(
-                  icon: Icons.apple,
-                  label: 'Apple',
-                  iconColor: Colors.black,
-                  onTap: _onSignUp,
-                ),
-              ],
+            // Social Buttons (Sign up with Gmail & Apple)
+            GmailSignInButton(
+              loading: _isGoogleLoading,
+              label: 'Sign up with Gmail',
+              onTap: _onGoogleSignUp,
+            ),
+            const SizedBox(height: 12),
+            _socialButton(
+              icon: Icons.apple,
+              label: 'Continue with Apple',
+              iconColor: Colors.black,
+              onTap: _onSignUp,
             ),
             const SizedBox(height: 28),
 
@@ -382,7 +428,7 @@ class _SignupScreenState extends State<SignupScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 120,
+        width: double.infinity,
         height: 48,
         decoration: BoxDecoration(
           color: Colors.white,
