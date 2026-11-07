@@ -34,11 +34,19 @@ class GoogleAuthService {
   GoogleAuthService._internal();
   static final GoogleAuthService instance = GoogleAuthService._internal();
 
-  /// Optional OAuth Client IDs supplied at build time via:
-  /// `--dart-define=GOOGLE_WEB_CLIENT_ID=xxx.apps.googleusercontent.com`
-  /// `--dart-define=GOOGLE_SERVER_CLIENT_ID=xxx.apps.googleusercontent.com`
-  static const String _webClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
-  static const String _serverClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+  static const String defaultWebClientId =
+      '784665159823-4aloigc4h10psf282ni1oveboubbilin.apps.googleusercontent.com';
+  static const String androidOAuthClientId =
+      '784665159823-nk3j6o9mbts1i1q2g77i15hnnk4i8nan.apps.googleusercontent.com';
+
+  static const String _webClientId = String.fromEnvironment(
+    'GOOGLE_WEB_CLIENT_ID',
+    defaultValue: defaultWebClientId,
+  );
+  static const String _serverClientId = String.fromEnvironment(
+    'GOOGLE_SERVER_CLIENT_ID',
+    defaultValue: defaultWebClientId,
+  );
 
   late final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: const <String>['email', 'profile'],
@@ -183,3 +191,4 @@ class GoogleAuthService {
     currentUser.value = null;
   }
 }
+

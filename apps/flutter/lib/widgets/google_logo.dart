@@ -166,3 +166,4 @@ class GmailSignInButton extends StatelessWidget {
     );
   }
 }
+

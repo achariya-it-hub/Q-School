@@ -6,6 +6,19 @@ To enable the native Google Account Picker on physical Android/iOS devices and W
 
 ---
 
+## Configured OAuth 2.0 Client IDs (`tdg---otp`)
+
+- **Web & Server Client ID (`GOOGLE_WEB_CLIENT_ID` / `GOOGLE_SERVER_CLIENT_ID`):**
+  `784665159823-4aloigc4h10psf282ni1oveboubbilin.apps.googleusercontent.com`
+- **Android OAuth Client ID (`com.qschool.qschool`):**
+  `784665159823-nk3j6o9mbts1i1q2g77i15hnnk4i8nan.apps.googleusercontent.com`
+- **Debug Keystore SHA-1:**
+  `67:59:84:E4:DA:3C:3B:4D:FE:0A:2D:B9:93:AB:2D:7A:3B:8E:53:06`
+
+*(Note: Never commit `client_secret` values into source control.)*
+
+---
+
 ## 1. Android (`com.qschool.qschool`)
 
 1. Generate your debug keystore **SHA-1** fingerprint on your PC:
@@ -42,3 +55,4 @@ To enable the native Google Account Picker on physical Android/iOS devices and W
    ```powershell
    flutter run -d chrome --web-port 8100 --dart-define=GOOGLE_WEB_CLIENT_ID=YOUR_WEB_CLIENT_ID.apps.googleusercontent.com
    ```
+

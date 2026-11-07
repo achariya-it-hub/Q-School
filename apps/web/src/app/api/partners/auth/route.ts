@@ -12,6 +12,14 @@ export async function OPTIONS() {
   return handleCorsOptions();
 }
 
+const ALLOWED_GOOGLE_CLIENT_IDS = new Set(
+  [
+    "784665159823-4aloigc4h10psf282ni1oveboubbilin.apps.googleusercontent.com",
+    "784665159823-nk3j6o9mbts1i1q2g77i15hnnk4i8nan.apps.googleusercontent.com",
+    process.env.GOOGLE_CLIENT_ID || "",
+  ].filter(Boolean),
+);
+
 async function verifyGoogleEmail(idToken?: string, accessToken?: string): Promise<string | null> {
   if (idToken) {
     const r = await fetch(
@@ -19,8 +27,17 @@ async function verifyGoogleEmail(idToken?: string, accessToken?: string): Promis
       { cache: "no-store" },
     );
     if (!r.ok) return null;
-    const data = (await r.json()) as { email?: string; email_verified?: string | boolean };
-    if (data.email && (data.email_verified === true || data.email_verified === "true")) {
+    const data = (await r.json()) as {
+      aud?: string;
+      azp?: string;
+      email?: string;
+      email_verified?: string | boolean;
+    };
+    const audOk =
+      !data.aud ||
+      ALLOWED_GOOGLE_CLIENT_IDS.has(data.aud) ||
+      (!!data.azp && ALLOWED_GOOGLE_CLIENT_IDS.has(data.azp));
+    if (audOk && data.email && (data.email_verified === true || data.email_verified === "true")) {
       return data.email.trim().toLowerCase();
     }
     return null;
