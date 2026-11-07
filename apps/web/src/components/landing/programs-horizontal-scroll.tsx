@@ -306,6 +306,57 @@ export function ProgramsHorizontalScroll() {
               </div>
             </motion.div>
           </motion.div>
+
+          {/* RBIQ Whole Brain Development Spotlight Banner */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.5 }}
+            className="mt-10 overflow-hidden rounded-3xl border border-[#CFE3DD] bg-white shadow-lg grid grid-cols-1 lg:grid-cols-12 items-center"
+          >
+            <div className="relative h-56 lg:h-full lg:col-span-4 min-h-[210px] overflow-hidden bg-[#054038]">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/rbiq/rbiq-hero.jpg"
+                alt="RBIQ Whole Brain Development Program"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#03221E]/75 via-transparent to-transparent" />
+              <span className="absolute bottom-3 left-4 rounded-full bg-[#FFC845] px-3 py-1 text-[11px] font-black text-[#03221E] shadow-md">
+                9 Skill-Building Activities
+              </span>
+            </div>
+
+            <div className="lg:col-span-8 p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E6F4F0] px-3 py-1 text-[11px] font-black uppercase tracking-wider text-[#0E937E]">
+                  <Icon name="brain" size={13} /> RBIQ – Whole Brain Development Program
+                </span>
+                <h3 className="mt-2 text-2xl font-extrabold text-[#054038]">
+                  Unlock Potential. Engineer Brilliance.
+                </h3>
+                <p className="mt-1.5 text-sm text-[#4b635e] max-w-xl leading-relaxed">
+                  Cup Stacking · Rubik&apos;s Cube · Clairaudience · Parallel Processing · Rope Knot · Towel Folding · Abacus · Speed Reading · Ambidexterity.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                <a
+                  href="/rbiq"
+                  className="btn-3d btn-3d-teal inline-flex items-center gap-2 rounded-xl px-5 py-3 text-xs sm:text-sm font-extrabold text-white"
+                >
+                  Explore RBIQ <Icon name="arrowRight" size={14} />
+                </a>
+                <a
+                  href="/rbiq#book-assessment"
+                  className="rounded-xl border border-[#BFE0D8] bg-[#F4FAF8] hover:bg-[#E6F4F0] px-4 py-3 text-xs sm:text-sm font-extrabold text-[#054038] transition"
+                >
+                  Book an Assessment
+                </a>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 

@@ -27,6 +27,7 @@ export function SiteFooter({ stickyCtaSpace = false }: { stickyCtaSpace?: boolea
             <li><Link href="/#pedagogy" className="hover:text-white transition">Traditional vs Q-School</Link></li>
             <li><Link href="/#framework" className="hover:text-white transition">Q 5D™ XYZTP Framework</Link></li>
             <li><Link href="/#programs" className="hover:text-white transition">8 Core Programs</Link></li>
+            <li><Link href="/rbiq" className="hover:text-white transition font-semibold text-[#2BD6B4]">RBIQ – Whole Brain Development</Link></li>
             <li><Link href="/#neo-sapiens" className="hover:text-white transition">Who is a Neo Sapiens?</Link></li>
             <li><Link href="/#journey" className="hover:text-white transition">48-Class Journey &amp; Habits</Link></li>
             <li><Link href="/#q-verse" className="hover:text-white transition">Q-Verse Ecosystem</Link></li>
