@@ -27,7 +27,7 @@ export function HeroVisual({ classWindow }: { classWindow?: WindowOverride } = {
             className="object-cover opacity-90 transition-opacity hover:opacity-100"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-          <span className="absolute bottom-2 left-2.5 inline-flex items-center gap-1 rounded-full bg-[#054038]/90 px-2 py-0.5 text-[10px] font-bold text-[#2BD6B4] backdrop-blur-xs">
+          <span className="absolute bottom-2 left-2.5 inline-flex items-center gap-1 rounded-full bg-[#054038]/90 px-2 py-0.5 text-[10px] font-bold text-[#2BD6B4] backdrop-blur-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-[#2BD6B4] animate-ping" />
             1:1 Mentor Guide
           </span>

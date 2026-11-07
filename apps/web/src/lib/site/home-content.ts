@@ -213,8 +213,8 @@ export const DEFAULT_HOME: HomeContent = {
         body: "48 classes. One continuous developmental journey. Structured progression across Year 1 Foundation, Year 2 Progression, and Year 3 Advanced Development at our 9 physical learning centres and live online interactive cohorts.",
         primary: { label: "Find Your Nearest Centre", href: "#centres" },
         secondary: { label: "Speak to a Counsellor", href: "#demo" },
-        image: "/images/classroom-centre.jpg",
-        imageAlt: "Children learning together in a Q-School active learning classroom",
+        image: "/images/workshop.png",
+        imageAlt: "Parent and child engaging in interactive Quantum Schooling learning session",
         chips: [
           { icon: "building", label: "9 Dedicated Centres" },
           { icon: "calendar", label: "48 Classes / Annum" },

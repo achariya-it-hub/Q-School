@@ -5,10 +5,12 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const NAV = [
-  { href: "/#programs", label: "Programs" },
-  { href: "/#framework", label: "Framework" },
-  { href: "/#centres", label: "Centres" },
   { href: "/#story", label: "About" },
+  { href: "/#framework", label: "5D Framework" },
+  { href: "/#programs", label: "Programs" },
+  { href: "/#neo-sapiens", label: "Neo Sapiens" },
+  { href: "/#q-verse", label: "Q-Verse" },
+  { href: "/#centres", label: "Centres" },
   { href: "/q-master", label: "Q-Master AI" },
 ];
 

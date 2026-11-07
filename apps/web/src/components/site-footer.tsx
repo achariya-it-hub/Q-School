@@ -28,6 +28,8 @@ export function SiteFooter({ stickyCtaSpace = false }: { stickyCtaSpace?: boolea
             <li><Link href="/#framework" className="hover:text-white transition">Q 5D™ XYZTP Framework</Link></li>
             <li><Link href="/#programs" className="hover:text-white transition">8 Core Programs</Link></li>
             <li><Link href="/#neo-sapiens" className="hover:text-white transition">Who is a Neo Sapiens?</Link></li>
+            <li><Link href="/#journey" className="hover:text-white transition">48-Class Journey &amp; Habits</Link></li>
+            <li><Link href="/#q-verse" className="hover:text-white transition">Q-Verse Ecosystem</Link></li>
             <li><Link href="/#centres" className="hover:text-white transition">9 Learning Centres</Link></li>
             <li><Link href="/courses" className="hover:text-white transition">Courses &amp; Curriculum</Link></li>
             <li><Link href="/privacy" className="hover:text-white transition">Privacy Policy</Link></li>
