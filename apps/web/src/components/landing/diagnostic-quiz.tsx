@@ -4,6 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon, type IconName } from "@/components/icons";
 import { BorderBeam } from "@/components/ui/21st";
+import { QuantumNexus } from "@/components/three/quantum-nexus";
+import { QuantumAtomOrbital } from "@/components/ui/quantum-effects";
 
 interface QuestionOption {
   label: string;
@@ -207,6 +209,17 @@ export function DiagnosticQuiz() {
       id="diagnostic-quiz"
       className="relative bg-gradient-to-b from-[#021A16] via-[#042B25] to-[#031F1B] py-24 md:py-28 scroll-mt-20 text-white overflow-hidden"
     >
+      <QuantumNexus
+        className="pointer-events-none absolute inset-0 z-0 opacity-35"
+        particleCount={55}
+        speed={0.38}
+        colorScheme="teal"
+      />
+      <QuantumAtomOrbital
+        theme="dark"
+        size={320}
+        className="absolute -left-20 bottom-8 opacity-55"
+      />
       <div
         className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 h-96 w-[600px] rounded-full bg-[#2BD6B4]/10 blur-3xl"
         aria-hidden

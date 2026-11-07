@@ -11,6 +11,7 @@ import {
 } from "framer-motion";
 import { Icon, type IconName } from "@/components/icons";
 import { BorderBeam } from "@/components/ui/21st";
+import { QuantumAtomOrbital, QuantumWaveStream } from "@/components/ui/quantum-effects";
 
 interface ComparisonDimension {
   id: string;
@@ -420,17 +421,25 @@ export function PedagogySection() {
   return (
     <section
       id="pedagogy"
-      className="relative scroll-mt-20 overflow-hidden bg-gradient-to-b from-[#EEF7F4] via-[#F7FCFA] to-[#EDF6F3] py-24 lg:py-32"
+      className="relative scroll-mt-20 bg-gradient-to-b from-[#EEF7F4] via-[#F7FCFA] to-[#EDF6F3] py-24 lg:py-32"
     >
-      {/* Subtle Ambient Orbs */}
-      <div
-        className="pointer-events-none absolute -right-40 top-24 h-[460px] w-[460px] rounded-full bg-[#2BD6B4]/12 blur-3xl"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute -left-40 bottom-24 h-[460px] w-[460px] rounded-full bg-[#0E937E]/10 blur-3xl"
-        aria-hidden
-      />
+      {/* Subtle Ambient Orbs & Quantum Atom Orbitals (clipped safely so sticky children work) */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <div className="absolute -right-40 top-24 h-[460px] w-[460px] rounded-full bg-[#2BD6B4]/12 blur-3xl" />
+        <div className="absolute -left-40 bottom-24 h-[460px] w-[460px] rounded-full bg-[#0E937E]/10 blur-3xl" />
+        <QuantumAtomOrbital
+          theme="light"
+          size={360}
+          className="absolute -left-24 top-16 opacity-80"
+        />
+        <QuantumAtomOrbital
+          theme="light"
+          size={300}
+          className="absolute -right-20 bottom-36 opacity-65"
+        />
+      </div>
+
+      <QuantumWaveStream theme="light" className="mb-8" />
 
       <div className="container-qs relative z-10">
         {/* ─── PART 1: Header & Provocative Question ─── */}

@@ -74,9 +74,13 @@ export function SiteHeader() {
       }`}
     >
       <div className={`container-qs flex items-center justify-between transition-[height] duration-300 ${scrolled ? "h-14" : "h-16"}`}>
-        <Link href="/" className="flex items-center shrink-0" aria-label="Q-School home">
+        <Link href="/" className="group relative flex items-center shrink-0" aria-label="Q-School home">
+          <span
+            className="pointer-events-none absolute -inset-2 rounded-full bg-[#2BD6B4]/0 blur-md transition-colors duration-500 group-hover:bg-[#2BD6B4]/20"
+            aria-hidden
+          />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Q-School" className={`w-auto transition-[height] duration-300 ${scrolled ? "h-8" : "h-9"}`} />
+          <img src="/logo.png" alt="Q-School" className={`relative w-auto transition-[height] duration-300 ${scrolled ? "h-8" : "h-9"}`} />
         </Link>
 
         <nav className="hidden items-center gap-1.5 md:flex">
@@ -138,10 +142,10 @@ export function SiteHeader() {
         </nav>
       )}
 
-      {/* reading progress */}
+      {/* Quantum reading progress beam */}
       <div
         ref={bar}
-        className="absolute inset-x-0 -bottom-px h-[3px] origin-left bg-gradient-to-r from-brand-teal via-[#2BD6B4] to-brand-teal500"
+        className="absolute inset-x-0 -bottom-px h-[3px] origin-left bg-gradient-to-r from-brand-teal via-[#2BD6B4] to-[#FFC845] shadow-[0_0_10px_rgba(43,214,180,0.65)]"
         style={{ transform: "scaleX(0)" }}
         aria-hidden
       />

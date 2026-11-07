@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon, type IconName } from "@/components/icons";
 import { BorderBeam } from "@/components/ui/21st";
+import { QuantumAtomOrbital, QuantumWaveStream } from "@/components/ui/quantum-effects";
 
 interface QVerseSpoke {
   id: string;
@@ -133,9 +134,25 @@ export function QVerseSection() {
   return (
     <section
       id="q-verse"
-      className="scroll-mt-20 py-24 md:py-32 bg-white border-y border-[#E2ECE9] overflow-hidden"
+      className="relative scroll-mt-20 py-24 md:py-32 bg-white border-y border-[#E2ECE9]"
     >
-      <div className="container-qs">
+      {/* Clipped background orbitals so sticky console remains active */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <QuantumAtomOrbital
+          theme="light"
+          size={380}
+          className="absolute -left-28 top-16 opacity-75"
+        />
+        <QuantumAtomOrbital
+          theme="light"
+          size={300}
+          className="absolute -right-20 bottom-16 opacity-65"
+        />
+      </div>
+
+      <QuantumWaveStream theme="light" className="mb-6" />
+
+      <div className="container-qs relative z-10">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}

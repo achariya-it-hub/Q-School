@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { QMasterWidget } from "@/components/q-master-widget";
+import { QuantumAmbientOverlay } from "@/components/ui/quantum-effects";
 
 export const metadata: Metadata = {
   title: "Q-School — Quantum Schooling",
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <QuantumAmbientOverlay />
         {children}
         <QMasterWidget />
       </body>

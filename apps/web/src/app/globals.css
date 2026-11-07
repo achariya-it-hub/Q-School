@@ -322,10 +322,51 @@ body {
   transform-style: preserve-3d;
 }
 
+/* ------------------------------------------------------------ Quantum Effects */
+@keyframes quantum-spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes quantum-spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+@keyframes quantum-ripple {
+  0% { transform: scale(0.35); opacity: 0.85; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+@keyframes quantum-wave-slide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes quantum-photon-glide {
+  0% { transform: translateX(-180px); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateX(calc(100vw + 180px)); opacity: 0; }
+}
+
+.animate-quantum-spin {
+  animation: quantum-spin-slow 26s linear infinite;
+}
+.animate-quantum-spin-reverse {
+  animation: quantum-spin-reverse 34s linear infinite;
+}
+.animate-quantum-wave {
+  animation: quantum-wave-slide 18s linear infinite;
+}
+.animate-quantum-photon {
+  animation: quantum-photon-glide 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-float,
   .animate-marquee,
-  .animate-fade-up {
+  .animate-fade-up,
+  .animate-quantum-spin,
+  .animate-quantum-spin-reverse,
+  .animate-quantum-wave,
+  .animate-quantum-photon {
     animation: none !important;
   }
   .btn-3d,

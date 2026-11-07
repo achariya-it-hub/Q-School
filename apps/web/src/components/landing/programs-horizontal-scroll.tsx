@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { PROGRAMS, type Program } from "@qschool/shared";
 import { Icon, type IconName } from "@/components/icons";
 import { SpotlightCard, BorderBeam } from "@/components/ui/21st";
+import { QuantumAtomOrbital, QuantumWaveStream } from "@/components/ui/quantum-effects";
 
 type CategoryKey = "all" | "sensory" | "mastery" | "stem";
 
@@ -175,11 +176,23 @@ export function ProgramsHorizontalScroll() {
         id="programs"
         className="relative scroll-mt-20 bg-gradient-to-b from-[#F4FAF8] via-white to-[#EAF5F1] py-24 md:py-28 border-t border-[#D7EAE4]"
       >
-        {/* Subtle Decorative Background Accents */}
+        {/* Subtle Decorative Background Accents & Quantum Orbitals */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
           <div className="absolute -top-24 right-10 h-80 w-80 rounded-full bg-[#2BD6B4]/15 blur-3xl" />
           <div className="absolute bottom-10 -left-20 h-80 w-80 rounded-full bg-[#0E937E]/10 blur-3xl" />
+          <QuantumAtomOrbital
+            theme="light"
+            size={360}
+            className="absolute -left-24 top-12 opacity-75"
+          />
+          <QuantumAtomOrbital
+            theme="light"
+            size={300}
+            className="absolute -right-20 bottom-20 opacity-65"
+          />
         </div>
+
+        <QuantumWaveStream theme="light" className="mb-6" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Clean, Unclipped, Symmetrical Header */}

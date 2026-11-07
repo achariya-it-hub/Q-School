@@ -1,10 +1,23 @@
 import Link from "next/link";
 import { CENTERS } from "@qschool/shared";
+import { QuantumAtomOrbital, QuantumWaveStream } from "@/components/ui/quantum-effects";
 
 export function SiteFooter({ stickyCtaSpace = false }: { stickyCtaSpace?: boolean } = {}) {
   return (
-    <footer className={`mt-20 border-t ${stickyCtaSpace ? "pb-20 md:pb-0" : ""} border-[#e2ece9] bg-brand-deep text-white`}>
-      <div className="container-qs grid gap-8 py-14 sm:grid-cols-2 lg:grid-cols-4">
+    <footer className={`relative overflow-hidden mt-20 border-t ${stickyCtaSpace ? "pb-20 md:pb-0" : ""} border-[#2BD6B4]/25 bg-brand-deep text-white`}>
+      {/* Ambient Quantum Wave & Orbital Accents */}
+      <QuantumWaveStream theme="dark" className="opacity-75" />
+      <QuantumAtomOrbital
+        theme="dark"
+        size={360}
+        className="absolute -right-24 -bottom-24 opacity-45"
+      />
+      <div
+        className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#2BD6B4]/10 blur-3xl"
+        aria-hidden
+      />
+
+      <div className="container-qs relative z-10 grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-xl font-bold">

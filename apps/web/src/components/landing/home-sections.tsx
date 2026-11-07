@@ -31,6 +31,7 @@ import { NeoSapiensSection } from "@/components/landing/neo-sapiens-section";
 import { JourneyAndPathwaySection } from "@/components/landing/journey-pathway-section";
 import { QVerseSection } from "@/components/landing/qverse-section";
 import { MagneticButton } from "@/components/ui/magnetic-button";
+import { QuantumAtomOrbital, QuantumWaveStream } from "@/components/ui/quantum-effects";
 import type { HeroSlide, HomeContent, SectionKey } from "@/lib/site/home-content";
 
 /* Typography & Visual Header Primitives */
@@ -179,10 +180,15 @@ function Hero({ c }: { c: HomeContent["hero"] }) {
   return (
     <section className="relative overflow-hidden bg-brand-deep text-white">
       <QuantumNexus
-        className="pointer-events-none absolute inset-0 z-0 opacity-45"
-        particleCount={95}
+        className="pointer-events-none absolute inset-0 z-0 opacity-50"
+        particleCount={100}
         speed={0.45}
         colorScheme="teal"
+      />
+      <QuantumAtomOrbital
+        theme="dark"
+        size={340}
+        className="absolute -left-24 top-12 opacity-45 z-0"
       />
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.07]"
@@ -451,8 +457,13 @@ const TESTIMONIAL_OUTCOMES = [
 function Testimonials({ c }: { c: HomeContent["testimonials"] }) {
   if (!c.items.length) return null;
   return (
-    <section className="bg-gradient-to-b from-white to-[#F4FAF8] py-24 border-y border-[#E2ECE9]">
-      <div className="container-qs">
+    <section className="relative overflow-hidden bg-gradient-to-b from-white to-[#F4FAF8] py-24 border-y border-[#E2ECE9]">
+      <QuantumAtomOrbital
+        theme="light"
+        size={340}
+        className="absolute -right-24 top-12 opacity-70"
+      />
+      <div className="container-qs relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-14">
           <ScrollMotion variant="blur-in" className="lg:col-span-7">
             <Kicker>{c.kicker}</Kicker>
@@ -587,7 +598,16 @@ function Centres({ c }: { c: HomeContent["centres"] }) {
   });
 
   return (
-    <section id="centres" className="container-qs scroll-mt-20 py-24">
+    <section id="centres" className="relative scroll-mt-20 py-24">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <QuantumAtomOrbital
+          theme="light"
+          size={360}
+          className="absolute -left-24 top-20 opacity-70"
+        />
+      </div>
+      <QuantumWaveStream theme="light" className="mb-8" />
+      <div className="container-qs relative z-10">
       <ScrollMotion
         variant="blur-in"
         className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"
@@ -803,6 +823,7 @@ function Centres({ c }: { c: HomeContent["centres"] }) {
           );
         })}
       </motion.div>
+      </div>
     </section>
   );
 }
@@ -846,8 +867,15 @@ function Faq({ c }: { c: HomeContent["faq"] }) {
   if (!c.items.length) return null;
 
   return (
-    <section id="faq" className="scroll-mt-20 bg-[#F4F8F7] py-24">
-      <div className="container-qs">
+    <section id="faq" className="relative scroll-mt-20 bg-[#F4F8F7] py-24">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <QuantumAtomOrbital
+          theme="light"
+          size={320}
+          className="absolute -right-20 top-14 opacity-70"
+        />
+      </div>
+      <div className="container-qs relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* Left: Pictorial Sticky Counsellor & Parent Guide Card */}
           <div className="lg:col-span-5 lg:sticky lg:top-24">
@@ -977,6 +1005,11 @@ function Demo({ c }: { c: HomeContent["demo"] }) {
       <ScrollMotion variant="fade-up">
         <div className="relative overflow-hidden rounded-[32px] bg-brand-deep px-6 py-12 text-white sm:px-12 sm:py-16 shadow-2xl border border-[#2BD6B4]/30">
           <BorderBeam size={280} duration={14} colorFrom="#2BD6B4" colorTo="#FFC845" />
+          <QuantumAtomOrbital
+            theme="dark"
+            size={340}
+            className="absolute -right-20 -top-20 opacity-50"
+          />
           <div
             className="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-brand-teal/50 blur-3xl"
             aria-hidden

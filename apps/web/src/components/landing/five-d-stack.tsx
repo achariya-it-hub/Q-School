@@ -4,6 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon, type IconName } from "@/components/icons";
 import { BorderBeam } from "@/components/ui/21st";
+import { QuantumNexus } from "@/components/three/quantum-nexus";
+import { QuantumAtomOrbital } from "@/components/ui/quantum-effects";
 
 interface Dimension {
   id: string;
@@ -180,6 +182,17 @@ export function FiveDFramework() {
           backgroundSize: "52px 52px",
         }}
         aria-hidden
+      />
+      <QuantumNexus
+        className="pointer-events-none absolute inset-0 z-0 opacity-35"
+        particleCount={60}
+        speed={0.4}
+        colorScheme="teal"
+      />
+      <QuantumAtomOrbital
+        theme="dark"
+        size={380}
+        className="absolute -right-24 top-16 opacity-60"
       />
       <div className="pointer-events-none absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-[#0E937E]/25 blur-3xl" aria-hidden />
       <div className="pointer-events-none absolute bottom-10 right-1/4 h-96 w-96 rounded-full bg-[#2BD6B4]/15 blur-3xl" aria-hidden />

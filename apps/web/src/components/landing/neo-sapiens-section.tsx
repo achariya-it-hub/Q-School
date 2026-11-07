@@ -4,6 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon, type IconName } from "@/components/icons";
 import { BorderBeam } from "@/components/ui/21st";
+import { QuantumNexus } from "@/components/three/quantum-nexus";
+import { QuantumAtomOrbital } from "@/components/ui/quantum-effects";
 
 interface NeoTrait {
   id: string;
@@ -157,7 +159,18 @@ export function NeoSapiensSection() {
       id="neo-sapiens"
       className="relative overflow-hidden bg-gradient-to-b from-[#04352E] via-[#032621] to-[#011815] py-24 md:py-32 text-white border-t border-white/10"
     >
-      {/* Ambient Orbital Glows */}
+      {/* Ambient Quantum Nexus & Orbital Glows */}
+      <QuantumNexus
+        className="pointer-events-none absolute inset-0 z-0 opacity-35"
+        particleCount={65}
+        speed={0.4}
+        colorScheme="gold"
+      />
+      <QuantumAtomOrbital
+        theme="dark"
+        size={400}
+        className="absolute -right-28 top-12 opacity-60"
+      />
       <div
         className="pointer-events-none absolute -left-40 top-20 h-[520px] w-[520px] rounded-full bg-[#2BD6B4]/15 blur-3xl"
         aria-hidden

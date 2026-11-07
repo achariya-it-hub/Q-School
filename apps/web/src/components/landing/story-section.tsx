@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon, type IconName } from "@/components/icons";
 import { BorderBeam } from "@/components/ui/21st";
+import { QuantumAtomOrbital, QuantumWaveStream } from "@/components/ui/quantum-effects";
 
 interface Capacity {
   label: string;
@@ -150,6 +151,18 @@ export function StorySection() {
         className="pointer-events-none absolute -top-40 left-1/2 h-[480px] w-[860px] -translate-x-1/2 rounded-full bg-gradient-to-r from-[#2BD6B4]/15 via-[#0E937E]/10 to-[#5B6CF0]/10 blur-3xl"
         aria-hidden
       />
+      <QuantumAtomOrbital
+        theme="light"
+        size={380}
+        className="absolute -right-24 top-16 opacity-80"
+      />
+      <QuantumAtomOrbital
+        theme="light"
+        size={280}
+        className="absolute -left-20 bottom-24 opacity-65"
+      />
+
+      <QuantumWaveStream theme="light" className="mb-8" />
 
       <div className="container-qs relative z-10">
         {/* ─── Section Header ─── */}

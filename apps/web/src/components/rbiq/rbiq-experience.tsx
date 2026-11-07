@@ -7,6 +7,7 @@ import { LeadForm } from "@/components/lead-form";
 import { Tilt } from "@/components/landing/tilt";
 import { QuantumNexus } from "@/components/three/quantum-nexus";
 import { SpotlightCard, BorderBeam, ScrollMotion } from "@/components/ui/21st";
+import { QuantumAtomOrbital, QuantumWaveStream } from "@/components/ui/quantum-effects";
 
 type DomainFilter = "all" | "motor" | "logic" | "sensory";
 type ViewMode = "cards" | "matrix";
@@ -267,6 +268,11 @@ export function RbiqExperience() {
           className="pointer-events-none absolute -top-32 -right-32 h-[480px] w-[480px] rounded-full bg-[#2BD6B4]/20 blur-3xl"
           aria-hidden
         />
+        <QuantumAtomOrbital
+          theme="dark"
+          size={360}
+          className="absolute -left-24 bottom-12 opacity-50"
+        />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Left Copy */}
@@ -400,8 +406,21 @@ export function RbiqExperience() {
       </section>
 
       {/* ═══════════════════════ 2. 9 SKILL-BUILDING ACTIVITIES ═══════════════════════ */}
-      <section id="activities" className="scroll-mt-20 py-20 md:py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="activities" className="relative scroll-mt-20 py-20 md:py-28">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+          <QuantumAtomOrbital
+            theme="light"
+            size={360}
+            className="absolute -right-24 top-16 opacity-75"
+          />
+          <QuantumAtomOrbital
+            theme="light"
+            size={280}
+            className="absolute -left-20 bottom-20 opacity-65"
+          />
+        </div>
+        <QuantumWaveStream theme="light" className="mb-8" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Header + View Mode Switcher */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
             <div className="max-w-2xl">
@@ -736,8 +755,13 @@ export function RbiqExperience() {
       </section>
 
       {/* ═══════════════════════ 3. THE RBIQ ADVANTAGE ═══════════════════════ */}
-      <section className="py-20 md:py-28 bg-white border-y border-[#E2ECE9]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden py-20 md:py-28 bg-white border-y border-[#E2ECE9]">
+        <QuantumAtomOrbital
+          theme="light"
+          size={320}
+          className="absolute -left-20 top-14 opacity-70"
+        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <ScrollMotion variant="blur-in" className="mx-auto max-w-3xl text-center">
             <span className="inline-flex items-center gap-2 rounded-full bg-[#E6F4F0] border border-[#BFE0D8] px-4 py-1.5 text-xs font-black uppercase tracking-widest text-[#054038]">
               <Icon name="award" size={14} className="text-[#0E937E]" /> Why Parents Choose RBIQ
@@ -815,6 +839,11 @@ export function RbiqExperience() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="relative overflow-hidden rounded-[32px] bg-[#054038] px-6 py-12 text-white sm:px-12 sm:py-16 shadow-2xl border border-[#2BD6B4]/30">
             <BorderBeam size={260} duration={13} colorFrom="#2BD6B4" colorTo="#FFC845" />
+            <QuantumAtomOrbital
+              theme="dark"
+              size={340}
+              className="absolute -right-20 -top-16 opacity-50"
+            />
             <div
               className="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-[#0E937E]/45 blur-3xl"
               aria-hidden

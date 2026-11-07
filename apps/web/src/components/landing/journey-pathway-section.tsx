@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon, type IconName } from "@/components/icons";
 import { SpotlightCard, BorderBeam } from "@/components/ui/21st";
+import { QuantumAtomOrbital, QuantumWaveStream } from "@/components/ui/quantum-effects";
 
 interface CycleStage {
   num: string;
@@ -210,9 +211,22 @@ export function JourneyAndPathwaySection() {
   return (
     <section
       id="journey"
-      className="scroll-mt-20 py-24 md:py-32 bg-gradient-to-b from-[#F4FAF8] via-white to-[#EDF6F3] overflow-hidden"
+      className="relative scroll-mt-20 py-24 md:py-32 bg-gradient-to-b from-[#F4FAF8] via-white to-[#EDF6F3] overflow-hidden"
     >
-      <div className="container-qs">
+      <QuantumAtomOrbital
+        theme="light"
+        size={360}
+        className="absolute -right-24 top-16 opacity-75"
+      />
+      <QuantumAtomOrbital
+        theme="light"
+        size={280}
+        className="absolute -left-20 bottom-24 opacity-65"
+      />
+
+      <QuantumWaveStream theme="light" className="mb-8" />
+
+      <div className="container-qs relative z-10">
         {/* ═══════════════════════ PART 1: 48-CLASS 6-STAGE CYCLE ═══════════════════════ */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
