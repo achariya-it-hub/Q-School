@@ -5,13 +5,10 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const NAV = [
-  { href: "/#story", label: "About" },
-  { href: "/#framework", label: "5D Framework" },
-  { href: "/#programs", label: "Programs" },
+  { href: "/", label: "Home" },
+  { href: "/#programs", label: "Our Programs" },
   { href: "/#neo-sapiens", label: "Neo Sapiens" },
-  { href: "/#q-verse", label: "Q-Verse" },
-  { href: "/#centres", label: "Centres" },
-  { href: "/q-master", label: "Q-Master AI" },
+  { href: "/#centres", label: "Our Branches" },
 ];
 
 export function SiteHeader() {
@@ -30,6 +27,7 @@ export function SiteHeader() {
         const y = window.scrollY;
         const max = document.documentElement.scrollHeight - window.innerHeight;
         setScrolled(y > 8);
+        if (y < 240) setActive(null);
         if (bar.current) bar.current.style.transform = `scaleX(${max > 0 ? Math.min(1, y / max) : 0})`;
       });
     };
@@ -56,27 +54,31 @@ export function SiteHeader() {
           else setActive((cur) => (cur === id ? null : cur));
         }
       },
-      { rootMargin: "-45% 0px -50% 0px" },
+      { rootMargin: "-40% 0px -50% 0px" },
     );
     els.forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, [pathname]);
 
-  const isActive = (href: string) => (href.startsWith("/#") ? active === href : pathname.startsWith(href));
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/" && !active;
+    if (href.startsWith("/#")) return active === href;
+    return pathname.startsWith(href);
+  };
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b bg-white/90 backdrop-blur transition-shadow duration-300 ${
+      className={`sticky top-0 z-50 border-b bg-white/95 backdrop-blur-md transition-shadow duration-300 ${
         scrolled ? "border-transparent shadow-[0_8px_24px_-12px_rgba(5,64,56,0.25)]" : "border-[#e2ece9]"
       }`}
     >
       <div className={`container-qs flex items-center justify-between transition-[height] duration-300 ${scrolled ? "h-14" : "h-16"}`}>
-        <Link href="/" className="flex items-center" aria-label="Q-School home">
+        <Link href="/" className="flex items-center shrink-0" aria-label="Q-School home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="Q-School" className={`w-auto transition-[height] duration-300 ${scrolled ? "h-8" : "h-9"}`} />
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex">
+        <nav className="hidden items-center gap-1.5 md:flex">
           {NAV.map((item) => {
             const on = isActive(item.href);
             return (
@@ -84,24 +86,24 @@ export function SiteHeader() {
                 key={item.href}
                 href={item.href}
                 aria-current={on ? "true" : undefined}
-                className={`nav-tile rounded-xl px-3.5 py-2 text-sm font-medium ${on ? "nav-tile-on" : "text-[#41564f]"}`}
+                className={`nav-tile rounded-xl px-4 py-2 text-sm font-semibold ${on ? "nav-tile-on" : "text-[#41564f]"}`}
               >
                 {item.label}
               </Link>
             );
           })}
-          <div className="ml-3 flex items-center gap-2">
-            <Link href="/login" className="nav-tile rounded-xl px-3.5 py-2 text-sm font-semibold text-brand-deep">
+          <div className="ml-2 flex items-center gap-2 border-l border-[#e2ece9] pl-3">
+            <Link href="/login" className="nav-tile rounded-xl px-4 py-2 text-sm font-bold text-brand-deep">
               Sign in
             </Link>
-            <Link href="/#demo" className="btn-primary btn-3d btn-3d-teal !px-4 !py-2">
-              Book free demo
+            <Link href="/#demo" className="btn-primary btn-3d btn-3d-teal !px-5 !py-2 text-sm font-bold">
+              Book Now
             </Link>
           </div>
         </nav>
 
         <button
-          className="nav-tile rounded-lg p-2 text-brand-deep lg:hidden"
+          className="nav-tile rounded-lg p-2 text-brand-deep md:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
           aria-expanded={open}
@@ -113,13 +115,13 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <nav className="border-t border-[#e2ece9] bg-white px-4 py-3 lg:hidden">
+        <nav className="border-t border-[#e2ece9] bg-white px-4 py-3 md:hidden">
           {NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setOpen(false)}
-              className={`nav-tile block rounded-xl px-3 py-2.5 text-sm font-medium ${isActive(item.href) ? "nav-tile-on" : "text-[#41564f]"}`}
+              className={`nav-tile block rounded-xl px-3 py-2.5 text-sm font-semibold ${isActive(item.href) ? "nav-tile-on" : "text-[#41564f]"}`}
             >
               {item.label}
             </Link>
@@ -129,7 +131,7 @@ export function SiteHeader() {
               Sign in
             </Link>
             <Link href="/#demo" onClick={() => setOpen(false)} className="btn-primary btn-3d btn-3d-teal w-full">
-              Free demo
+              Book Now
             </Link>
           </div>
         </nav>
