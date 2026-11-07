@@ -10,7 +10,7 @@
 const u = (id: string, w = 900) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=70`;
 
 export const PHOTOS = {
-  codingClass: { src: "/images/mentor-student.jpg", alt: "Certified Quantum Mentor guiding learner" },
+  codingClass: { src: "/images/pic-girl.png", alt: "Young Neo Sapiens learner at Q-School" },
   writingClass: { src: "/images/programs/quantum-reading.jpg", alt: "Learner reading and comprehending deeply" },
   liveClass: { src: "/images/bmit-hero.png", alt: "Young learner in a live Q-School quantum class" },
   coding: { src: "/images/programs/quantum-learning.jpg", alt: "Boy building cognitive mental models" },
@@ -18,5 +18,5 @@ export const PHOTOS = {
   group: { src: "/images/workshop.png", alt: "Children working together at a Q-School learning centre" },
   // full-width hero slides (landscape, larger)
   heroCoding: { src: "/images/side-brain.png", alt: "Human Intelligence in the Age of AI" },
-  heroWorkshop: { src: "/images/classroom-centre.jpg", alt: "Modern state-of-the-art Q-School learning space" },
+  heroWorkshop: { src: "/images/side-family.png", alt: "Modern state-of-the-art Q-School learning space" },
 } as const;

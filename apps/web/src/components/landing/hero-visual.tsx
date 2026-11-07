@@ -20,8 +20,8 @@ export function HeroVisual({ classWindow }: { classWindow?: WindowOverride } = {
       <Parallax speed={0.05} className="absolute -top-7 -left-3 z-0 hidden sm:block">
         <div className="relative h-44 w-36 -rotate-6 overflow-hidden rounded-3xl border-2 border-white/20 bg-brand-deep/60 shadow-2xl backdrop-blur-md transition-transform duration-500 hover:rotate-0 hover:scale-105">
           <Image
-            src="/images/uploaded/mentor-student.jpg"
-            alt="Q-School Certified Mentor guiding learner"
+            src="/images/pic-brain-boy.png"
+            alt="Q-School young learner activating quantum intelligence"
             fill
             sizes="160px"
             className="object-cover opacity-90 transition-opacity hover:opacity-100"
@@ -45,7 +45,7 @@ export function HeroVisual({ classWindow }: { classWindow?: WindowOverride } = {
       <Parallax speed={-0.06} className="absolute -left-3 -bottom-5 z-20 sm:-bottom-4 sm:-left-6">
         <div className="relative h-32 w-44 rotate-3 overflow-hidden rounded-2xl border-2 border-white/30 bg-brand-deep/80 shadow-2xl backdrop-blur-md transition-transform duration-500 hover:rotate-0 hover:scale-105">
           <Image
-            src="/images/uploaded/classroom-centre.jpg"
+            src="/images/side-family.png"
             alt="Q-School Learning Centre"
             fill
             sizes="180px"

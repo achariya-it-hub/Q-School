@@ -28,6 +28,7 @@ import { AiVsHiSection } from "@/components/landing/ai-vs-hi-scroll";
 import { FiveDFramework } from "@/components/landing/five-d-stack";
 import { ProgramsHorizontalScroll } from "@/components/landing/programs-horizontal-scroll";
 import { DiagnosticQuiz } from "@/components/landing/diagnostic-quiz";
+import { StorySection } from "@/components/landing/story-section";
 import { MagneticButton } from "@/components/ui/magnetic-button";
 import type { HeroSlide, HomeContent, SectionKey } from "@/lib/site/home-content";
 
@@ -211,248 +212,8 @@ function Subjects({ c }: { c: HomeContent["subjects"] }) {
 }
 
 /* ───────────────────────── 1. The Q-School Story & Gen Alpha ───────────────────────── */
-function StoryAndGenAlpha() {
-  const [activeTrait, setActiveTrait] = useState<number>(0);
+/* Extracted into @/components/landing/story-section.tsx (StorySection) */
 
-  const traits = [
-    {
-      icon: "laptop",
-      title: "Digitally Native",
-      desc: "Comfortable with technology and digital experiences.",
-      color: "#0E937E",
-      qschoolSuperpower: "Transforms passive screen consumption into active creator capability, hands-on spatial thinking, and computational logic.",
-    },
-    {
-      icon: "sparkle",
-      title: "Instantly Stimulated",
-      desc: "Accustomed to fast-paced information and immediate responses.",
-      color: "#5B6CF0",
-      qschoolSuperpower: "Harnesses dopamine feedback loops through gamified speed drills, dual-n-back mental challenges, and 1-minute recall sprints.",
-    },
-    {
-      icon: "eye",
-      title: "Curious Explorers",
-      desc: "Thrive on discovery, interaction, and engaging experiences.",
-      color: "#F29A2E",
-      qschoolSuperpower: "Replaces rigid textbook answers with Socratic questioning, hands-on robotics kits, and real-world scientific inquiry.",
-    },
-    {
-      icon: "heart",
-      title: "Unique Learners",
-      desc: "Have individual strengths, distinctive interests, and unique learning needs.",
-      color: "#E2557A",
-      qschoolSuperpower: "Individualized 1:1 mentor coaching, tailored pace calibration, and psychological safety in micro-cohorts of 15.",
-    },
-    {
-      icon: "planet",
-      title: "Future-Driven",
-      desc: "Need the ability to think independently, adapt, and solve problems.",
-      color: "#054038",
-      qschoolSuperpower: "Embeds ethical judgement, emotional equilibrium, and divergent multi-solution thinking before machines automate standard tasks.",
-    },
-  ];
-
-  return (
-    <section id="story" className="relative scroll-mt-20 py-24 bg-gradient-to-b from-[#F4F8F7] via-white to-[#F4F8F7] border-y border-[#E2ECE9] overflow-hidden">
-      <QuantumNexus className="pointer-events-none absolute inset-0 opacity-30" particleCount={85} speed={0.35} colorScheme="emerald" />
-
-      <div className="container-qs relative z-10">
-        <ScrollMotion variant="blur-in" className="mx-auto max-w-3xl text-center">
-          <Kicker>The Q-School Story</Kicker>
-          <H2>A Brighter Future Starts With the Learner</H2>
-          <p className="mt-4 text-lg sm:text-xl leading-relaxed text-[#3b544e]">
-            Every generation of parents has asked the same question in a different way: <strong className="text-brand-ink font-bold">what will my child need to thrive?</strong> For children growing up alongside smartphones, artificial intelligence, and constant change, the answer is evolving faster than any curriculum can keep pace.
-          </p>
-        </ScrollMotion>
-
-        {/* Narrative & Founder Quote Split */}
-        <div className="mt-16 grid grid-cols-1 items-stretch gap-8 lg:grid-cols-2">
-          {/* Left Card: The Shift */}
-          <ScrollMotion variant="fade-left" className="h-full">
-            <SpotlightCard
-              spotlightColor="rgba(43, 214, 180, 0.22)"
-              borderColor="rgba(43, 214, 180, 0.5)"
-              className="p-8 sm:p-10 shadow-xl flex h-full flex-col justify-between group"
-            >
-              <div className="relative z-10">
-                <div className="flex items-center justify-between">
-                  <span className="chip !px-3.5 !py-1 !text-xs !bg-[#2BD6B4]/20 !text-[#0B6E5F] font-bold">THE SHIFT</span>
-                  <span className="text-xs font-bold text-[#0E937E] uppercase tracking-wider">Human Intelligence First</span>
-                </div>
-                <h3 className="mt-5 text-2xl sm:text-3xl font-extrabold text-brand-ink">Beyond Competing with Machines</h3>
-                <p className="mt-4 text-base sm:text-[17px] leading-relaxed text-[#4b635e]">
-                  Q-School (The Quantum Schooling) was created to respond to that shift — <strong className="text-brand-ink font-semibold">not by teaching children to compete with machines</strong>, but by deliberately developing the human capacities that remain essential:
-                </p>
-                <div className="mt-6 flex flex-wrap gap-2.5">
-                  {["Attention", "Imagination", "Judgement", "Emotional Awareness", "Self-Belief", "Creativity", "Original Thought"].map((c) => (
-                    <span
-                      key={c}
-                      className="rounded-full bg-white/95 px-4 py-1.5 text-xs sm:text-[13.5px] font-bold text-brand-deep border border-[#CFE3DD] shadow-xs hover:border-[#2BD6B4] hover:shadow-[0_0_14px_rgba(43,214,180,0.45)] hover:scale-105 transition duration-300 cursor-default"
-                    >
-                      ✦ {c}
-                    </span>
-                  ))}
-                </div>
-                <p className="mt-6 text-sm sm:text-base leading-relaxed text-[#4b635e]">
-                  Drawing from contemporary learning methods, cognitive-development practices, and selected principles inspired by India’s knowledge traditions, Q-School brings these dimensions together in one structured learning journey.
-                </p>
-
-                {/* Real Mentor & Student Photo Frame */}
-                <div className="mt-6 relative overflow-hidden rounded-2xl border border-[#CFE3DD] shadow-md group/img">
-                  <div className="relative h-48 w-full">
-                    <Image
-                      src="/images/uploaded/mentor-student.jpg"
-                      alt="Q-School Certified Mentor guiding young learner"
-                      fill
-                      sizes="(max-width: 768px) 100vw, 500px"
-                      className="object-cover transition duration-700 group-hover/img:scale-105"
-                    />
-                  </div>
-                  <div className="bg-white px-4 py-2.5 text-xs sm:text-[13px] font-semibold text-[#0B6E5F] flex items-center justify-between">
-                    <span>Individualised Mentor Guidance</span>
-                    <span className="text-[#6b807b] font-normal">Ages 6–14 Years</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative z-10 mt-8 border-t border-[#E2ECE9] pt-6 flex items-center gap-3.5">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-deep text-[#2BD6B4] shadow-md">
-                  <Icon name="award" size={22} />
-                </span>
-                <div>
-                  <p className="text-base font-bold text-brand-ink">For Children Aged 6–14 Years</p>
-                  <p className="text-xs sm:text-sm text-[#5c7772]">48 Classes Per Annum · Continuous Developmental Journey</p>
-                </div>
-              </div>
-            </SpotlightCard>
-          </ScrollMotion>
-
-          {/* Right Card: Founder's Quote with 21st.dev Border Beam */}
-          <ScrollMotion variant="fade-right" delay={0.15} className="h-full">
-            <div className="relative flex h-full flex-col justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#054038] via-[#04332D] to-[#011C18] p-8 text-white sm:p-10 shadow-2xl border border-[#2BD6B4]/30 group">
-              <BorderBeam size={280} duration={10} colorFrom="#2BD6B4" colorTo="#0E937E" borderWidth={2} />
-
-              <div className="absolute -top-10 -right-10 w-60 h-60 pointer-events-auto opacity-80 group-hover:opacity-100 transition duration-500">
-                <QuantumCoreOrb />
-              </div>
-              <div className="pointer-events-none absolute -left-12 -bottom-12 h-44 w-44 rounded-full bg-[#2BD6B4]/15 blur-2xl" />
-
-              <div className="relative z-10">
-                <span className="font-hand text-6xl leading-none text-[#2BD6B4]">&ldquo;</span>
-                <blockquote className="mt-2 text-lg sm:text-xl lg:text-[22px] font-medium leading-relaxed text-white/95 max-w-[88%]">
-                  Education must do more than transfer information. It must develop the human being who receives it. My vision for Q-School is to help every child discover their strengths, build the habits to use them well, and grow with the confidence to navigate a world that is changing every day.
-                </blockquote>
-                <div className="mt-8 border-t border-white/15 pt-5 flex items-center justify-between">
-                  <div>
-                    <p className="text-lg sm:text-xl font-bold text-[#2BD6B4]">Dr J Arawindhan</p>
-                    <p className="text-sm text-white/75">Founder, Chief Mentor &amp; Managing Director, Q-School</p>
-                  </div>
-                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-[#2BD6B4] border border-[#2BD6B4]/30 backdrop-blur-xs">
-                    <span className="h-2 w-2 rounded-full bg-[#2BD6B4] animate-ping" />
-                    3D Quantum Core
-                  </span>
-                </div>
-              </div>
-
-              <div className="relative z-10 mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-white/15 pt-6 text-xs sm:text-sm">
-                <div className="rounded-2xl bg-white/10 p-4.5 backdrop-blur-xs border border-white/10 hover:border-[#2BD6B4]/50 transition">
-                  <p className="font-bold text-[#2BD6B4] uppercase tracking-wider text-xs">Our Mission</p>
-                  <p className="mt-1.5 text-white/85 leading-relaxed">Systematically develop every child&apos;s ability to focus, learn, think, create, communicate, adapt, solve and lead in an AI-driven world.</p>
-                </div>
-                <div className="rounded-2xl bg-white/10 p-4.5 backdrop-blur-xs border border-white/10 hover:border-[#2BD6B4]/50 transition">
-                  <p className="font-bold text-[#2BD6B4] uppercase tracking-wider text-xs">Our Vision</p>
-                  <p className="mt-1.5 text-white/85 leading-relaxed">The definitive future-readiness programme recognized nationally as the trusted partner that develops the learner behind the learning.</p>
-                </div>
-              </div>
-            </div>
-          </ScrollMotion>
-        </div>
-
-        {/* Gen Alpha & New-Age Parenting Challenge */}
-        <ScrollMotion variant="fade-up" delay={0.2} className="mt-18 rounded-3xl bg-[#F4F8F7] border border-[#CFE3DD] p-8 sm:p-11 shadow-sm">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-5 relative">
-              <div className="relative overflow-hidden rounded-3xl border border-[#CFE3DD] shadow-md aspect-[4/3]">
-                <Image
-                  src="/images/uploaded/gen-alpha-kid.jpg"
-                  alt="Generation Alpha Learner"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 450px"
-                  className="object-cover"
-                />
-              </div>
-              <span className="absolute -bottom-3 -right-3 rounded-2xl bg-[#054038] text-white px-4 py-2 text-xs sm:text-sm font-bold shadow-lg border border-[#2BD6B4]/30">
-                Ages 6–14 Years
-              </span>
-            </div>
-
-            <div className="lg:col-span-7">
-              <span className="chip !px-3.5 !py-1 !text-xs !bg-[#054038] !text-white font-bold">GEN ALPHA</span>
-              <h3 className="mt-3 text-2xl sm:text-3xl lg:text-4xl font-extrabold text-brand-ink">A New Generation. A New World. A New Way to Learn.</h3>
-              <p className="mt-3.5 text-base sm:text-lg text-[#4b635e] leading-relaxed">
-                Born into a digitally connected world, Generation Alpha is growing up alongside artificial intelligence, smart technology and rapid global change. Their future calls for adaptability, creativity, critical thinking, and emotional intelligence.
-              </p>
-              <div className="mt-5 rounded-2xl border border-[#2BD6B4]/40 bg-[#E9F6F3] p-5 text-left">
-                <p className="text-sm sm:text-base font-semibold text-brand-deep italic">
-                  &ldquo;My child is growing up in a world I never experienced. Am I preparing them for the future they will inherit?&rdquo;
-                </p>
-                <p className="mt-1.5 text-xs sm:text-sm text-[#41564f]">
-                  The answer lies in nurturing the child behind the learning — attention, judgment, and original imagination.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Interactive Trait Tabs */}
-          <div className="mt-10">
-            <p className="text-xs sm:text-sm uppercase tracking-wider font-extrabold text-[#0E937E] mb-3 text-center sm:text-left">
-              Click Any Trait to View Q-School&apos;s Pedagogical Transformation:
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-              {traits.map((t, idx) => {
-                const isActive = activeTrait === idx;
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setActiveTrait(idx)}
-                    className={`rounded-2xl p-4 text-left transition-all duration-300 border ${
-                      isActive
-                        ? "bg-white border-[#2BD6B4] shadow-[0_8px_20px_rgba(43,214,180,0.25)] scale-[1.02] ring-2 ring-[#2BD6B4]/30"
-                        : "bg-white/70 border-[#CFE3DD] hover:bg-white hover:border-[#2BD6B4]/50"
-                    }`}
-                  >
-                    <span className="icon-3d h-10 w-10 rounded-xl" style={{ ["--c" as string]: t.color }}>
-                      <Icon name={t.icon as IconName} size={20} />
-                    </span>
-                    <h4 className="mt-2.5 text-sm sm:text-base font-extrabold text-brand-ink">{t.title}</h4>
-                    <p className="mt-1 text-xs text-[#6b807b] line-clamp-2">{t.desc}</p>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Active Trait Deep-Dive Spotlight */}
-            <div className="mt-6 rounded-2xl bg-white border border-[#2BD6B4]/40 p-6 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2ECE9] pb-3">
-                <div className="flex items-center gap-3">
-                  <span className="h-3 w-3 rounded-full animate-ping" style={{ backgroundColor: traits[activeTrait].color }} />
-                  <span className="text-sm font-black uppercase text-[#0B6E5F]">
-                    How Q-School Guides: {traits[activeTrait].title}
-                  </span>
-                </div>
-                <span className="text-xs font-bold text-[#6b807b]">Trait 0{activeTrait + 1} of 05</span>
-              </div>
-              <p className="mt-3.5 text-base sm:text-[17px] font-medium text-brand-deep leading-relaxed">
-                {traits[activeTrait].qschoolSuperpower}
-              </p>
-            </div>
-          </div>
-        </ScrollMotion>
-      </div>
-    </section>
-  );
-}
 
 /* ───────────────────────── 2. Traditional Education vs. Q-School & 10 Core Abilities ───────────────────────── */
 function PedagogySection() {
@@ -737,11 +498,11 @@ function NeoSapiensSection() {
             <div className="relative overflow-hidden rounded-3xl border-2 border-[#2BD6B4]/50 shadow-2xl bg-[#042d27] max-w-[380px] w-full">
               <div className="relative h-96 w-full">
                 <Image
-                  src="/images/uploaded/bmit-hero.png"
-                  alt="Engineering the Neo Sapiens - Dr J Arawindhan"
+                  src="/images/pic-globe-boy.png"
+                  alt="Engineering the Neo Sapiens - Q-School"
                   fill
                   sizes="380px"
-                  className="object-contain p-4"
+                  className="object-cover"
                 />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent pointer-events-none" />
@@ -1144,7 +905,7 @@ function Centres({ c }: { c: HomeContent["centres"] }) {
       <ScrollMotion variant="fade-up" delay={0.1} className="mt-10 overflow-hidden rounded-3xl border border-[#CFE3DD] bg-white shadow-xl grid grid-cols-1 lg:grid-cols-12 items-stretch">
         <div className="relative lg:col-span-5 min-h-[260px] lg:min-h-full">
           <Image
-            src="/images/uploaded/classroom-centre.jpg"
+            src="/images/bmit-hero.png"
             alt="Q-School Learning Centre Classroom"
             fill
             sizes="(max-width: 1024px) 100vw, 500px"
@@ -1333,7 +1094,7 @@ function Demo({ c }: { c: HomeContent["demo"] }) {
               <div className="mt-7 flex items-center gap-4 rounded-2xl bg-white/10 border border-white/15 p-4 max-w-lg backdrop-blur-xs">
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-[#2BD6B4]/50 shadow-sm">
                   <Image
-                    src="/images/uploaded/side-family.png"
+                    src="/images/side-family.png"
                     alt="Parent & Child Learning Success"
                     fill
                     sizes="64px"
@@ -1405,7 +1166,7 @@ export function HomeSections({ content }: { content: HomeContent }) {
           {/* Weave the brochure narrative seamlessly into the page flow */}
           {s.key === "subjects" && (
             <>
-              <StoryAndGenAlpha />
+              <StorySection />
               <PedagogySection />
               <AiVsHiSection />
               <FiveDFramework />
