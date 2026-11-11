@@ -6,10 +6,12 @@ import { useEffect, useRef, useState } from "react";
 
 const NAV = [
   { href: "/", label: "Home" },
-  { href: "/#programs", label: "Our Programs" },
+  { href: "/#programs", label: "Programs" },
+  { href: "/neo-sapiens", label: "Neo Sapiens" },
+  { href: "/q-verse", label: "Q - Verse" },
+  { href: "/quantum-habits", label: "Q - Habits" },
   { href: "/rbiq", label: "RBIQ" },
-  { href: "/#neo-sapiens", label: "Neo Sapiens" },
-  { href: "/#centres", label: "Our Branches" },
+  { href: "/#centres", label: "Our Centres" },
 ];
 
 export function SiteHeader() {
@@ -83,7 +85,7 @@ export function SiteHeader() {
           <img src="/logo.png" alt="Q-School" className={`relative w-auto transition-[height] duration-300 ${scrolled ? "h-8" : "h-9"}`} />
         </Link>
 
-        <nav className="hidden items-center gap-1.5 md:flex">
+        <nav className="hidden items-center gap-1 lg:gap-1.5 md:flex">
           {NAV.map((item) => {
             const on = isActive(item.href);
             return (
@@ -91,18 +93,15 @@ export function SiteHeader() {
                 key={item.href}
                 href={item.href}
                 aria-current={on ? "true" : undefined}
-                className={`nav-tile rounded-xl px-4 py-2 text-sm font-semibold ${on ? "nav-tile-on" : "text-[#41564f]"}`}
+                className={`nav-tile whitespace-nowrap rounded-xl px-3 lg:px-3.5 py-2 text-xs lg:text-sm font-semibold ${on ? "nav-tile-on" : "text-[#41564f]"}`}
               >
                 {item.label}
               </Link>
             );
           })}
           <div className="ml-2 flex items-center gap-2 border-l border-[#e2ece9] pl-3">
-            <Link href="/login" className="nav-tile rounded-xl px-4 py-2 text-sm font-bold text-brand-deep">
-              Sign in
-            </Link>
-            <Link href="/#demo" className="btn-primary btn-3d btn-3d-teal !px-5 !py-2 text-sm font-bold">
-              Book Now
+            <Link href="/#demo" className="btn-primary btn-3d btn-3d-teal whitespace-nowrap !px-4 lg:!px-5 !py-2 text-xs lg:text-sm font-bold">
+              Join Now
             </Link>
           </div>
         </nav>
@@ -131,12 +130,9 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            <Link href="/login" onClick={() => setOpen(false)} className="btn-ghost w-full">
-              Sign in
-            </Link>
-            <Link href="/#demo" onClick={() => setOpen(false)} className="btn-primary btn-3d btn-3d-teal w-full">
-              Book Now
+          <div className="mt-2">
+            <Link href="/#demo" onClick={() => setOpen(false)} className="btn-primary btn-3d btn-3d-teal flex w-full items-center justify-center">
+              Join Now
             </Link>
           </div>
         </nav>

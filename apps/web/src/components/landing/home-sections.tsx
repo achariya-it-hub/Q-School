@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { CENTERS, WEBINAR_LIST } from "@qschool/shared";
 import { LeadForm } from "@/components/lead-form";
@@ -21,15 +22,7 @@ import {
   StaggerContainer,
   StaggerItem,
 } from "@/components/ui/21st";
-import { AiVsHiSection } from "@/components/landing/ai-vs-hi-scroll";
-import { FiveDFramework } from "@/components/landing/five-d-stack";
 import { ProgramsHorizontalScroll } from "@/components/landing/programs-horizontal-scroll";
-import { DiagnosticQuiz } from "@/components/landing/diagnostic-quiz";
-import { StorySection } from "@/components/landing/story-section";
-import { PedagogySection } from "@/components/landing/pedagogy-section";
-import { NeoSapiensSection } from "@/components/landing/neo-sapiens-section";
-import { JourneyAndPathwaySection } from "@/components/landing/journey-pathway-section";
-import { QVerseSection } from "@/components/landing/qverse-section";
 import { MagneticButton } from "@/components/ui/magnetic-button";
 import { QuantumAtomOrbital, QuantumWaveStream } from "@/components/ui/quantum-effects";
 import type { HeroSlide, HomeContent, SectionKey } from "@/lib/site/home-content";
@@ -121,38 +114,46 @@ function BrandSlide({ s }: { s: HeroSlide }) {
           )}
         </div>
 
-        {(s.trustLearners || s.trustRating) && (
+        {(s.trustLearners || s.trustRating || s.windowMeta) && (
           <div
-            className="hs-in mt-10 flex flex-wrap items-center gap-x-8 gap-y-4"
+            className="hs-in mt-10 flex flex-wrap items-center gap-x-6 gap-y-4"
             style={{ ["--d" as string]: "360ms" }}
           >
             {s.trustLearners && (
               <div className="flex items-center gap-3">
                 <div className="flex -space-x-1.5">
                   {["Asha V", "Rohit S", "Neha J", "Kiran B"].map((n) => (
-                    <Avatar key={n} name={n} size={36} className="!ring-brand-deep" />
+                    <Avatar key={n} name={n} size={34} className="!ring-brand-deep" />
                   ))}
                 </div>
-                <p className="text-[13px] leading-tight text-white/75">
+                <p className="text-[13px] leading-tight text-white/85">
                   <b className="block text-[15px] text-white">{s.trustLearners}</b>
-                  across India
                 </p>
               </div>
             )}
             {s.trustLearners && s.trustRating && (
-              <div className="h-10 w-px bg-white/15 max-sm:hidden" />
+              <div className="h-8 w-px bg-white/15 max-sm:hidden" />
             )}
             {s.trustRating && (
               <div>
                 <div className="flex gap-0.5 text-[#FFC845]">
                   {[0, 1, 2, 3, 4].map((i) => (
-                    <Icon key={i} name="star" size={16} fill="currentColor" strokeWidth={0} />
+                    <Icon key={i} name="star" size={15} fill="currentColor" strokeWidth={0} />
                   ))}
                 </div>
-                <p className="mt-1 text-[13px] text-white/75">
-                  <b className="text-white">{s.trustRating}</b> from parent reviews
+                <p className="mt-1 text-[13px] text-white/85">
+                  <b className="text-white">{s.trustRating}</b>
                 </p>
               </div>
+            )}
+            {s.windowMeta && (
+              <>
+                <div className="h-8 w-px bg-white/15 max-sm:hidden" />
+                <div className="flex items-center gap-2 text-[13px] text-white/85">
+                  <Icon name="building" size={16} className="text-[#2BD6B4]" />
+                  <b className="text-white">{s.windowMeta}</b>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -352,33 +353,309 @@ function Formats({ c }: { c: HomeContent["formats"] }) {
   );
 }
 
-function How({ c }: { c: HomeContent["how"] }) {
-  if (!c.steps.length) return null;
+/* ───────────────────────── Section 2 — Why Q-School ───────────────────────── */
+function Why({ c }: { c: HomeContent["why"] }) {
+  if (!c.items.length) return null;
   return (
-    <section id="how" className="bg-[#f0f6f4] py-24">
-      <div className="container-qs">
-        <ScrollMotion variant="blur-in" className="mx-auto max-w-2xl text-center">
-          <Kicker>{c.kicker}</Kicker>
+    <section id="why" className="container-qs scroll-mt-20 py-24">
+      <ScrollMotion variant="blur-in" className="mx-auto max-w-3xl text-center">
+        <Kicker>{c.kicker}</Kicker>
+        <H2>{c.title}</H2>
+        {c.body && (
+          <p className="mt-4 text-base sm:text-lg text-[#4b635e] leading-relaxed">
+            {c.body}
+          </p>
+        )}
+      </ScrollMotion>
+      <StaggerContainer className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3" staggerDelay={0.08}>
+        {c.items.map((card, i) => (
+          <StaggerItem key={i} className="h-full">
+            <SpotlightCard
+              spotlightColor="rgba(43, 214, 180, 0.2)"
+              className="flex h-full flex-col justify-between p-8 hover:shadow-xl transition-all duration-300"
+            >
+              <div>
+                <span
+                  className="icon-3d h-12 w-12 rounded-2xl mb-5 inline-flex items-center justify-center"
+                  style={{ ["--c" as string]: card.color || "#0E937E" }}
+                >
+                  <Icon name={(card.icon as IconName) || "brain"} size={24} />
+                </span>
+                <h3 className="text-xl font-bold text-brand-ink">{card.title}</h3>
+                <p className="mt-3 text-base text-[#5c7772] leading-relaxed">{card.body}</p>
+              </div>
+            </SpotlightCard>
+          </StaggerItem>
+        ))}
+      </StaggerContainer>
+    </section>
+  );
+}
+
+/* ───────────────────────── Section 3 — How it works ───────────────────────── */
+const HOW_STEP_META: {
+  icon: IconName;
+  color: string;
+  softBg: string;
+  phase: string;
+  caption: string;
+}[] = [
+  {
+    icon: "sparkle",
+    color: "#0E937E",
+    softBg: "rgba(14, 147, 126, 0.12)",
+    phase: "In Class",
+    caption: "Captures attention",
+  },
+  {
+    icon: "eye",
+    color: "#5B6CF0",
+    softBg: "rgba(91, 108, 240, 0.12)",
+    phase: "In Class",
+    caption: "Introduces a challenge",
+  },
+  {
+    icon: "brain",
+    color: "#0891B2",
+    softBg: "rgba(8, 145, 178, 0.12)",
+    phase: "In Class",
+    caption: "Builds skill through practice",
+  },
+  {
+    icon: "tools",
+    color: "#F29A2E",
+    softBg: "rgba(242, 154, 46, 0.14)",
+    phase: "In Class",
+    caption: "Applies it to a real task",
+  },
+  {
+    icon: "bulb",
+    color: "#E2557A",
+    softBg: "rgba(226, 85, 122, 0.12)",
+    phase: "In Class",
+    caption: "Ends with reflection",
+  },
+  {
+    icon: "award",
+    color: "#059669",
+    softBg: "rgba(5, 150, 105, 0.12)",
+    phase: "At Home",
+    caption: "Guided home practice",
+  },
+];
+
+function How({ c }: { c: HomeContent["how"] }) {
+  const [activeStep, setActiveStep] = useState<number>(0);
+  if (!c.steps.length) return null;
+
+  return (
+    <section
+      id="how"
+      className="relative scroll-mt-20 overflow-hidden bg-gradient-to-b from-[#EDF7F4] via-[#F4FAF8] to-white py-24 border-y border-[#DCECE7]"
+    >
+      {/* Subtle decorative background accents */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.35]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 15% 20%, rgba(43, 214, 180, 0.18), transparent 40%), radial-gradient(circle at 85% 80%, rgba(14, 147, 126, 0.14), transparent 45%)",
+        }}
+        aria-hidden
+      />
+      <QuantumAtomOrbital
+        theme="light"
+        size={320}
+        className="pointer-events-none absolute -right-24 top-10 opacity-60"
+      />
+
+      <div className="container-qs relative z-10">
+        <ScrollMotion variant="blur-in" className="mx-auto max-w-3xl text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#0E937E]/25 bg-white/90 px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-[#0E937E] shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-[#2BD6B4] animate-pulse" />
+            {c.kicker}
+          </span>
           <H2>{c.title}</H2>
-        </ScrollMotion>
-        <StaggerContainer className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3" staggerDelay={0.1}>
-          {c.steps.map((st, i) => (
-            <StaggerItem key={i} className="h-full">
-              <SpotlightCard
-                spotlightColor="rgba(43, 214, 180, 0.2)"
-                className="flex h-full flex-col justify-between p-8 hover:shadow-xl transition-all duration-300"
-              >
-                <div>
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-teal text-white font-bold text-base shadow-md">
-                    0{i + 1}
+
+          {/* Interactive Flow Pill Strip */}
+          <div className="mt-5 inline-flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-[#CFE3DD] bg-white/85 px-4 py-2 text-xs sm:text-[13px] font-bold text-[#41564f] shadow-sm backdrop-blur">
+            {c.steps.map((st, idx) => (
+              <span key={idx} className="inline-flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onMouseEnter={() => setActiveStep(idx)}
+                  onClick={() => setActiveStep(idx)}
+                  className={`rounded-lg px-2 py-0.5 transition-colors ${
+                    activeStep === idx
+                      ? "bg-brand-deep text-[#2BD6B4] font-extrabold"
+                      : "hover:text-brand-deep"
+                  }`}
+                >
+                  {st.title}
+                </button>
+                {idx < c.steps.length - 1 && (
+                  <span className="text-[#0E937E] font-black" aria-hidden>
+                    →
                   </span>
-                  <h3 className="mt-5 text-2xl font-bold text-brand-ink">{st.title}</h3>
-                  <p className="mt-3 text-base text-[#5c7772] leading-relaxed">{st.body}</p>
+                )}
+              </span>
+            ))}
+          </div>
+        </ScrollMotion>
+
+        {/* Six-step visual pipeline — Wide Rounded-Rectangle 3x2 Grid */}
+        <div className="relative mt-12">
+          <StaggerContainer
+            className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3"
+            staggerDelay={0.07}
+          >
+            {c.steps.map((st, i) => {
+              const meta = HOW_STEP_META[i % HOW_STEP_META.length];
+              const isActive = activeStep === i;
+              return (
+                <StaggerItem key={i} className="h-full">
+                  <div
+                    onMouseEnter={() => setActiveStep(i)}
+                    onClick={() => setActiveStep(i)}
+                    className={`group relative flex h-full cursor-pointer flex-col justify-between overflow-hidden rounded-2xl border bg-white p-6 transition-all duration-300 ${
+                      isActive
+                        ? "-translate-y-1 border-[#0E937E] shadow-[0_18px_40px_-16px_rgba(5,64,56,0.22)] ring-2 ring-[#2BD6B4]/35"
+                        : "border-[#CFE3DD] shadow-sm hover:-translate-y-1 hover:border-[#0E937E]/60 hover:shadow-lg"
+                    }`}
+                  >
+                    {/* Top accent bar */}
+                    <div
+                      className="absolute inset-x-0 top-0 h-1.5 transition-opacity duration-300"
+                      style={{ backgroundColor: meta.color }}
+                    />
+
+                    {/* Subtle corner glow */}
+                    <div
+                      className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full blur-2xl transition-opacity duration-300 group-hover:opacity-100"
+                      style={{
+                        backgroundColor: meta.softBg,
+                        opacity: isActive ? 1 : 0.55,
+                      }}
+                      aria-hidden
+                    />
+
+                    <div>
+                      {/* Horizontal Header: 3D Icon + Title & Badges */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <span
+                            className="icon-3d flex h-13 w-13 shrink-0 items-center justify-center rounded-xl p-3 shadow-md transition-transform duration-300 group-hover:scale-105"
+                            style={{ ["--c" as string]: meta.color }}
+                          >
+                            <Icon name={(st.icon as IconName) || meta.icon} size={24} />
+                          </span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`inline-flex whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-black tracking-wider transition-colors ${
+                                  isActive
+                                    ? "bg-brand-deep text-[#2BD6B4]"
+                                    : "bg-[#F0F7F5] text-brand-deep"
+                                }`}
+                              >
+                                STEP 0{i + 1}
+                              </span>
+                              <span
+                                className="whitespace-nowrap rounded-md px-2 py-0.5 text-[10.5px] font-extrabold uppercase tracking-wider"
+                                style={{
+                                  backgroundColor: meta.softBg,
+                                  color: meta.color,
+                                }}
+                              >
+                                {meta.phase}
+                              </span>
+                            </div>
+                            <h3 className="mt-1.5 text-xl font-extrabold tracking-tight text-brand-deep">
+                              {st.title}
+                            </h3>
+                          </div>
+                        </div>
+
+                        {i < c.steps.length - 1 && (
+                          <span
+                            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#E6F4F0] text-xs font-black text-[#0E937E] transition-transform duration-300 group-hover:translate-x-0.5"
+                            aria-hidden
+                          >
+                            →
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Step Description */}
+                      <p className="mt-4 text-sm leading-relaxed text-[#4b635e] font-medium">
+                        {st.body || meta.caption}
+                      </p>
+                    </div>
+
+                    {/* Bottom progress dot indicator */}
+                    <div className="mt-5 flex items-center justify-between border-t border-[#EDF4F2] pt-3">
+                      <span className="text-xs font-bold text-[#5c7772]">
+                        {i === c.steps.length - 1 ? "Weekly Cycle" : `Next: ${c.steps[i + 1].title}`}
+                      </span>
+                      <span
+                        className="h-2.5 w-2.5 rounded-full transition-transform duration-300 group-hover:scale-125"
+                        style={{ backgroundColor: meta.color }}
+                      />
+                    </div>
+                  </div>
+                </StaggerItem>
+              );
+            })}
+          </StaggerContainer>
+        </div>
+
+        {/* Elevated Story & Parent Progress Update Card */}
+        <ScrollMotion variant="fade-up" delay={0.15} className="mt-12">
+          <div className="relative overflow-hidden rounded-3xl bg-brand-deep p-7 sm:p-10 text-white shadow-xl border border-[#2BD6B4]/30">
+            <BorderBeam size={240} duration={12} colorFrom="#2BD6B4" colorTo="#FFC845" />
+            <div
+              className="pointer-events-none absolute -right-20 -bottom-20 h-64 w-64 rounded-full bg-[#2BD6B4]/20 blur-3xl"
+              aria-hidden
+            />
+
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-8">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/15 px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider text-[#2BD6B4]">
+                  <Icon name="checkCircle" size={14} /> Classroom + Guided Home Practice
                 </div>
-              </SpotlightCard>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+                <p className="mt-4 text-base sm:text-[17.5px] text-white/95 leading-relaxed font-medium">
+                  Each class captures attention, introduces a challenge, builds skill through practice, applies it to a real task, and ends with reflection. Learning continues at home through guided practice, and parents get a weekly progress update on focus, memory, habits and confidence.
+                </p>
+
+                {/* Weekly Parent Update Pillars */}
+                <div className="mt-5 flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-white/70 mr-1">
+                    Weekly Parent Update:
+                  </span>
+                  {["Focus", "Memory", "Habits", "Confidence"].map((metric) => (
+                    <span
+                      key={metric}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-3 py-1 text-xs font-bold text-[#2BD6B4]"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#FFC845]" />
+                      {metric}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {c.cta?.label && (
+                <div className="lg:col-span-4 flex lg:justify-end">
+                  <Link
+                    href={c.cta.href || "/q-5d-framework"}
+                    className="btn-3d btn-3d-mint inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm sm:text-base font-extrabold text-brand-deep shadow-lg"
+                  >
+                    <span>{c.cta.label}</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </ScrollMotion>
       </div>
     </section>
   );
@@ -421,90 +698,603 @@ function Live({ c }: { c: HomeContent["live"] }) {
   );
 }
 
-function Why({ c }: { c: HomeContent["why"] }) {
-  if (!c.items.length) return null;
+/* ───────────────────────── Section 5 — The 3-year pathway & 5 Short Concept Blocks ───────────────────────── */
+function Pricing({ c }: { c: HomeContent["pricing"] }) {
+  if (!c.plans.length) return null;
   return (
-    <section id="why" className="container-qs scroll-mt-20 py-24">
-      <ScrollMotion variant="blur-in" className="mx-auto max-w-2xl text-center">
-        <Kicker>{c.kicker}</Kicker>
-        <H2>{c.title}</H2>
-      </ScrollMotion>
-      <StaggerContainer className="mt-14 grid grid-cols-1 gap-6 md:grid-cols-3" staggerDelay={0.08}>
-        {c.items.map((card, i) => (
-          <StaggerItem key={i} className="h-full">
-            <SpotlightCard
-              spotlightColor="rgba(43, 214, 180, 0.2)"
-              className="flex h-full flex-col justify-between p-8 hover:shadow-xl transition-all duration-300"
-            >
-              <div>
-                <h3 className="text-xl font-bold text-brand-ink">{card.title}</h3>
-                <p className="mt-3 text-sm text-[#5c7772] leading-relaxed">{card.body}</p>
+    <>
+      <section id="pathway" className="scroll-mt-20 bg-white py-24 border-t border-[#E2ECE9]">
+        <div id="pricing" className="scroll-mt-20" />
+        <div className="container-qs">
+          <ScrollMotion variant="blur-in" className="mx-auto max-w-3xl text-center">
+            <Kicker>{c.kicker}</Kicker>
+            <H2>{c.title}</H2>
+          </ScrollMotion>
+
+          {/* 3-year pathway table / cards */}
+          <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
+            {c.plans.map((p, i) => (
+              <div
+                key={i}
+                className="flex flex-col justify-between rounded-3xl border border-[#CFE3DD] bg-gradient-to-b from-[#F8FCFB] to-white p-7 sm:p-8 shadow-sm hover:shadow-lg transition"
+              >
+                <div>
+                  <span className="inline-block rounded-full bg-[#E6F4F0] px-3 py-1 text-xs font-black uppercase tracking-wider text-[#0E937E]">
+                    {p.name}
+                  </span>
+                  <p className="mt-4 text-xs font-bold uppercase tracking-wider text-[#5c7772]">
+                    Programs
+                  </p>
+                  <h3 className="mt-1 text-xl sm:text-2xl font-extrabold text-brand-deep">
+                    {p.price}
+                  </h3>
+                  <p className="mt-4 text-xs font-bold uppercase tracking-wider text-[#5c7772]">
+                    Focus
+                  </p>
+                  <p className="mt-1 text-base font-semibold text-brand-ink">{p.blurb}</p>
+                </div>
               </div>
-            </SpotlightCard>
-          </StaggerItem>
-        ))}
-      </StaggerContainer>
+            ))}
+          </div>
+
+          {/* Supporting pathway copy & CTA */}
+          <ScrollMotion variant="fade-up" delay={0.1} className="mx-auto mt-10 max-w-3xl text-center">
+            <div className="space-y-3 text-sm sm:text-base text-[#4b635e] leading-relaxed">
+              <p>
+                Q-Reading, Q-Maths and Q-Science are available as add-ons. Your counsellor will recommend the right starting point for your child&apos;s age and needs.
+              </p>
+              <p>
+                Each year includes 48 classes (about one a week), learning kits, progress assessments and parent reviews.
+              </p>
+              <p>
+                Year 3 ends with a capstone project and a Q-School completion certificate.
+              </p>
+            </div>
+            <div className="mt-8">
+              <a
+                href="#demo"
+                className="btn-3d btn-3d-teal inline-flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-base font-bold"
+              >
+                Book a Free Demo
+              </a>
+            </div>
+          </ScrollMotion>
+        </div>
+      </section>
+
+      <ConceptBlocks />
+    </>
+  );
+}
+
+const RBIQ_ACTIVITIES = [
+  {
+    num: "01",
+    title: "Cup Stacking",
+    shortTitle: "Cup Stacking",
+    pillar: "Speed & Coordination",
+    desc: "Develop hand-eye coordination, focus, speed and accuracy.",
+    icon: "clock" as IconName,
+    color: "#0E937E",
+  },
+  {
+    num: "02",
+    title: "Rubik's Cube Solving",
+    shortTitle: "Rubik's Cube",
+    pillar: "Logical Thinking",
+    desc: "Encourage logical thinking, pattern recognition and problem-solving.",
+    icon: "grid" as IconName,
+    color: "#5B6CF0",
+  },
+  {
+    num: "03",
+    title: "Clairaudience (Auditory Awareness)",
+    shortTitle: "Clairaudience",
+    pillar: "Auditory Awareness",
+    desc: "Strengthen listening skills, sound recognition and auditory attention.",
+    icon: "bell" as IconName,
+    color: "#0891B2",
+  },
+  {
+    num: "04",
+    title: "Parallel Processing",
+    shortTitle: "Parallel Processing",
+    pillar: "Mental Flexibility",
+    desc: "Develop mental flexibility, attention and information processing.",
+    icon: "brain" as IconName,
+    color: "#F29A2E",
+  },
+  {
+    num: "05",
+    title: "Rope Knot",
+    shortTitle: "Rope Knot",
+    pillar: "Spatial Reasoning",
+    desc: "Improve spatial reasoning, fine motor skills and sequential thinking.",
+    icon: "tools" as IconName,
+    color: "#E2557A",
+  },
+  {
+    num: "06",
+    title: "Towel Folding",
+    shortTitle: "Towel Folding",
+    pillar: "Precision & Organisation",
+    desc: "Encourage visual-spatial awareness, precision and organisation.",
+    icon: "box" as IconName,
+    color: "#10B981",
+  },
+  {
+    num: "07",
+    title: "Abacus",
+    shortTitle: "Abacus",
+    pillar: "Mental Calculation",
+    desc: "Build number sense, visualisation and mental calculation skills.",
+    icon: "chart" as IconName,
+    color: "#D97706",
+  },
+  {
+    num: "08",
+    title: "Speed Reading",
+    shortTitle: "Speed Reading",
+    pillar: "Reading Fluency",
+    desc: "Improve reading fluency, visual tracking and comprehension.",
+    icon: "book" as IconName,
+    color: "#2563EB",
+  },
+  {
+    num: "09",
+    title: "Ambidexterity",
+    shortTitle: "Ambidexterity",
+    pillar: "Bilateral Coordination",
+    desc: "Develop bilateral coordination, motor control and hand flexibility.",
+    icon: "palette" as IconName,
+    color: "#8B5CF6",
+  },
+];
+
+/* ───────────────────────── 5 Short Concept Blocks (Linking to Separate Pages) ───────────────────────── */
+function ConceptBlocks() {
+  const [rbiqOption, setRbiqOption] = useState<"option1" | "option2">("option1");
+  return (
+    <section className="bg-[#F4FAF8] py-20 border-t border-[#E2ECE9]">
+      <div className="container-qs space-y-8">
+        {/* 1. Our Mission, Our Vision and Founder's Message */}
+        <div
+          id="mission-vision"
+          className="relative overflow-hidden rounded-[34px] border border-[#2BD6B4]/35 bg-gradient-to-br from-[#021B17] via-[#04302A] to-[#021915] p-6 sm:p-10 lg:p-12 text-white shadow-[0_32px_80px_-20px_rgba(3,34,29,0.55)]"
+        >
+          <BorderBeam size={300} duration={14} colorFrom="#2BD6B4" colorTo="#FFC845" borderWidth={2} />
+          <div
+            className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-[#2BD6B4]/15 blur-3xl"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute -bottom-24 -right-20 h-80 w-80 rounded-full bg-[#FFC845]/10 blur-3xl"
+            aria-hidden
+          />
+
+          {/* Section Header */}
+          <div className="relative z-10 mx-auto max-w-3xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#2BD6B4]/35 bg-[#2BD6B4]/10 px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.18em] text-[#2BD6B4]">
+              <Icon name="sparkle" size={14} /> Purpose &amp; Leadership
+            </span>
+            <h2 className="mt-4 text-3xl sm:text-4xl lg:text-[2.6rem] font-extrabold tracking-tight leading-tight text-white">
+              Our Mission, Our Vision and{" "}
+              <span className="bg-gradient-to-r from-[#2BD6B4] via-[#7CF3DA] to-[#FFD875] bg-clip-text text-transparent">
+                Founder&apos;s Message
+              </span>
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-white/80 leading-relaxed">
+              A brighter future starts with the learner. Q-School helps children build the focus, values and thinking skills that marks alone cannot measure.
+            </p>
+          </div>
+
+          {/* Dual Cards: OUR MISSION & OUR VISION */}
+          <div className="relative z-10 mt-10 grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+            {/* OUR MISSION */}
+            <div className="group flex flex-col justify-between overflow-hidden rounded-[26px] border border-white/15 bg-gradient-to-b from-white/[0.10] to-white/[0.04] p-6 sm:p-8 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-[#2BD6B4]/60">
+              <div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[#2BD6B4]/40 bg-[#03221D]/80 px-3.5 py-1 text-xs font-extrabold uppercase tracking-[0.16em] text-[#2BD6B4]">
+                    <Icon name="leader" size={14} /> OUR MISSION
+                  </span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#2BD6B4] text-[#03221D] shadow-md">
+                    <Icon name="sparkle" size={20} />
+                  </span>
+                </div>
+
+                <p className="mt-5 text-base sm:text-[17px] leading-relaxed text-white/95 font-medium">
+                  To systematically develop every child&apos;s ability to{" "}
+                  <strong className="font-extrabold text-[#2BD6B4]">
+                    focus, learn, think, create, communicate, adapt, solve and lead
+                  </strong>{" "}
+                  - equipping them with the human capabilities that remain essential in an AI-driven world.
+                </p>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-2 pt-5 border-t border-white/10">
+                {[
+                  "Focus",
+                  "Learn",
+                  "Think",
+                  "Create",
+                  "Communicate",
+                  "Adapt",
+                  "Solve",
+                  "Lead",
+                ].map((pill, idx) => (
+                  <div
+                    key={pill}
+                    className="flex items-center gap-1.5 rounded-xl border border-[#2BD6B4]/25 bg-[#03221D]/70 px-2.5 py-1.5 text-xs font-bold text-[#B8F5E8]"
+                  >
+                    <span className="text-[10px] font-black text-[#2BD6B4]">0{idx + 1}</span>
+                    <span className="truncate">{pill}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* OUR VISION */}
+            <div className="group flex flex-col justify-between overflow-hidden rounded-[26px] border border-white/15 bg-gradient-to-b from-white/[0.10] to-white/[0.04] p-6 sm:p-8 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-[#FFC845]/60">
+              <div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[#FFC845]/45 bg-[#03221D]/80 px-3.5 py-1 text-xs font-extrabold uppercase tracking-[0.16em] text-[#FFD875]">
+                    <Icon name="globe" size={14} /> OUR VISION
+                  </span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#FFD875] to-[#F4B63F] text-[#03221D] shadow-md">
+                    <Icon name="crown" size={20} />
+                  </span>
+                </div>
+
+                <p className="mt-5 text-base sm:text-[17px] leading-relaxed text-white/95 font-medium">
+                  To be the definitive future-readiness programme for children aged 6–14 recognised nationally as the trusted partner that develops{" "}
+                  <strong className="font-extrabold text-[#FFD875]">
+                    the learner behind the learning
+                  </strong>
+                  , and prepares every child, with confidence, for a future we cannot yet fully predict.
+                </p>
+              </div>
+
+              <div className="mt-6 grid grid-cols-3 gap-2.5 pt-5 border-t border-white/10">
+                {[
+                  { value: "Ages 6–14", label: "Future-Readiness" },
+                  { value: "9 Centres", label: "National Trust" },
+                  { value: "Confidence", label: "Learner First" },
+                ].map((item) => (
+                  <div
+                    key={item.value}
+                    className="rounded-xl border border-white/15 bg-[#03221D]/70 px-3 py-2 text-center"
+                  >
+                    <p className="text-xs sm:text-sm font-extrabold text-[#FFD875]">{item.value}</p>
+                    <p className="mt-0.5 text-[10.5px] text-white/70">{item.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Founder's Message Showcase */}
+          <div className="relative z-10 mt-7 rounded-[26px] border border-[#2BD6B4]/30 bg-[#03221D]/85 p-6 sm:p-9 backdrop-blur-xl">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-8">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#FFC845]/40 bg-[#FFC845]/10 px-3.5 py-1 text-xs font-extrabold uppercase tracking-[0.16em] text-[#FFD875]">
+                  <Icon name="award" size={14} /> Founder&apos;s Message
+                </span>
+
+                <blockquote className="mt-4 text-lg sm:text-xl lg:text-[22px] font-medium leading-relaxed text-white/95 italic">
+                  &ldquo;Education must do more than transfer information.{" "}
+                  <span className="not-italic font-extrabold text-[#2BD6B4]">
+                    It must develop the human being who receives it.
+                  </span>{" "}
+                  My vision for Q-School is to help every child discover their strengths, build the habits to use them well, and grow with the confidence to navigate a world that is changing every day.&rdquo;
+                </blockquote>
+              </div>
+
+              <div className="lg:col-span-4 flex flex-col justify-between gap-5 rounded-2xl border border-white/15 bg-white/[0.05] p-5">
+                <div className="flex items-center gap-3.5">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FFD875] via-[#F4B63F] to-[#D99116] text-lg font-black text-[#03221D] shadow-lg">
+                    JA
+                  </div>
+                  <div>
+                    <p className="text-base sm:text-lg font-extrabold text-white">
+                      - Dr J Arawindhan
+                    </p>
+                    <p className="mt-0.5 text-xs font-semibold text-[#9ED8CC] leading-snug">
+                      Founder, Chief Mentor &amp; Managing Director, Q-School
+                    </p>
+                  </div>
+                </div>
+
+                <Link
+                  href="/our-story"
+                  className="inline-flex items-center justify-between rounded-xl border border-[#2BD6B4]/35 bg-[#2BD6B4]/15 px-4 py-2.5 text-xs sm:text-sm font-extrabold text-[#2BD6B4] hover:bg-[#2BD6B4] hover:text-[#03221D] transition"
+                >
+                  <span>Read our full story</span>
+                  <span>→</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Grid for 2, 3, 4, 5 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 2. The Q 5D™ Framework */}
+          <div className="flex flex-col justify-between rounded-3xl border border-[#CFE3DD] bg-white p-7 sm:p-8 shadow-sm">
+            <div>
+              <Kicker>The Q 5D™ Framework</Kicker>
+              <h3 className="mt-2 text-xl sm:text-2xl font-extrabold text-brand-deep">
+                One framework. Five dimensions.
+              </h3>
+              <p className="mt-3 rounded-xl bg-[#F4FAF8] border border-[#E2ECE9] px-4 py-3 text-xs sm:text-sm font-extrabold text-brand-ink">
+                Conscious → Deep Learning → Flow and Application → Time → Peak Possibility
+              </p>
+              <p className="mt-3 text-sm sm:text-base text-[#4b635e] leading-relaxed">
+                In simple terms: understand, practise, internalise, apply, express.
+              </p>
+            </div>
+            <div className="mt-5 pt-4 border-t border-[#EEF3F1]">
+              <Link
+                href="/q-5d-framework"
+                className="inline-flex items-center gap-1.5 text-sm font-extrabold text-brand-teal hover:text-brand-deep transition"
+              >
+                Explore the framework →
+              </Link>
+            </div>
+          </div>
+
+          {/* 3. Who Is a Neo Sapiens? */}
+          <div className="flex flex-col justify-between rounded-3xl border border-[#CFE3DD] bg-white p-7 sm:p-8 shadow-sm">
+            <div>
+              <Kicker>Who Is a Neo Sapiens?</Kicker>
+              <h3 className="mt-2 text-xl sm:text-2xl font-extrabold text-brand-deep">
+                A future-ready learner who can think, adapt, create and lead.
+              </h3>
+              <p className="mt-3 text-sm sm:text-base text-[#4b635e] leading-relaxed">
+                At Q-School, we use the term Neo Sapiens for the kind of young person we aim to develop: someone who pairs strong academics with creativity, emotional balance and clear values.
+              </p>
+              <ul className="mt-3 space-y-1.5 text-xs sm:text-sm text-[#2b3d38]">
+                <li>
+                  <b className="text-brand-deep">Strong academics:</b> better learning skills and exam confidence
+                </li>
+                <li>
+                  <b className="text-brand-deep">Leadership and character:</b> resilience, ethics and communication
+                </li>
+                <li>
+                  <b className="text-brand-deep">Human skills for the age of AI:</b> original thinking and critical reasoning
+                </li>
+              </ul>
+            </div>
+            <div className="mt-5 pt-4 border-t border-[#EEF3F1]">
+              <Link
+                href="/neo-sapiens"
+                className="inline-flex items-center gap-1.5 text-sm font-extrabold text-brand-teal hover:text-brand-deep transition"
+              >
+                What is a Neo Sapiens? →
+              </Link>
+            </div>
+          </div>
+
+          {/* 4. The Q-Verse */}
+          <div className="flex flex-col justify-between rounded-3xl border border-[#CFE3DD] bg-white p-7 sm:p-8 shadow-sm">
+            <div>
+              <Kicker>The Q-Verse</Kicker>
+              <h3 className="mt-2 text-xl sm:text-2xl font-extrabold text-brand-deep">
+                One ecosystem, ten connected tracks.
+              </h3>
+              <p className="mt-3 rounded-xl bg-[#F4FAF8] border border-[#E2ECE9] px-4 py-3 text-xs sm:text-sm font-bold text-brand-ink leading-relaxed">
+                Q-Memory · Q-Vision · Q-Learning · Q-Mastery · Q-Maths · Q-Science · Q-Creation · Q-Way · Q-Habit · Q-Parenting
+              </p>
+              <p className="mt-3 text-sm sm:text-base text-[#4b635e] leading-relaxed">
+                Eight core programs for children, with Q-Habit and Q-Parenting supporting learning at home.
+              </p>
+            </div>
+            <div className="mt-5 pt-4 border-t border-[#EEF3F1]">
+              <Link
+                href="/q-verse"
+                className="inline-flex items-center gap-1.5 text-sm font-extrabold text-brand-teal hover:text-brand-deep transition"
+              >
+                Explore the Q-Verse →
+              </Link>
+            </div>
+          </div>
+
+          {/* 5. Quantum Habits */}
+          <div className="flex flex-col justify-between rounded-3xl border border-[#CFE3DD] bg-white p-7 sm:p-8 shadow-sm">
+            <div>
+              <Kicker>Quantum Habits</Kicker>
+              <h3 className="mt-2 text-xl sm:text-2xl font-extrabold text-brand-deep">
+                Small habits. Big possibilities.
+              </h3>
+              <p className="mt-3 text-sm sm:text-base text-[#4b635e] leading-relaxed">
+                Habit → Practice → Growth. Children build five lasting routines:
+              </p>
+              <p className="mt-2.5 rounded-xl bg-[#F4FAF8] border border-[#E2ECE9] px-4 py-3 text-xs sm:text-sm font-bold text-brand-ink leading-relaxed">
+                Physically healthy · Emotionally strong · Intellectually sharp · Financially responsible · Self-disciplined
+              </p>
+            </div>
+            <div className="mt-5 pt-4 border-t border-[#EEF3F1]">
+              <Link
+                href="/quantum-habits"
+                className="inline-flex items-center gap-1.5 text-sm font-extrabold text-brand-teal hover:text-brand-deep transition"
+              >
+                See how habits are built →
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* RBIQ – Whole Brain Development Program Showcase (Option 1 & Option 2) */}
+        <div
+          id="rbiq"
+          className="relative overflow-hidden rounded-[34px] border border-[#CFE3DD] bg-white p-6 sm:p-10 lg:p-12 shadow-lg"
+        >
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-[#E6F0ED] pb-8">
+            <div className="max-w-2xl">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#E6F4F0] border border-[#BFE0D8] px-3.5 py-1 text-xs font-extrabold uppercase tracking-[0.16em] text-[#0E937E]">
+                <Icon name="brain" size={14} />{" "}
+                {rbiqOption === "option1"
+                  ? "RBIQ – Whole Brain Development Program"
+                  : "RBIQ – Whole Brain Development"}
+              </span>
+              <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold tracking-tight text-brand-deep">
+                Unlock Potential.{" "}
+                <span className="text-brand-teal">Engineer Brilliance.</span>
+              </h2>
+              <p className="mt-3 text-sm sm:text-base text-[#4b635e] leading-relaxed">
+                {rbiqOption === "option1"
+                  ? "Engaging activities designed to strengthen children's cognitive development, concentration, coordination, memory and problem-solving abilities."
+                  : "Engaging activities designed to strengthen children's cognitive abilities, focus, coordination and problem-solving skills."}
+              </p>
+            </div>
+
+            {/* Option 1 / Option 2 Switcher */}
+            <div className="inline-flex rounded-2xl border border-[#CFE3DD] bg-[#F4FAF8] p-1.5 self-start lg:self-auto">
+              <button
+                type="button"
+                onClick={() => setRbiqOption("option1")}
+                className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-extrabold transition ${
+                  rbiqOption === "option1"
+                    ? "bg-brand-deep text-[#2BD6B4] shadow-sm"
+                    : "text-[#4b635e] hover:text-brand-deep"
+                }`}
+              >
+                Option 1: Detailed View
+              </button>
+              <button
+                type="button"
+                onClick={() => setRbiqOption("option2")}
+                className={`rounded-xl px-4 py-2 text-xs sm:text-sm font-extrabold transition ${
+                  rbiqOption === "option2"
+                    ? "bg-brand-deep text-[#2BD6B4] shadow-sm"
+                    : "text-[#4b635e] hover:text-brand-deep"
+                }`}
+              >
+                Option 2: Compact Skills
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-8">
+            <h3 className="text-lg sm:text-xl font-extrabold text-brand-deep mb-5">
+              9 Skill-Building Activities
+            </h3>
+
+            {rbiqOption === "option1" ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {RBIQ_ACTIVITIES.map((act) => (
+                  <div
+                    key={act.num}
+                    className="group rounded-2xl border border-[#DCECE7] bg-gradient-to-b from-[#F9FCFB] to-white p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#0E937E] hover:shadow-md"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className="icon-3d flex h-10 w-10 items-center justify-center rounded-xl"
+                        style={{ ["--c" as string]: act.color }}
+                      >
+                        <Icon name={act.icon} size={19} />
+                      </span>
+                      <span className="rounded-lg bg-[#E6F4F0] px-2.5 py-1 text-xs font-black text-[#0E937E]">
+                        {act.num}
+                      </span>
+                    </div>
+                    <h4 className="mt-4 text-base sm:text-lg font-extrabold text-brand-deep">
+                      {act.num.replace(/^0/, "")}. {act.title}
+                    </h4>
+                    <p className="mt-1.5 text-xs sm:text-sm text-[#4b635e] leading-relaxed">
+                      {act.desc}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {RBIQ_ACTIVITIES.map((act) => (
+                  <div
+                    key={act.num}
+                    className="flex items-center gap-3.5 rounded-2xl border border-[#DCECE7] bg-[#F8FCFB] p-4 transition hover:border-[#0E937E] hover:bg-white hover:shadow-sm"
+                  >
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-black text-white shadow-sm"
+                      style={{ backgroundColor: act.color }}
+                    >
+                      {act.num}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-extrabold text-brand-deep truncate">
+                        {act.shortTitle}
+                      </p>
+                      <p className="text-xs font-bold text-[#0E937E]">
+                        – {act.pillar}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* The RBIQ Advantage & CTA Banner */}
+          <div className="mt-8 rounded-2xl bg-brand-deep p-6 sm:p-8 text-white flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#2BD6B4]">
+                {rbiqOption === "option1"
+                  ? "The RBIQ Advantage"
+                  : "Think Better. Learn Better. Grow Stronger."}
+              </p>
+              {rbiqOption === "option1" && (
+                <p className="mt-1.5 text-sm sm:text-base text-white/85 font-medium">
+                  Structured activities. Guided practice. Progressive challenges. Meaningful learning experiences.
+                </p>
+              )}
+              <h4 className="mt-2 text-xl sm:text-2xl font-extrabold text-[#FFD875]">
+                {rbiqOption === "option1"
+                  ? "Give Your Child the Opportunity to Think, Learn and Perform Better."
+                  : "Think Better. Learn Better. Grow Stronger."}
+              </h4>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <Link
+                href="/rbiq"
+                className="btn-3d btn-3d-mint inline-flex items-center gap-2 rounded-xl px-5 py-3 text-xs sm:text-sm font-black text-brand-deep"
+              >
+                {rbiqOption === "option1" ? "Explore RBIQ" : "Explore RBIQ Programs"} →
+              </Link>
+              <a
+                href="#demo"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 py-3 text-xs sm:text-sm font-bold text-white hover:bg-white/20 transition"
+              >
+                Book an Assessment
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
 
-const TESTIMONIAL_OUTCOMES = [
-  { tag: "3× Reading Speed & Exam Calm", program: "Quantum Learning + Vision", avatarName: "Priya R" },
-  { tag: "Visual Math & Emotional Balance", program: "Q-Maths + Q-Mastery", avatarName: "Karthik M" },
-  { tag: "School Prefect & Stage Confidence", program: "Quantum Mastery", avatarName: "Meera S" },
-];
+/* ───────────────────────── Section 6 — What parents say ───────────────────────── */
+const TESTIMONIAL_AVATARS = ["Priya R", "Karthik M", "Meera S"];
 
 function Testimonials({ c }: { c: HomeContent["testimonials"] }) {
   if (!c.items.length) return null;
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-white to-[#F4FAF8] py-24 border-y border-[#E2ECE9]">
+    <section className="relative overflow-hidden bg-white py-24 border-y border-[#E2ECE9]">
       <QuantumAtomOrbital
         theme="light"
         size={340}
         className="absolute -right-24 top-12 opacity-70"
       />
       <div className="container-qs relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mb-14">
-          <ScrollMotion variant="blur-in" className="lg:col-span-7">
-            <Kicker>{c.kicker}</Kicker>
-            <H2>{c.title}</H2>
-            <p className="mt-3 text-base text-[#4b635e] max-w-xl">
-              Across Chennai, Bengaluru, Hyderabad, Pune, Puducherry, Trichy, and Coimbatore, parents see tangible shifts in focus, self-discipline, and joyful learning within weeks.
-            </p>
-          </ScrollMotion>
-
-          {/* Pictorial Parent Trust Banner */}
-          <ScrollMotion variant="fade-up" delay={0.1} className="lg:col-span-5">
-            <div className="flex items-center gap-4 rounded-3xl bg-[#054038] text-white p-5 sm:p-6 shadow-xl border border-[#2BD6B4]/30">
-              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 border-[#2BD6B4]/60">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/side-family.png"
-                  alt="Happy Q-School Family"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div>
-                <div className="flex items-center gap-1 text-[#FFC845]">
-                  {[0, 1, 2, 3, 4].map((k) => (
-                    <Icon key={k} name="star" size={15} fill="currentColor" strokeWidth={0} />
-                  ))}
-                  <span className="ml-1.5 text-xs font-black text-white">4.9 / 5.0</span>
-                </div>
-                <p className="text-lg font-extrabold text-white mt-1">
-                  25,000+ Learners Empowered
-                </p>
-                <p className="text-xs text-[#2BD6B4] font-semibold mt-0.5">
-                  Verified Parent Feedback · Ages 6–14
-                </p>
-              </div>
-            </div>
-          </ScrollMotion>
-        </div>
+        <ScrollMotion variant="blur-in" className="mx-auto max-w-2xl text-center mb-14">
+          <Kicker>{c.kicker}</Kicker>
+          <H2>{c.title}</H2>
+        </ScrollMotion>
 
         <StaggerContainer className="grid grid-cols-1 gap-6 md:grid-cols-3" staggerDelay={0.1}>
           {c.items.map((t, i) => {
-            const extra = TESTIMONIAL_OUTCOMES[i % TESTIMONIAL_OUTCOMES.length];
+            const avatarName = TESTIMONIAL_AVATARS[i % TESTIMONIAL_AVATARS.length];
             return (
               <StaggerItem key={i} className="h-full">
                 <SpotlightCard
@@ -512,45 +1302,35 @@ function Testimonials({ c }: { c: HomeContent["testimonials"] }) {
                   className="flex h-full flex-col justify-between p-7 sm:p-8 hover:shadow-xl transition-all duration-300"
                 >
                   <div>
-                    <div className="flex items-center justify-between gap-2 mb-4">
-                      <span className="rounded-full bg-[#E6F4F0] px-3 py-1 text-[11px] font-black text-[#0E937E]">
-                        ✦ {extra.tag}
-                      </span>
-                      {t.rating > 0 && (
-                        <div
-                          className="flex gap-0.5 text-[#FFC845]"
-                          aria-label={`${t.rating} out of 5 stars`}
-                        >
-                          {Array.from({ length: Math.round(t.rating) }, (_, k) => (
-                            <Icon
-                              key={k}
-                              name="star"
-                              size={14}
-                              fill="currentColor"
-                              strokeWidth={0}
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    {t.rating > 0 && (
+                      <div
+                        className="flex gap-0.5 text-[#FFC845] mb-4"
+                        aria-label={`${t.rating} out of 5 stars`}
+                      >
+                        {Array.from({ length: Math.round(t.rating) }, (_, k) => (
+                          <Icon
+                            key={k}
+                            name="star"
+                            size={15}
+                            fill="currentColor"
+                            strokeWidth={0}
+                          />
+                        ))}
+                      </div>
+                    )}
 
                     <blockquote className="text-base sm:text-[16.5px] leading-relaxed text-[#2b3d38] font-medium">
                       &ldquo;{t.quote}&rdquo;
                     </blockquote>
                   </div>
 
-                  <figcaption className="mt-7 flex items-center justify-between gap-3 border-t border-[#E2ECE9] pt-5">
-                    <div className="flex items-center gap-3">
-                      <Avatar name={extra.avatarName} size={42} />
-                      <span className="text-sm">
-                        <b className="block text-sm sm:text-base font-extrabold text-brand-ink">
-                          {t.who}
-                        </b>
-                        <span className="text-xs text-[#5c7772] font-semibold">{t.city}</span>
-                      </span>
-                    </div>
-                    <span className="rounded-lg bg-[#F4FAF8] border border-[#CFE3DD] px-2.5 py-1 text-[10px] font-bold text-brand-deep shrink-0">
-                      {extra.program}
+                  <figcaption className="mt-7 flex items-center gap-3 border-t border-[#E2ECE9] pt-5">
+                    <Avatar name={avatarName} size={42} />
+                    <span className="text-sm">
+                      <b className="block text-sm sm:text-base font-extrabold text-brand-ink">
+                        {t.who}
+                      </b>
+                      <span className="text-xs text-[#5c7772] font-semibold">{t.city}</span>
                     </span>
                   </figcaption>
                 </SpotlightCard>
@@ -558,6 +1338,10 @@ function Testimonials({ c }: { c: HomeContent["testimonials"] }) {
             );
           })}
         </StaggerContainer>
+
+        <p className="mt-8 text-center text-xs sm:text-sm text-[#5c7772]">
+          Individual results vary.
+        </p>
       </div>
     </section>
   );
@@ -569,24 +1353,12 @@ const CITY_FILTERS = [
   { id: "bengaluru", label: "Bengaluru (2)" },
   { id: "puducherry", label: "Puducherry" },
   { id: "hyderabad", label: "Hyderabad" },
-  { id: "pune", label: "Pune" },
   { id: "trichy", label: "Trichy" },
+  { id: "pune", label: "Pune" },
   { id: "coimbatore", label: "Coimbatore" },
 ];
 
-const CENTRE_IMAGES = [
-  "/images/bmit-hero.png",
-  "/images/workshop.png",
-  "/images/side-brain.png",
-  "/images/side-family.png",
-  "/images/pic-brain-boy.png",
-  "/images/pic-girl.png",
-  "/images/programs/quantum-vision.jpg",
-  "/images/programs/quantum-creation.jpg",
-  "/images/programs/quantum-learning.jpg",
-];
-
-/* ───────────────────────── 9. Interactive Centres Explorer ───────────────────────── */
+/* ───────────────────────── Section 7 — Centres ───────────────────────── */
 function Centres({ c }: { c: HomeContent["centres"] }) {
   const [selectedCity, setSelectedCity] = useState<string>("all");
 
@@ -608,390 +1380,376 @@ function Centres({ c }: { c: HomeContent["centres"] }) {
       </div>
       <QuantumWaveStream theme="light" className="mb-8" />
       <div className="container-qs relative z-10">
-      <ScrollMotion
-        variant="blur-in"
-        className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"
-      >
-        <div>
+        <ScrollMotion variant="blur-in" className="mx-auto max-w-3xl text-center">
           <Kicker>{c.kicker}</Kicker>
           <H2>{c.title}</H2>
-          <p className="mt-3 text-xs sm:text-sm font-black tracking-[0.14em] text-[#0E937E]">
-            CONFIDENT LEARNERS · COMPASSIONATE THINKERS · FUTURE-READY LEADERS
+          <p className="mt-3 text-base sm:text-lg text-[#4b635e] leading-relaxed">
+            Learn at one of our 9 centres or join a live online cohort from anywhere in India. Batches are limited to 15 children.
           </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <a
-            href="tel:+919944454840"
-            className="btn-3d btn-3d-mint inline-flex items-center gap-2 rounded-xl px-5 py-3 text-xs sm:text-sm font-bold shadow-md"
-          >
-            <Icon name="phone" size={16} /> Central Helpline: +91 99444 54840
-          </a>
-        </div>
-      </ScrollMotion>
+        </ScrollMotion>
 
-      {/* Pictorial Dual-Photo Centre Environment Showcase */}
-      <ScrollMotion
-        variant="fade-up"
-        delay={0.1}
-        className="mt-10 overflow-hidden rounded-3xl border border-[#CFE3DD] bg-white shadow-xl grid grid-cols-1 lg:grid-cols-12 items-stretch"
-      >
-        <div className="lg:col-span-5 grid grid-cols-2 gap-1 bg-[#054038] min-h-[250px]">
-          <div className="relative overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/bmit-hero.png"
-              alt="Q-School Experiential Cohort"
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
-            <span className="absolute bottom-3 left-3 rounded-full bg-white/95 px-3 py-1 text-[11px] font-black text-brand-deep shadow-md">
-              Max 15 / Cohort
-            </span>
-          </div>
-          <div className="relative overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/workshop.png"
-              alt="Mentor and Parent Alignment"
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
-            <span className="absolute bottom-3 left-3 rounded-full bg-[#2BD6B4] px-3 py-1 text-[11px] font-black text-[#03221E] shadow-md">
-              1:1 Mentor Care
-            </span>
-          </div>
-        </div>
-
-        <div className="lg:col-span-7 p-7 sm:p-10 flex flex-col justify-between">
-          <div>
-            <span className="chip !px-3.5 !py-1 !text-xs !bg-[#054038] !text-[#2BD6B4] font-black">
-              9 EXPERIENTIAL HUBS + LIVE ONLINE
-            </span>
-            <h3 className="mt-3.5 text-2xl sm:text-3xl font-extrabold text-brand-ink">
-              Purpose-Built Quantum Learning Environments
-            </h3>
-            <p className="mt-3 text-sm sm:text-base text-[#4b635e] leading-relaxed">
-              Every Q-School centre is designed for calm sensory activation, hands-on cognitive kits, and individualised coaching by certified Quantum Mentors — with weekend and weekday evening batches tailored around school hours.
-            </p>
-          </div>
-          <div className="mt-6 grid grid-cols-3 gap-3 pt-5 border-t border-[#E6F0ED]">
-            <div>
-              <p className="text-xl sm:text-2xl font-black text-brand-deep">9</p>
-              <p className="text-xs text-[#5c7772] font-semibold">Physical Centres</p>
-            </div>
-            <div>
-              <p className="text-xl sm:text-2xl font-black text-[#0E937E]">15 Max</p>
-              <p className="text-xs text-[#5c7772] font-semibold">Learners Per Batch</p>
-            </div>
-            <div>
-              <p className="text-xl sm:text-2xl font-black text-brand-deep">45 Min</p>
-              <p className="text-xs text-[#5c7772] font-semibold">Free Diagnostic Demo</p>
-            </div>
-          </div>
-        </div>
-      </ScrollMotion>
-
-      {/* Animated City Filter Pills */}
-      <div className="mt-10 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-bold uppercase tracking-wider text-[#5c7772] mr-2">
-          Select City:
-        </span>
-        {CITY_FILTERS.map((city) => {
-          const isSelected = selectedCity === city.id;
-          return (
-            <button
-              key={city.id}
-              type="button"
-              onClick={() => setSelectedCity(city.id)}
-              className={`relative rounded-full px-4 py-2 text-xs sm:text-sm font-bold transition ${
-                isSelected
-                  ? "text-[#2BD6B4] shadow-md"
-                  : "bg-white border border-[#CFE3DD] text-[#4b635e] hover:bg-[#F4F8F7]"
-              }`}
-            >
-              {isSelected && (
-                <motion.span
-                  layoutId="city-filter-pill"
-                  transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                  className="absolute inset-0 rounded-full bg-brand-deep"
-                />
-              )}
-              <span className="relative z-10">{city.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 9 Pictorial Centres Grid */}
-      <motion.div layout className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredCentres.map((ct) => {
-          const globalIndex = centres.findIndex((item) => item.id === ct.id);
-          const thumb = CENTRE_IMAGES[Math.max(0, globalIndex) % CENTRE_IMAGES.length];
-          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            `Q-School ${ct.name} ${ct.address}`,
-          )}`;
-
-          return (
-            <motion.div
-              key={ct.id}
-              layout
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.28 }}
-            >
-              <SpotlightCard
-                spotlightColor="rgba(43, 214, 180, 0.18)"
-                className="h-full flex flex-col justify-between hover:shadow-xl transition-all duration-300"
+        {/* Animated City Filter Pills */}
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-2">
+          {CITY_FILTERS.map((city) => {
+            const isSelected = selectedCity === city.id;
+            return (
+              <button
+                key={city.id}
+                type="button"
+                onClick={() => setSelectedCity(city.id)}
+                className={`relative rounded-full px-4 py-2 text-xs sm:text-sm font-bold transition ${
+                  isSelected
+                    ? "text-[#2BD6B4] shadow-md"
+                    : "bg-white border border-[#CFE3DD] text-[#4b635e] hover:bg-[#F4F8F7]"
+                }`}
               >
-                <div>
-                  {/* Centre Visual Banner */}
-                  <div className="relative h-36 w-full overflow-hidden bg-[#054038]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={thumb}
-                      alt={ct.name}
-                      className="h-full w-full object-cover opacity-90 transition-transform duration-700 hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#054038]/90 via-[#054038]/25 to-transparent" />
-                    <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
-                      <span className="rounded-full bg-white/95 px-3 py-0.5 text-xs font-black text-brand-deep shadow-sm">
+                {isSelected && (
+                  <motion.span
+                    layoutId="city-filter-pill"
+                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    className="absolute inset-0 rounded-full bg-brand-deep"
+                  />
+                )}
+                <span className="relative z-10">{city.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 9 Centres Grid */}
+        <motion.div layout className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredCentres.map((ct) => {
+            const cleanTel = ct.phone.replace(/\s+/g, "");
+            return (
+              <motion.div
+                key={ct.id}
+                layout
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.25 }}
+              >
+                <SpotlightCard
+                  spotlightColor="rgba(43, 214, 180, 0.18)"
+                  className="h-full flex flex-col justify-between p-6 hover:shadow-xl transition-all duration-300"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded-full bg-[#E6F4F0] px-3 py-1 text-xs font-black text-[#0E937E]">
                         {ct.city}
                       </span>
-                      <span className="rounded-full bg-[#03221E]/80 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-bold text-[#2BD6B4] border border-white/15">
-                        Centre 0{globalIndex + 1}
-                      </span>
+                      <span className="text-xs font-bold text-[#5c7772]">{ct.area}</span>
                     </div>
-                    <div className="absolute bottom-3 left-4 right-4">
-                      <h3 className="text-lg sm:text-xl font-extrabold text-white leading-tight">
-                        {ct.name}
-                      </h3>
-                    </div>
-                  </div>
-
-                  <div className="p-6">
-                    <p className="text-xs sm:text-sm text-[#4b635e] leading-relaxed flex items-start gap-2">
-                      <Icon
-                        name="pin"
-                        size={16}
-                        className="shrink-0 mt-0.5 text-[#0E937E]"
-                      />
+                    <h3 className="mt-3 text-lg sm:text-xl font-extrabold text-brand-deep">
+                      {ct.city} — {ct.area}
+                    </h3>
+                    <p className="mt-2.5 text-sm text-[#4b635e] leading-relaxed flex items-start gap-2">
+                      <Icon name="pin" size={16} className="shrink-0 mt-0.5 text-[#0E937E]" />
                       <span>{ct.address}</span>
                     </p>
-
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {ct.batches.map((b) => (
-                        <span
-                          key={b}
-                          className="rounded-lg bg-[#F2FAF8] border border-[#CFE3DD] px-2.5 py-1 text-[11px] font-bold text-brand-deep"
-                        >
-                          {b}
-                        </span>
-                      ))}
-                    </div>
                   </div>
-                </div>
 
-                <div className="px-6 pb-6 pt-4 border-t border-[#EEF3F1] flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-3">
+                  <div className="mt-5 pt-4 border-t border-[#EEF3F1] flex items-center justify-between gap-2">
                     <a
-                      href={`tel:+91${ct.phone}`}
+                      href={`tel:${cleanTel}`}
                       className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold text-brand-teal hover:underline"
                     >
                       <Icon name="phone" size={14} />
                       <span>{ct.phone}</span>
                     </a>
                     <a
-                      href={mapsUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`Open ${ct.name} in Google Maps`}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[#5c7772] hover:text-brand-deep transition"
+                      href="#demo"
+                      className="btn-3d btn-3d-teal rounded-lg px-3.5 py-2 text-xs font-bold"
                     >
-                      <Icon name="external" size={13} /> Map
+                      Book a Visit
                     </a>
                   </div>
+                </SpotlightCard>
+              </motion.div>
+            );
+          })}
+        </motion.div>
 
-                  <a
-                    href="#demo"
-                    className="btn-3d btn-3d-teal rounded-lg px-3.5 py-2 text-xs font-bold"
-                  >
-                    Book Visit →
-                  </a>
-                </div>
-              </SpotlightCard>
-            </motion.div>
-          );
-        })}
-      </motion.div>
-      </div>
-    </section>
-  );
-}
-
-function Pricing({ c }: { c: HomeContent["pricing"] }) {
-  if (!c.plans.length) return null;
-  const cols =
-    c.plans.length === 4
-      ? "md:grid-cols-2 lg:grid-cols-4"
-      : c.plans.length === 2
-      ? "md:grid-cols-2"
-      : c.plans.length === 1
-      ? ""
-      : "md:grid-cols-3";
-  return (
-    <section id="pricing" className="scroll-mt-20 bg-white py-24">
-      <div className="container-qs">
-        <ScrollMotion variant="blur-in" className="mx-auto max-w-2xl text-center">
-          <Kicker>{c.kicker}</Kicker>
-          <H2>{c.title}</H2>
-        </ScrollMotion>
-        <div className={`mt-14 grid grid-cols-1 gap-6 ${cols}`}>
-          {c.plans.map((p, i) => (
-            <div
-              key={i}
-              className="rounded-3xl border border-[#CFE3DD] p-8 shadow-sm hover:shadow-lg transition"
+        <div className="mt-10 text-center">
+          <p className="text-sm font-semibold text-[#4b635e]">
+            Batches: Weekend &amp; weekday evening (confirm per centre).
+          </p>
+          <div className="mt-5">
+            <a
+              href="#demo"
+              className="btn-3d btn-3d-teal inline-flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-base font-bold"
             >
-              <h3 className="text-xl font-bold text-brand-ink">{p.name}</h3>
-              <p className="mt-2 text-3xl font-extrabold text-brand-deep">{p.price}</p>
-              <p className="mt-3 text-sm text-[#5c7772]">{p.blurb}</p>
-            </div>
-          ))}
+              Book a Visit
+            </a>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
+/* ───────────────────────── Section 8 — Frequently asked questions ───────────────────────── */
+const FAQ_META: {
+  tag: string;
+  icon: IconName;
+  color: string;
+  softBg: string;
+}[] = [
+  {
+    tag: "Why Q-School",
+    icon: "sparkle",
+    color: "#0E937E",
+    softBg: "rgba(14, 147, 126, 0.12)",
+  },
+  {
+    tag: "Ages & Starting Point",
+    icon: "users",
+    color: "#5B6CF0",
+    softBg: "rgba(91, 108, 240, 0.12)",
+  },
+  {
+    tag: "Schedule & Batches",
+    icon: "calendar",
+    color: "#0891B2",
+    softBg: "rgba(8, 145, 178, 0.12)",
+  },
+  {
+    tag: "45-Min Free Demo",
+    icon: "eye",
+    color: "#F29A2E",
+    softBg: "rgba(242, 154, 46, 0.14)",
+  },
+  {
+    tag: "Fees & Enrolment",
+    icon: "rupee",
+    color: "#E2557A",
+    softBg: "rgba(226, 85, 122, 0.12)",
+  },
+  {
+    tag: "Live Online & Centres",
+    icon: "globe",
+    color: "#059669",
+    softBg: "rgba(5, 150, 105, 0.12)",
+  },
+];
+
 function Faq({ c }: { c: HomeContent["faq"] }) {
   const [openIdx, setOpenIdx] = useState<number>(0);
+  const [expandAll, setExpandAll] = useState<boolean>(false);
   if (!c.items.length) return null;
 
   return (
-    <section id="faq" className="relative scroll-mt-20 bg-[#F4F8F7] py-24">
+    <section
+      id="faq"
+      className="relative scroll-mt-20 overflow-hidden bg-gradient-to-b from-[#EDF7F4] via-[#F4FAF8] to-white py-24 border-t border-[#DCECE7]"
+    >
+      <div
+        className="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle at 12% 20%, rgba(43, 214, 180, 0.16), transparent 40%), radial-gradient(circle at 88% 85%, rgba(14, 147, 126, 0.12), transparent 45%)",
+        }}
+        aria-hidden
+      />
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         <QuantumAtomOrbital
           theme="light"
           size={320}
-          className="absolute -right-20 top-14 opacity-70"
+          className="absolute -right-20 top-14 opacity-65"
         />
       </div>
-      <div className="container-qs relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          {/* Left: Pictorial Sticky Counsellor & Parent Guide Card */}
-          <div className="lg:col-span-5 lg:sticky lg:top-24">
-            <Kicker>{c.kicker}</Kicker>
-            <H2>{c.title}</H2>
-            {c.body && (
-              <p className="mt-3 text-sm sm:text-base text-[#4b635e] leading-relaxed">
-                {c.body}
-              </p>
-            )}
 
-            <div className="mt-7 relative overflow-hidden rounded-3xl border border-[#CFE3DD] bg-[#054038] text-white shadow-xl">
+      <div className="container-qs relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-start">
+          {/* Left Sticky Column: Header, Quick Facts & Counsellor Desk */}
+          <div className="lg:col-span-5 lg:sticky lg:top-24">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#0E937E]/25 bg-white/90 px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-[#0E937E] shadow-sm">
+              <Icon name="help" size={14} /> {c.kicker}
+            </span>
+            <H2>{c.title}</H2>
+            <p className="mt-3 text-sm sm:text-base text-[#4b635e] leading-relaxed">
+              Clear answers on how Q-School works alongside your child&apos;s regular school, how batches are structured, and what happens in your free 45-minute demo.
+            </p>
+
+            {/* At-a-glance Quick Highlights */}
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              {[
+                { label: "Age Group", val: "6–14 Years", icon: "users" as IconName },
+                { label: "Annual Cycle", val: "48 Classes / Yr", icon: "calendar" as IconName },
+                { label: "Cohort Size", val: "Up to 15 Learners", icon: "shield" as IconName },
+                { label: "First Step", val: "Free 45-Min Demo", icon: "sparkle" as IconName },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="flex items-center gap-3 rounded-2xl border border-[#CFE3DD] bg-white/95 p-3.5 shadow-sm"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E6F4F0] text-[#0E937E]">
+                    <Icon name={stat.icon} size={17} />
+                  </span>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-[#5c7772]">
+                      {stat.label}
+                    </p>
+                    <p className="text-xs sm:text-sm font-extrabold text-brand-deep">{stat.val}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Parent Guidance Card */}
+            <div className="mt-6 relative overflow-hidden rounded-3xl border border-[#2BD6B4]/30 bg-brand-deep text-white shadow-xl">
               <BorderBeam size={200} duration={11} colorFrom="#2BD6B4" colorTo="#FFC845" />
-              <div className="relative h-52 w-full overflow-hidden">
+              <div className="relative h-44 w-full overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/images/pic-girl.png"
                   alt="Q-School Young Learner"
                   className="h-full w-full object-cover object-top"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#054038] via-[#054038]/30 to-transparent" />
-                <span className="absolute top-4 left-4 rounded-full bg-[#2BD6B4] px-3 py-1 text-[11px] font-black text-[#03221E]">
+                <div className="absolute inset-0 bg-gradient-to-t from-brand-deep via-brand-deep/35 to-transparent" />
+                <span className="absolute top-4 left-4 rounded-full bg-[#2BD6B4] px-3 py-1 text-[11px] font-black text-[#03221E] shadow-sm">
                   Parent Guidance Desk
                 </span>
               </div>
 
               <div className="p-6">
-                <h3 className="text-xl font-extrabold text-white">
-                  Have Questions About Your Child&apos;s Age or Learning Needs?
+                <h3 className="text-lg sm:text-xl font-extrabold text-white leading-snug">
+                  Not sure which program or year fits your child?
                 </h3>
                 <p className="text-xs sm:text-sm text-white/80 mt-1.5 leading-relaxed">
-                  Speak directly with a Q-School Academic Counsellor for a zero-obligation 1:1 guidance call.
+                  Speak with our counsellor or book a free 45-minute demo session. No obligation to enrol.
                 </p>
 
                 <div className="mt-5 flex flex-wrap gap-3">
                   <a
-                    href="tel:+919944454840"
-                    className="inline-flex items-center gap-2 rounded-xl bg-[#2BD6B4] px-4 py-2.5 text-xs font-black text-[#03221E] hover:bg-[#FFC845] transition"
+                    href="#demo"
+                    className="btn-3d btn-3d-mint inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-black text-brand-deep"
                   >
-                    <Icon name="phone" size={14} /> +91 99444 54840
+                    Book a Free Demo →
                   </a>
                   <a
-                    href={c.cta?.href || "#demo"}
-                    className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold text-white hover:bg-white/20 transition"
+                    href="tel:+919944454840"
+                    className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs sm:text-sm font-bold text-white hover:bg-white/20 transition"
                   >
-                    {c.cta?.label || "Book Free Demo"} →
+                    <Icon name="phone" size={14} className="text-[#2BD6B4]" /> +91 99444 54840
                   </a>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right: Animated Interactive Accordion */}
-          <div className="lg:col-span-7 space-y-3.5">
-            {c.items.map((f, i) => {
-              const isOpen = openIdx === i;
-              return (
-                <div
-                  key={i}
-                  className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
-                    isOpen
-                      ? "bg-white border-[#0E937E] shadow-lg"
-                      : "bg-white/90 border-[#CFE3DD] hover:border-[#0E937E]/50"
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setOpenIdx(isOpen ? -1 : i)}
-                    aria-expanded={isOpen}
-                    className="w-full flex items-center justify-between gap-4 p-5 sm:p-6 text-left"
+          {/* Right Column: Interactive Rich Accordion */}
+          <div className="lg:col-span-7">
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-xs sm:text-sm font-bold text-[#4b635e]">
+                Showing all <span className="text-brand-deep font-extrabold">{c.items.length}</span> essential parent questions
+              </p>
+              <button
+                type="button"
+                onClick={() => setExpandAll((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-[#CFE3DD] bg-white px-3.5 py-1.5 text-xs font-extrabold text-[#0E937E] shadow-sm hover:border-[#0E937E] transition"
+              >
+                <Icon name={expandAll ? "x" : "plus"} size={13} />
+                {expandAll ? "Collapse all" : "Expand all answers"}
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {c.items.map((f, i) => {
+                const meta = FAQ_META[i % FAQ_META.length];
+                const isOpen = expandAll || openIdx === i;
+                return (
+                  <div
+                    key={i}
+                    className={`group relative rounded-3xl border transition-all duration-300 overflow-hidden ${
+                      isOpen
+                        ? "bg-white border-[#0E937E] shadow-[0_20px_45px_-18px_rgba(5,64,56,0.2)] ring-2 ring-[#2BD6B4]/30"
+                        : "bg-white/95 border-[#CFE3DD] shadow-sm hover:border-[#0E937E]/60 hover:shadow-md"
+                    }`}
                   >
-                    <div className="flex items-start gap-3.5">
+                    {/* Left vertical color indicator */}
+                    <div
+                      className="
+                        absolute inset-y-0 left-0 w-1.5 transition-opacity duration-300
+                      "
+                      style={{
+                        backgroundColor: meta.color,
+                        opacity: isOpen ? 1 : 0.45,
+                      }}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (expandAll) {
+                          setExpandAll(false);
+                          setOpenIdx(i);
+                        } else {
+                          setOpenIdx(openIdx === i ? -1 : i);
+                        }
+                      }}
+                      aria-expanded={isOpen}
+                      className="w-full flex items-start justify-between gap-4 p-5 sm:p-6 pl-6 sm:pl-7 text-left"
+                    >
+                      <div className="flex items-start gap-4">
+                        <span
+                          className="icon-3d mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform duration-300 group-hover:scale-105"
+                          style={{ ["--c" as string]: meta.color }}
+                        >
+                          <Icon name={meta.icon} size={20} />
+                        </span>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                            <span className="text-[11px] font-black uppercase tracking-wider text-[#5c7772]">
+                              Question 0{i + 1}
+                            </span>
+                            <span
+                              className="rounded-full px-2.5 py-0.5 text-[10.5px] font-extrabold uppercase tracking-wider"
+                              style={{
+                                backgroundColor: meta.softBg,
+                                color: meta.color,
+                              }}
+                            >
+                              {meta.tag}
+                            </span>
+                          </div>
+                          <span className="block font-extrabold text-brand-deep text-base sm:text-lg leading-snug">
+                            {f.q}
+                          </span>
+                        </div>
+                      </div>
+
                       <span
-                        className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-black transition-colors ${
+                        className={`mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
                           isOpen
-                            ? "bg-[#054038] text-[#2BD6B4]"
-                            : "bg-[#E6F4F0] text-[#0E937E]"
+                            ? "border-[#0E937E] bg-brand-deep text-[#2BD6B4] rotate-180 shadow-sm"
+                            : "border-[#DCECE7] bg-[#F4F8F7] text-brand-teal group-hover:bg-[#E6F4F0]"
                         }`}
                       >
-                        0{i + 1}
+                        <Icon name="chevDown" size={16} />
                       </span>
-                      <span className="font-extrabold text-brand-ink text-base sm:text-lg leading-snug">
-                        {f.q}
-                      </span>
-                    </div>
-                    <span
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-300 ${
-                        isOpen
-                          ? "bg-[#0E937E] text-white rotate-180"
-                          : "bg-[#F4F8F7] text-brand-teal"
-                      }`}
-                    >
-                      <Icon name="chevDown" size={16} />
-                    </span>
-                  </button>
+                    </button>
 
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: "easeOut" }}
-                        className="overflow-hidden"
-                      >
-                        <div className="px-5 sm:px-6 pb-6 pl-16">
-                          <div className="border-t border-[#E6F0ED] pt-4 whitespace-pre-line text-sm sm:text-base leading-relaxed text-[#4b635e]">
-                            {f.a}
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.25, ease: "easeOut" }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-6 sm:px-7 pb-6 pl-6 sm:pl-[4.75rem]">
+                            <div className="rounded-2xl bg-[#F6FBF9] border border-[#E2F0EC] p-4 sm:p-5 text-sm sm:text-base leading-relaxed text-[#2b3d38] font-medium">
+                              {f.a}
+                            </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -999,9 +1757,10 @@ function Faq({ c }: { c: HomeContent["faq"] }) {
   );
 }
 
+/* ───────────────────────── Section 9 — Final call to action and form ───────────────────────── */
 function Demo({ c }: { c: HomeContent["demo"] }) {
   return (
-    <section id="demo" className="container-qs scroll-mt-20 py-14">
+    <section id="demo" className="container-qs scroll-mt-20 py-16">
       <ScrollMotion variant="fade-up">
         <div className="relative overflow-hidden rounded-[32px] bg-brand-deep px-6 py-12 text-white sm:px-12 sm:py-16 shadow-2xl border border-[#2BD6B4]/30">
           <BorderBeam size={280} duration={14} colorFrom="#2BD6B4" colorTo="#FFC845" />
@@ -1020,8 +1779,7 @@ function Demo({ c }: { c: HomeContent["demo"] }) {
           />
           <div className="relative grid items-center gap-10 lg:grid-cols-2">
             <div>
-              <p className="font-hand text-2xl sm:text-3xl text-[#2BD6B4]">{c.script}</p>
-              <h2 className="mt-3 text-3xl font-extrabold leading-tight sm:text-4xl lg:text-[2.6rem]">
+              <h2 className="text-3xl font-extrabold leading-tight sm:text-4xl lg:text-[2.6rem]">
                 {c.title}
               </h2>
               {c.body && (
@@ -1029,70 +1787,42 @@ function Demo({ c }: { c: HomeContent["demo"] }) {
                   {c.body}
                 </p>
               )}
-              <ul className="mt-6 space-y-3">
-                {c.points.map((x, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center gap-3 text-base sm:text-[16.5px] text-white/95"
-                  >
-                    <span
-                      className="icon-3d h-6 w-6 rounded-full shrink-0"
-                      style={{ ["--c" as string]: "#2BD6B4" }}
+              {c.points.length > 0 && (
+                <ul className="mt-6 space-y-3">
+                  {c.points.map((x, i) => (
+                    <li
+                      key={i}
+                      className="flex items-center gap-3 text-base sm:text-[16.5px] text-white/95"
                     >
-                      <Icon name="check" size={14} strokeWidth={3} className="text-brand-deep" />
-                    </span>
-                    {x}
-                  </li>
-                ))}
-              </ul>
+                      <span
+                        className="icon-3d h-6 w-6 rounded-full shrink-0"
+                        style={{ ["--c" as string]: "#2BD6B4" }}
+                      >
+                        <Icon name="check" size={14} strokeWidth={3} className="text-brand-deep" />
+                      </span>
+                      {x}
+                    </li>
+                  ))}
+                </ul>
+              )}
 
-              {/* Happy Family Trust Card */}
-              <div className="mt-7 flex items-center gap-4 rounded-2xl bg-white/10 border border-white/15 p-4 max-w-lg backdrop-blur-md">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-[#2BD6B4]/60 shadow-sm">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/images/side-family.png"
-                    alt="Parent and Child Learning Success"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-white">
-                    Trusted by 25,000+ Happy Families Across India
-                  </p>
-                  <p className="text-xs sm:text-[13px] text-white/80 mt-0.5">
-                    Includes personalised cognitive stamina evaluation &amp; zero obligation to enrol.
-                  </p>
-                </div>
-              </div>
-
-              {/* Direct Counsellor Callout */}
-              <div className="mt-5 rounded-2xl bg-white/10 border border-white/15 p-5 max-w-lg backdrop-blur-md">
-                <p className="text-xs uppercase tracking-wider text-[#FFC845] font-black">
-                  Direct Academic Counsellor Desk · www.theqschool.com
+              {/* Direct Contact Strip */}
+              <div className="mt-8 rounded-2xl bg-white/10 border border-white/15 p-5 max-w-lg backdrop-blur-md">
+                <p className="text-xs sm:text-sm font-bold text-white leading-relaxed">
+                  <a href="tel:+919944454840" className="text-[#2BD6B4] hover:underline">
+                    +91 99444 54840
+                  </a>{" "}
+                  (call or WhatsApp) ·{" "}
+                  <a href="mailto:info@theqschool.com" className="text-[#2BD6B4] hover:underline">
+                    info@theqschool.com
+                  </a>{" "}
+                  · Mon–Sat, 9am–7pm IST
                 </p>
-                <div className="mt-2.5 flex flex-wrap items-center gap-5 text-sm font-bold">
-                  <a
-                    href="tel:+919944454840"
-                    className="hover:text-[#2BD6B4] flex items-center gap-1.5 transition"
-                  >
-                    <Icon name="phone" size={16} className="text-[#2BD6B4]" /> +91 99444 54840
-                  </a>
-                  <a
-                    href="mailto:info@theqschool.com"
-                    className="hover:text-[#2BD6B4] flex items-center gap-1.5 transition"
-                  >
-                    <Icon name="message" size={16} className="text-[#2BD6B4]" /> info@theqschool.com
-                  </a>
-                </div>
               </div>
             </div>
 
             <Tilt max={3} glare={false} className="rounded-3xl">
               <div className="rounded-3xl bg-gradient-to-b from-white to-[#f3faf8] p-7 text-brand-ink shadow-[inset_0_1px_0_#fff,inset_0_-3px_0_rgba(5,64,56,.08),0_40px_70px_-25px_rgba(0,0,0,.6)] sm:p-9">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E6F4F0] px-3 py-1 text-[11px] font-black uppercase tracking-wider text-[#0E937E] mb-3">
-                  <Icon name="calendar" size={13} /> Free 45-Minute Diagnostic Demo
-                </span>
                 <h3 className="text-xl sm:text-2xl font-extrabold text-brand-deep">
                   {c.formTitle}
                 </h3>
@@ -1122,12 +1852,7 @@ const RENDER: Record<SectionKey, (c: HomeContent, ctx: { overlap: boolean }) => 
   centres: (c) => <Centres c={c.centres} />,
   pricing: (c) => <Pricing c={c.pricing} />,
   faq: (c) => <Faq c={c.faq} />,
-  demo: (c) => (
-    <>
-      <DiagnosticQuiz />
-      <Demo c={c.demo} />
-    </>
-  ),
+  demo: (c) => <Demo c={c.demo} />,
 };
 
 export function HomeSections({ content }: { content: HomeContent }) {
@@ -1137,22 +1862,6 @@ export function HomeSections({ content }: { content: HomeContent }) {
       {visible.map((s, i) => (
         <div key={s.key} data-section={s.key} className="contents">
           {RENDER[s.key](content, { overlap: i > 0 && visible[i - 1].key === "hero" })}
-          {/* Weave the complete 16-page Q-School Brochure narrative seamlessly into the landing flow */}
-          {s.key === "subjects" && (
-            <>
-              <StorySection />
-              <PedagogySection />
-              <AiVsHiSection />
-              <FiveDFramework />
-            </>
-          )}
-          {s.key === "programs" && (
-            <>
-              <NeoSapiensSection />
-              <JourneyAndPathwaySection />
-              <QVerseSection />
-            </>
-          )}
         </div>
       ))}
     </>

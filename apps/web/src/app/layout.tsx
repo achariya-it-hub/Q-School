@@ -4,9 +4,9 @@ import { QMasterWidget } from "@/components/q-master-widget";
 import { QuantumAmbientOverlay } from "@/components/ui/quantum-effects";
 
 export const metadata: Metadata = {
-  title: "Q-School — Quantum Schooling",
+  title: "Q-School | Thinking, Memory and Confidence Classes for Ages 6–14",
   description:
-    "Q-School: live classes, webinars, workshops and recorded courses — one owned platform for your education business.",
+    "Q-School builds focus, memory, reasoning and confidence in children aged 6–14 through 48 mentor-led classes a year, at 9 centres across 7 cities and online. Book a free demo.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

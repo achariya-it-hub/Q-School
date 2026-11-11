@@ -20,6 +20,9 @@ export async function POST(req: Request) {
   const phone = String(body.phone ?? "").trim().slice(0, 20);
   if (!name || !phone) return NextResponse.json({ error: "name and phone are required" }, { status: 400 });
 
+  const childAge = String(body.childAge ?? "").trim().slice(0, 60);
+  const city = String(body.city ?? "").trim().slice(0, 100);
+
   const r = await ingestLead({
     sourceKey: "website",
     source: "Website",
@@ -27,7 +30,12 @@ export async function POST(req: Request) {
     phone,
     email: String(body.email ?? "").slice(0, 160),
     interest: String(body.interest ?? "").slice(0, 120),
+    location: city || undefined,
     formName: String(body.source ?? "website").slice(0, 60),
+    extra: {
+      ...(childAge ? { childAgeOrGrade: childAge } : {}),
+      ...(city ? { preferredCentre: city } : {}),
+    },
   });
   return NextResponse.json({ ok: true, leadId: r.lead.id });
 }

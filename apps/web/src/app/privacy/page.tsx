@@ -4,143 +4,122 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | The Q School",
-  description: "Privacy Policy and data protection terms for The Q School and its educational ERP/LMS services.",
+  title: "Privacy Policy | Q-School - A Unit of Divine Grace Foundation",
+  description:
+    "Privacy Policy and child & parent data protection terms for Q-School (A Unit of Divine Grace Foundation).",
 };
 
 export default function PrivacyPolicyPage() {
-  const lastUpdated = "October 29, 2026";
+  const lastUpdated = "November 11, 2026";
 
   return (
-    <div className="min-h-screen bg-[#FDFCF7] text-brand-ink flex flex-col justify-between">
+    <div className="min-h-screen bg-[#F4FAF8] text-brand-ink flex flex-col justify-between">
       <SiteHeader />
 
       <main className="container-qs mx-auto px-4 py-12 max-w-4xl flex-1">
-        <div className="mb-8 border-b border-[#E2ECE9] pb-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-brand-teal">Legal & Compliance</p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl text-brand-ink">Privacy Policy</h1>
-          <p className="mt-2 text-sm text-[#6b807b]">Last updated: {lastUpdated}</p>
+        <div className="mb-8 rounded-3xl border border-[#CFE3DD] bg-brand-deep p-8 sm:p-10 text-white shadow-lg">
+          <span className="inline-block rounded-full bg-[#2BD6B4]/20 border border-[#2BD6B4]/40 px-3.5 py-1 text-xs font-extrabold uppercase tracking-wider text-[#2BD6B4]">
+            Legal &amp; Compliance
+          </span>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl text-white">
+            Privacy Policy
+          </h1>
+          <p className="mt-2 text-sm text-[#9ED8CC] font-semibold">
+            Q-School - A Unit of Divine Grace Foundation · Last updated: {lastUpdated}
+          </p>
         </div>
 
-        <div className="prose prose-slate max-w-none space-y-8 text-[15px] leading-relaxed text-[#2C3E3A]">
+        <div className="rounded-3xl border border-[#CFE3DD] bg-white p-7 sm:p-10 shadow-sm space-y-8 text-[15px] leading-relaxed text-[#2C3E3A]">
           <section>
-            <h2 className="text-xl font-bold text-brand-ink mb-3">1. Introduction</h2>
+            <h2 className="text-xl font-extrabold text-brand-deep mb-3">1. Introduction</h2>
             <p>
-              Welcome to <strong>The Q School</strong> (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;). We respect your privacy and are committed
-              to protecting the personal data of our students, prospective applicants, webinar attendees, and visitors.
-              This Privacy Policy explains how we collect, use, store, and safeguard your information when you interact
-              with our website, educational ERP portal (<strong>https://erp.theqschool.com</strong>), mobile applications,
-              and our advertising campaigns on platforms such as Meta (Facebook and Instagram) and Google.
+              Welcome to <strong>Q-School - A Unit of Divine Grace Foundation</strong> (&quot;Q-School&quot;, &quot;we&quot;, &quot;our&quot;, &quot;us&quot;). We respect the privacy of parents, guardians, and young learners aged 6–14 and are committed to protecting your personal data. This Privacy Policy explains how we collect, use, store, and safeguard information when you interact with our website (<strong>https://www.theqschool.com</strong>), learning centres across India, live online cohorts, RBIQ assessments, and mobile/web learning portals.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-brand-ink mb-3">2. Information We Collect</h2>
-            <p>We may collect and process the following categories of personal information:</p>
-            <ul className="list-disc pl-6 space-y-1.5 mt-2">
+            <h2 className="text-xl font-extrabold text-brand-deep mb-3">2. Information We Collect</h2>
+            <p>We collect only the information required to deliver our educational programs and counselling services:</p>
+            <ul className="list-disc pl-6 space-y-2 mt-2">
               <li>
-                <strong>Contact Information:</strong> Full name, phone number, WhatsApp contact number, and email address.
+                <strong>Parent / Guardian Contact Information:</strong> Parent&apos;s full name, phone number, WhatsApp number, email address, and city or preferred learning centre.
               </li>
               <li>
-                <strong>Educational & Professional Background:</strong> Course of interest (e.g., BMIT, AI programs, technical degrees), educational qualifications, current occupation, and learning goals.
+                <strong>Learner Details (Submitted by Parent/Guardian):</strong> Child&apos;s name, age or school grade, program of interest (Q-Vision, Q-Creation, Q-Way, Q-Learning, Q-Reading, Q-Mastery, Q-Maths, Q-Science, or RBIQ), and assessment notes shared during demo classes.
               </li>
               <li>
-                <strong>Ad Submissions & Inquiries:</strong> Information you voluntarily provide when submitting an inquiry through our website forms or instant lead forms on Meta (Facebook / Instagram) and Google Ads.
+                <strong>Learning Progress &amp; Attendance:</strong> Batch schedules, class attendance, weekly progress updates on focus, memory, habits and confidence, and capstone project records.
               </li>
               <li>
-                <strong>Account & ERP Usage:</strong> Login credentials, attendance records, batch schedules, assignment submissions, course progression, and communication logs within the LMS.
-              </li>
-              <li>
-                <strong>Technical Information:</strong> IP address, browser type, operating system, and general usage analytics when visiting our web portal.
+                <strong>Technical &amp; Website Analytics:</strong> Standard browser type, device type, IP address, and form interaction logs used to keep our platform secure and responsive.
               </li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-brand-ink mb-3">3. How We Use Your Information</h2>
-            <p>We utilize the collected information for legitimate educational and institutional purposes, including:</p>
-            <ul className="list-disc pl-6 space-y-1.5 mt-2">
-              <li>Responding to your inquiries and providing comprehensive course information, fee structures, and counselling.</li>
-              <li>Processing registrations for demo classes, live webinars, workshops, and admissions.</li>
-              <li>Sending transactional updates, schedule notifications, and reminders via Email, SMS, or WhatsApp.</li>
-              <li>Operating, securing, and maintaining our student management and ERP systems.</li>
-              <li>Analyzing and improving our curriculum, educational services, and advertising efficacy.</li>
+            <h2 className="text-xl font-extrabold text-brand-deep mb-3">3. How We Use Your Information</h2>
+            <p>We use the collected information exclusively for educational and parent-support purposes:</p>
+            <ul className="list-disc pl-6 space-y-2 mt-2">
+              <li>Scheduling and conducting your child&apos;s free 45-minute demo class or RBIQ whole-brain assessment.</li>
+              <li>Recommending the right starting program and pathway (Year 1 Foundation, Year 2 Progression, Year 3 Advanced, or RBIQ) for your child&apos;s age and needs.</li>
+              <li>Sending batch schedules, class reminders, and weekly parent progress reports via call, WhatsApp, SMS, or email.</li>
+              <li>Providing learner access to Q-Master AI and guided home-practice resources.</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-brand-ink mb-3">4. Meta (Facebook & Instagram) Lead Ads</h2>
+            <h2 className="text-xl font-extrabold text-brand-deep mb-3">4. Communication &amp; Opt-Out</h2>
             <p>
-              When you submit your contact details via Meta Lead Ads on Facebook or Instagram, your information is
-              securely transmitted via Meta Graph Webhooks directly to our encrypted CRM server.
-            </p>
-            <p className="mt-2">
-              We use this information exclusively to fulfill your specific request (such as scheduling an academic counselling
-              session or sending you a course prospectus). <strong>We never sell, rent, or trade your lead data to third parties.</strong>
+              When you submit an enquiry or demo booking form on our website or through social campaigns (Meta / Google), you consent to being contacted by Q-School via phone call, WhatsApp, SMS, or email. You may opt out of WhatsApp or promotional messages at any time by replying <strong>STOP</strong> or contacting our support desk.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-brand-ink mb-3">5. Data Sharing and Third-Party Disclosures</h2>
+            <h2 className="text-xl font-extrabold text-brand-deep mb-3">5. Data Sharing &amp; Protection</h2>
             <p>
-              We do not share your personal information with external organizations, except in the following limited circumstances:
-            </p>
-            <ul className="list-disc pl-6 space-y-1.5 mt-2">
-              <li>
-                <strong>Trusted Service Providers:</strong> Cloud infrastructure hosting, transactional SMS/WhatsApp messaging gateways, and payment processors who operate under strict non-disclosure and data protection agreements.
-              </li>
-              <li>
-                <strong>Legal Requirements:</strong> When mandated by applicable law, court order, or governmental authorities to comply with statutory legal processes.
-              </li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-brand-ink mb-3">6. Data Security and Retention</h2>
-            <p>
-              We implement industry-standard technical and organizational security controls (including SSL/TLS encryption,
-              restricted database access, and cryptographic authentication) to protect your personal data from unauthorized
-              access, alteration, disclosure, or destruction.
-            </p>
-            <p className="mt-2">
-              We retain your information only as long as necessary to fulfill the educational purposes for which it was
-              collected or to comply with statutory and academic record-keeping obligations.
+              <strong>We never sell, rent, or trade parent or student data to third parties.</strong> Information is shared only with authorised Q-School mentors, academic counsellors, and trusted infrastructure providers (such as secure cloud hosting, payment gateways, and transactional messaging services) bound by strict confidentiality obligations, or when required by law.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-brand-ink mb-3">7. User Data Deletion &amp; Your Rights</h2>
+            <h2 className="text-xl font-extrabold text-brand-deep mb-3">6. Data Security, Access &amp; Deletion Rights</h2>
             <p>
-              You have the right to access, correct, or request the complete deletion of your personal data stored in our systems.
+              We implement industry-standard encryption and access controls to safeguard your family&apos;s records. Parents and guardians may request access to, correction of, or deletion of their personal data at any time by emailing{" "}
+              <a href="mailto:info@theqschool.com" className="font-bold text-brand-teal hover:underline">
+                info@theqschool.com
+              </a>{" "}
+              or visiting our{" "}
+              <Link href="/data-deletion" className="font-bold text-brand-teal hover:underline">
+                User Data Deletion page
+              </Link>.
             </p>
-            <div className="mt-3 rounded-xl border border-[#E2ECE9] bg-[#F7FAF9] p-4">
-              <h3 className="font-semibold text-brand-ink text-sm">How to request data deletion:</h3>
-              <p className="mt-1 text-sm text-[#41564f]">
-                If you wish to delete your user account, contact records, or data submitted through Facebook/Instagram forms,
-                please send an email with the subject line <strong>&quot;Data Deletion Request&quot;</strong> to{" "}
-                <a href="mailto:admin@theqschool.com" className="font-semibold text-brand-teal hover:underline">
-                  admin@theqschool.com
+          </section>
+
+          <section>
+            <h2 className="text-xl font-extrabold text-brand-deep mb-3">7. Contact Us</h2>
+            <div className="rounded-2xl border border-[#CFE3DD] bg-[#F4FAF8] p-5 text-sm text-[#2b3d38] space-y-1.5">
+              <p className="font-extrabold text-brand-deep text-base">
+                Q-School - A Unit of Divine Grace Foundation
+              </p>
+              <p>
+                Phone / WhatsApp:{" "}
+                <a href="tel:+919944454840" className="font-bold text-brand-teal hover:underline">
+                  +91 99444 54840
                 </a>{" "}
-                or visit our dedicated{" "}
-                <Link href="/data-deletion" className="font-semibold text-brand-teal hover:underline">
-                  User Data Deletion Instructions page
-                </Link>.
+                (Mon–Sat, 9am–7pm IST)
               </p>
-              <p className="mt-2 text-xs text-[#6b807b]">
-                Requests are processed within 48 to 72 business hours, after which all corresponding personal identifiers are permanently purged from active databases.
+              <p>
+                Email:{" "}
+                <a href="mailto:info@theqschool.com" className="font-bold text-brand-teal hover:underline">
+                  info@theqschool.com
+                </a>
               </p>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold text-brand-ink mb-3">8. Contact Us</h2>
-            <p>
-              If you have any questions, feedback, or concerns regarding this Privacy Policy or our data handling practices, please contact our compliance desk:
-            </p>
-            <div className="mt-3 text-sm text-[#41564f] space-y-1">
-              <p><strong>The Q School</strong></p>
-              <p>Email: <a href="mailto:admin@theqschool.com" className="text-brand-teal hover:underline">admin@theqschool.com</a></p>
-              <p>Website: <a href="https://erp.theqschool.com" className="text-brand-teal hover:underline">https://erp.theqschool.com</a></p>
+              <p>
+                Also see our{" "}
+                <Link href="/refund-policy" className="font-bold text-brand-teal hover:underline">
+                  Refund Policy →
+                </Link>
+              </p>
             </div>
           </section>
         </div>
@@ -150,4 +129,3 @@ export default function PrivacyPolicyPage() {
     </div>
   );
 }
-

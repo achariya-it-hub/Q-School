@@ -408,6 +408,19 @@ export function StorySection() {
             aria-hidden
           />
 
+          {/* Section Header */}
+          <div className="relative z-10 mx-auto mb-10 max-w-3xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#2BD6B4]/35 bg-[#2BD6B4]/10 px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.18em] text-[#2BD6B4]">
+              <Icon name="sparkle" size={14} /> Purpose &amp; Leadership
+            </span>
+            <h2 className="mt-4 text-3xl sm:text-4xl lg:text-[2.6rem] font-extrabold tracking-tight leading-tight text-white">
+              Our Mission, Our Vision and{" "}
+              <span className="bg-gradient-to-r from-[#2BD6B4] via-[#7CF3DA] to-[#FFD875] bg-clip-text text-transparent">
+                Founder&apos;s Message
+              </span>
+            </h2>
+          </div>
+
           {/* Top Editorial Row: Visual Visionary Portal + Founder's Quote */}
           <div className="relative z-10 grid grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:gap-12">
             {/* Left Visual Emblem Portal (4 Cols) */}

@@ -13,8 +13,10 @@ const DIR = DATA_DIR;
 const FILE = path.join(DIR, "site-content.json");
 export const MEDIA_DIR = path.join(DIR, "site-media");
 const HISTORY = 10;
+const CONTENT_VERSION = 2;
 
 export interface SiteFile {
+  contentVersion?: number;
   published: HomeContent;
   publishedAt: string | null;
   draft: HomeContent | null;
@@ -32,7 +34,11 @@ function serial<T>(fn: () => Promise<T>): Promise<T> {
 async function read(): Promise<SiteFile> {
   try {
     const raw = JSON.parse(await fs.readFile(FILE, "utf8"));
+    if (raw.contentVersion !== CONTENT_VERSION) {
+      return { contentVersion: CONTENT_VERSION, published: DEFAULT_HOME, publishedAt: null, draft: null, draftSavedAt: null, history: [] };
+    }
     return {
+      contentVersion: CONTENT_VERSION,
       published: normalizeHome(raw.published),
       publishedAt: raw.publishedAt ?? null,
       draft: raw.draft ? normalizeHome(raw.draft) : null,
@@ -42,13 +48,13 @@ async function read(): Promise<SiteFile> {
         : [],
     };
   } catch {
-    return { published: DEFAULT_HOME, publishedAt: null, draft: null, draftSavedAt: null, history: [] };
+    return { contentVersion: CONTENT_VERSION, published: DEFAULT_HOME, publishedAt: null, draft: null, draftSavedAt: null, history: [] };
   }
 }
 
 async function write(f: SiteFile) {
   const tmp = `${FILE}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(f, null, 2));
+  await fs.writeFile(tmp, JSON.stringify({ ...f, contentVersion: CONTENT_VERSION }, null, 2));
   await fs.rename(tmp, FILE);
 }
 

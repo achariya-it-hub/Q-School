@@ -283,7 +283,10 @@ export function RbiqExperience() {
             className="lg:col-span-6"
           >
             <span className="inline-flex items-center gap-2 rounded-full border border-[#2BD6B4]/40 bg-[#2BD6B4]/15 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-[#2BD6B4]">
-              <Icon name="brain" size={14} /> RBIQ · Whole Brain Development Program
+              <Icon name="brain" size={14} />{" "}
+              {viewMode === "cards"
+                ? "RBIQ – Whole Brain Development Program"
+                : "RBIQ – Whole Brain Development"}
             </span>
 
             <h1 className="mt-6 text-4xl sm:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.1] tracking-tight text-white">
@@ -292,7 +295,9 @@ export function RbiqExperience() {
             </h1>
 
             <p className="mt-5 text-base sm:text-lg text-white/85 leading-relaxed max-w-xl">
-              Engaging activities designed to strengthen children&apos;s cognitive development, concentration, coordination, memory and problem-solving abilities.
+              {viewMode === "cards"
+                ? "Engaging activities designed to strengthen children's cognitive development, concentration, coordination, memory and problem-solving abilities."
+                : "Engaging activities designed to strengthen children's cognitive abilities, focus, coordination and problem-solving skills."}
             </p>
 
             {/* Mantra Strip */}
@@ -316,7 +321,8 @@ export function RbiqExperience() {
                 href="#activities"
                 className="btn-3d btn-3d-mint inline-flex items-center justify-center gap-2 rounded-xl px-7 py-4 text-sm sm:text-base font-black text-[#03221E] shadow-lg"
               >
-                Explore RBIQ Programs <Icon name="arrowDown" size={16} />
+                {viewMode === "cards" ? "Explore RBIQ" : "Explore RBIQ Programs"}{" "}
+                <Icon name="arrowDown" size={16} />
               </a>
               <a
                 href="#book-assessment"
@@ -452,7 +458,7 @@ export function RbiqExperience() {
                   />
                 )}
                 <span className="relative z-10 flex items-center gap-1.5">
-                  <Icon name="grid" size={14} /> Detailed Cards
+                  <Icon name="grid" size={14} /> Option 1: Detailed Program
                 </span>
               </button>
               <button
@@ -470,7 +476,7 @@ export function RbiqExperience() {
                   />
                 )}
                 <span className="relative z-10 flex items-center gap-1.5">
-                  <Icon name="sparkle" size={14} /> Interactive Skill Matrix
+                  <Icon name="sparkle" size={14} /> Option 2: Skill Matrix
                 </span>
               </button>
             </div>
