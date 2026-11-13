@@ -397,7 +397,7 @@ export function DiagnosticQuiz() {
                         href="#demo"
                         className="btn-3d btn-3d-mint rounded-xl px-6 py-3.5 text-xs sm:text-sm font-black shadow-lg text-brand-deep"
                       >
-                        Book Free 45-Min Demo Assessment ↓
+                        Book a BMIT Assessment ↓
                       </a>
                       <button
                         type="button"

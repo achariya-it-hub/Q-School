@@ -98,7 +98,7 @@ function ProgramBentoCard({
             href="#demo"
             className="text-xs font-bold text-[#5c7772] hover:text-brand-deep transition"
           >
-            Book Demo
+            Book a BMIT Assessment
           </a>
         </div>
       </SpotlightCard>

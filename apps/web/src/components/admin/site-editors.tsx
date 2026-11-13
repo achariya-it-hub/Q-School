@@ -419,7 +419,7 @@ function PricingEditor({ value, onChange }: Ed<"pricing">) {
         onChange={set("plans")}
         max={4}
         addLabel="Add plan"
-        create={() => ({ name: "", price: "", per: "/ month", blurb: "", features: [], cta: { label: "Book a free demo", href: "#demo" }, featured: false })}
+        create={() => ({ name: "", price: "", per: "/ month", blurb: "", features: [], cta: { label: "Book a BMIT Assessment", href: "#demo" }, featured: false })}
         title={(p) => (
           <span className="flex items-center gap-2">
             {p.name || "New plan"} <span className="font-normal text-[#6b807b]">{p.price}</span>

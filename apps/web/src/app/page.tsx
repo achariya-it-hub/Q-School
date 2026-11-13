@@ -34,7 +34,7 @@ export default async function Home({ searchParams }: { searchParams: { preview?:
       {demoVisible && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e2ece9] bg-white/95 p-3 backdrop-blur md:hidden">
           <Link href="#demo" className="btn-3d btn-3d-teal flex w-full items-center justify-center rounded-xl py-3.5 text-sm font-semibold">
-            Book a free demo class
+            Book a BMIT Assessment
           </Link>
         </div>
       )}

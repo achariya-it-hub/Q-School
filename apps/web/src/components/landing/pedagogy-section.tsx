@@ -745,7 +745,7 @@ export function PedagogySection() {
                         href="#demo"
                         className="inline-flex items-center gap-1.5 rounded-xl bg-[#2BD6B4] px-4 py-2 text-xs font-extrabold text-[#03221D] shadow-md transition hover:bg-[#52E5C6]"
                       >
-                        Book Free Assessment <Icon name="arrowRight" size={14} />
+                        Book a BMIT Assessment <Icon name="arrowRight" size={14} />
                       </a>
                     </div>
                   </motion.div>

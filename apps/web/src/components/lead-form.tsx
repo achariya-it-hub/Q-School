@@ -29,7 +29,7 @@ const CENTRE_OPTIONS = [
 
 export function LeadForm({
   source,
-  cta = "Book a Free Demo",
+  cta = "Book a BMIT Assessment",
   defaultProgram,
 }: {
   source: string;

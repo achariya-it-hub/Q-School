@@ -118,7 +118,7 @@ export const BLANK_SLIDE: HeroSlide = {
   title: "Headline goes",
   accent: "here",
   body: "One or two sentences that explain the offer.",
-  primary: { label: "Book a free demo", href: "#demo" },
+  primary: { label: "Book a BMIT Assessment", href: "#demo" },
   secondary: { label: "Explore programs", href: "#programs" },
   image: "",
   imageAlt: "",
@@ -160,7 +160,7 @@ export const DEFAULT_HOME: HomeContent = {
         title: "Help your child learn how to think,",
         accent: "not just what to memorise.",
         body: "Q-School builds focus, memory, confidence and original thinking alongside regular school, in small batches of up to 15.",
-        primary: { label: "Book a Free 45-Min Demo", href: "#demo" },
+        primary: { label: "Book a BMIT Assessment", href: "#demo" },
         secondary: { label: "See Programs", href: "#programs" },
         image: "/images/bmit-hero.png",
         imageAlt: "Young learner engaging in Q-School cognitive development",
@@ -303,7 +303,7 @@ export const DEFAULT_HOME: HomeContent = {
           "Q-Mastery: Habits, emotional intelligence and leadership",
           "48 classes, learning kits, progress assessments & parent reviews",
         ],
-        cta: { label: "Book a Free Demo", href: "#demo" },
+        cta: { label: "Book a BMIT Assessment", href: "#demo" },
         featured: false,
       },
       {
@@ -317,7 +317,7 @@ export const DEFAULT_HOME: HomeContent = {
           "Q-Mastery: Habits, emotional intelligence and leadership",
           "48 classes, learning kits, progress assessments & parent reviews",
         ],
-        cta: { label: "Book a Free Demo", href: "#demo" },
+        cta: { label: "Book a BMIT Assessment", href: "#demo" },
         featured: true,
       },
       {
@@ -331,7 +331,7 @@ export const DEFAULT_HOME: HomeContent = {
           "Q-Mastery: Habits, emotional intelligence and leadership",
           "Ends with a capstone project and a Q-School completion certificate",
         ],
-        cta: { label: "Book a Free Demo", href: "#demo" },
+        cta: { label: "Book a BMIT Assessment", href: "#demo" },
         featured: false,
       },
     ],
@@ -340,7 +340,7 @@ export const DEFAULT_HOME: HomeContent = {
     kicker: "FAQ",
     title: "Frequently asked questions",
     body: "Have questions about your child's age or starting point? Call or WhatsApp +91 99444 54840 or email info@theqschool.com.",
-    cta: { label: "Book a Free Demo", href: "#demo" },
+    cta: { label: "Book a BMIT Assessment", href: "#demo" },
     items: [
       {
         q: "What is Q-School, and how is it different from school or tuition?",
@@ -369,18 +369,18 @@ export const DEFAULT_HOME: HomeContent = {
     ],
   },
   demo: {
-    script: "Free 45-Minute Demo Session",
-    title: "Book your child's free demo class",
-    body: "A free 45-minute session. No obligation. Our counsellor will call you within 24 hours.",
+    script: "BMIT Assessment Session",
+    title: "Book a BMIT Assessment",
+    body: "A comprehensive Brain Mapping & Intelligence Test (BMIT) session. No obligation. Our counsellor will call you within 24 hours.",
     points: [
       "Ages 6–14 · Small batches of up to 15",
       "48 mentor-led classes a year",
       "9 centres across 7 cities + live online",
       "No obligation to enrol",
     ],
-    formTitle: "Book your child's free demo class",
-    formNote: "A free 45-minute session. No obligation. Our counsellor will call you within 24 hours.",
-    button: "Book a Free Demo",
+    formTitle: "Book a BMIT Assessment",
+    formNote: "Schedule your child's BMIT Assessment. Our counsellor will call you within 24 hours.",
+    button: "Book a BMIT Assessment",
   },
 };
 
@@ -412,9 +412,12 @@ const color = (v: unknown, fallback: string) => {
   const s = str(v, 9);
   return /^#[0-9a-f]{3,8}$/i.test(s) ? s : fallback;
 };
+const upgradeDemoLabel = (s: string) =>
+  s.replace(/Book a Free 45-Min Demo|Book a free demo class|Book your child's free demo class|Book a Free Demo|Book free demo/gi, "Book a BMIT Assessment");
+
 const cta = (v: unknown, d: Cta): Cta => {
   const o = obj(v);
-  return { label: str(o.label, 60, d.label), href: safeHref(o.href, d.href) };
+  return { label: upgradeDemoLabel(str(o.label, 60, d.label)), href: safeHref(o.href, d.href) };
 };
 
 /** Coerce anything (old file, hand-edited JSON, API body) into a valid HomeContent. */
@@ -572,7 +575,7 @@ export function normalizeHome(input: unknown): HomeContent {
             per: str(y.per, 30),
             blurb: str(y.blurb, 120),
             features: arr(y.features, (f) => str(f, 100), 10),
-            cta: cta(y.cta, { label: "Book a Free Demo", href: "#demo" }),
+            cta: cta(y.cta, { label: "Book a BMIT Assessment", href: "#demo" }),
             featured: bool(y.featured, false),
           };
         }, 4),
@@ -594,12 +597,12 @@ export function normalizeHome(input: unknown): HomeContent {
       "demo",
       (o) => ({
         script: str(o.script, 60),
-        title: str(o.title, 120),
+        title: upgradeDemoLabel(str(o.title, 120)),
         body: str(o.body, 300),
         points: arr(o.points, (p) => str(p, 80), 6),
-        formTitle: str(o.formTitle, 80),
+        formTitle: upgradeDemoLabel(str(o.formTitle, 80)),
         formNote: str(o.formNote, 160),
-        button: str(o.button, 40, "Book a Free Demo"),
+        button: upgradeDemoLabel(str(o.button, 40, "Book a BMIT Assessment")),
       }),
       d.demo,
     ),

@@ -755,7 +755,7 @@ function Pricing({ c }: { c: HomeContent["pricing"] }) {
                 href="#demo"
                 className="btn-3d btn-3d-teal inline-flex items-center justify-center gap-2 rounded-xl px-7 py-3.5 text-base font-bold"
               >
-                Book a Free Demo
+                Book a BMIT Assessment
               </a>
             </div>
           </ScrollMotion>
@@ -1616,7 +1616,7 @@ function Faq({ c }: { c: HomeContent["faq"] }) {
                   Not sure which program or year fits your child?
                 </h3>
                 <p className="text-xs sm:text-sm text-white/80 mt-1.5 leading-relaxed">
-                  Speak with our counsellor or book a free 45-minute demo session. No obligation to enrol.
+                  Speak with our counsellor or book a BMIT Assessment. No obligation to enrol.
                 </p>
 
                 <div className="mt-5 flex flex-wrap gap-3">
@@ -1624,7 +1624,7 @@ function Faq({ c }: { c: HomeContent["faq"] }) {
                     href="#demo"
                     className="btn-3d btn-3d-mint inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-black text-brand-deep"
                   >
-                    Book a Free Demo →
+                    Book a BMIT Assessment →
                   </a>
                   <a
                     href="tel:+919944454840"

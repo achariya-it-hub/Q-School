@@ -190,7 +190,7 @@ export default async function CourseDetail({ params }: { params: { slug: string 
                 </Link>
               ) : (
                 <Link href="/#demo" className="btn-ghost mt-3 w-full">
-                  Book free demo
+                  Book a BMIT Assessment
                 </Link>
               )}
               <ul className="mt-6 space-y-2.5 text-sm text-[#41564f]">

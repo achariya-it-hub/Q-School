@@ -156,13 +156,13 @@ export default async function LearnPage({ params }: { params: { slug: string; le
                 </svg>
               </span>
               <h1 className="mt-4 text-xl font-bold text-brand-deep">{l.title}</h1>
-              <p className="mt-2 max-w-sm text-sm text-[#5c7772]">This lesson is part of the full course. Enrol to unlock every lesson, or book a free demo class first.</p>
+              <p className="mt-2 max-w-sm text-sm text-[#5c7772]">This lesson is part of the full course. Enrol to unlock every lesson, or book a BMIT Assessment first.</p>
               <div className="mt-5 flex flex-wrap justify-center gap-2">
                 <Link href="/login" className="btn-primary btn-3d btn-3d-teal">
                   Enrol now
                 </Link>
                 <Link href="/#demo" className="btn-ghost">
-                  Book free demo
+                  Book a BMIT Assessment
                 </Link>
               </div>
             </div>

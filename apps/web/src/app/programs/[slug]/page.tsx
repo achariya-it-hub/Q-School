@@ -65,7 +65,7 @@ export default function ProgramDetailPage({ params }: { params: { slug: string }
                     href="#book-demo"
                     className="btn-3d btn-3d-mint inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-sm sm:text-base font-extrabold text-brand-deep"
                   >
-                    Book a Free 45-Min Demo
+                    Book a BMIT Assessment
                   </a>
                 </div>
               </div>
@@ -148,15 +148,15 @@ export default function ProgramDetailPage({ params }: { params: { slug: string }
           <div id="book-demo" className="lg:col-span-5 scroll-mt-24">
             <div className="rounded-3xl border border-[#CFE3DD] bg-white p-7 sm:p-8 shadow-lg">
               <h2 className="text-xl sm:text-2xl font-extrabold text-brand-deep">
-                Book your child&apos;s free demo class
+                Book a BMIT Assessment
               </h2>
               <p className="mt-1.5 mb-6 text-xs sm:text-sm text-[#5c7772]">
-                A free 45-minute session. No obligation. Our counsellor will call you within 24 hours.
+                A comprehensive BMIT session. No obligation. Our counsellor will call you within 24 hours.
               </p>
               <LeadForm
                 source={`program_${program.slug}`}
                 defaultProgram={program.title}
-                cta="Book a Free Demo"
+                cta="Book a BMIT Assessment"
               />
             </div>
           </div>

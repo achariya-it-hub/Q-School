@@ -6,7 +6,7 @@ import { QuantumAmbientOverlay } from "@/components/ui/quantum-effects";
 export const metadata: Metadata = {
   title: "Q-School | Thinking, Memory and Confidence Classes for Ages 6–14",
   description:
-    "Q-School builds focus, memory, reasoning and confidence in children aged 6–14 through 48 mentor-led classes a year, at 9 centres across 7 cities and online. Book a free demo.",
+    "Q-School builds focus, memory, reasoning and confidence in children aged 6–14 through 48 mentor-led classes a year, at 9 centres across 7 cities and online. Book a BMIT Assessment.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
