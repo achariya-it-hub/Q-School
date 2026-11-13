@@ -16,12 +16,99 @@ const SLIDES: {
   meta: string;
   watching: number;
 }[] = [
-  { photo: PHOTOS.liveClass, art: "bulb", path: "design-thinking", title: "Design Thinking for Young Minds", mentor: "Meera Nair", meta: "Session 6 of 12", watching: 42 },
-  { photo: PHOTOS.codingClass, art: "laptop", path: "coding-for-beginners", title: "Coding for Beginners", mentor: "Rahul Verma", meta: "Session 3 of 10", watching: 36 },
-  { photo: PHOTOS.writingClass, art: "pencil", path: "creative-writing", title: "Creative Writing Workshop", mentor: "Kavya Iyer", meta: "Day 2 of 2", watching: 28 },
+  {
+    photo: { src: "/images/bmit-hero.png", alt: "Young learner engaging in Q-School cognitive development" },
+    art: "bulb",
+    path: "quantum-thinking-lab",
+    title: "Every class follows the same six steps",
+    mentor: "Q-School Certified Mentors",
+    meta: "9 centres in 7 cities",
+    watching: 48,
+  },
+  {
+    photo: { src: "/images/rbiq/rbiq-hero.jpg", alt: "RBIQ Whole Brain Development Activity" },
+    art: "bulb",
+    path: "rbiq-whole-brain",
+    title: "RBIQ — Whole Brain Development",
+    mentor: "Master Cognitive Coach",
+    meta: "Bilateral Brain Sync · Ages 6–14",
+    watching: 42,
+  },
+  {
+    photo: { src: "/images/workshop.png", alt: "Neo Sapiens Interactive Workshop at Q-School" },
+    art: "bulb",
+    path: "neo-sapiens-workshop",
+    title: "Neo Sapiens: Future-Ready Intelligence",
+    mentor: "Q-5D™ Lead Mentor",
+    meta: "Original Thinking & Creativity",
+    watching: 39,
+  },
+  {
+    photo: { src: "/images/classroom-centre.jpg", alt: "Q-School Physical Learning Centre Classroom" },
+    art: "laptop",
+    path: "quantum-classroom",
+    title: "Small-Batch Interactive Learning",
+    mentor: "Centre Academic Director",
+    meta: "Max 15 Learners per Batch",
+    watching: 35,
+  },
+  {
+    photo: { src: "/images/rbiq/cup-stacking.jpg", alt: "Cup Stacking Speed & Coordination Drill" },
+    art: "bulb",
+    path: "speed-coordination",
+    title: "Cup Stacking — Speed & Hand-Eye Sync",
+    mentor: "RBIQ Motor Lab",
+    meta: "Reflex & Focus Training",
+    watching: 31,
+  },
+  {
+    photo: { src: "/images/rbiq/rubiks-cube.jpg", alt: "Rubik's Cube Algorithmic & Spatial Reasoning" },
+    art: "laptop",
+    path: "spatial-reasoning",
+    title: "Algorithmic & Spatial Problem Solving",
+    mentor: "Q-Maths & Logic Lab",
+    meta: "Pattern Recognition",
+    watching: 44,
+  },
+  {
+    photo: { src: "/images/rbiq/abacus.jpg", alt: "Quantum Mental Arithmetic & Abacus Visualization" },
+    art: "pencil",
+    path: "quantum-abacus",
+    title: "Mental Arithmetic & Photographic Memory",
+    mentor: "Q-Memory Faculty",
+    meta: "High-Speed Visualization",
+    watching: 37,
+  },
+  {
+    photo: { src: "/images/mentor-student.jpg", alt: "1:1 BMIT Assessment & Personalized Mentorship" },
+    art: "pencil",
+    path: "bmit-counselling",
+    title: "1:1 BMIT Assessment & Cognitive Mapping",
+    mentor: "Senior BMIT Counsellor",
+    meta: "Personalized Growth Blueprint",
+    watching: 29,
+  },
+  {
+    photo: { src: "/images/rbiq/speed-reading.jpg", alt: "Quantum Speed Reading & Comprehension Session" },
+    art: "pencil",
+    path: "quantum-reading",
+    title: "Quantum Speed Reading & Visual Recall",
+    mentor: "Q-Reading Specialist",
+    meta: "Rapid Comprehension Lab",
+    watching: 41,
+  },
+  {
+    photo: { src: "/images/side-brain.png", alt: "Whole-Brain Neural Activation & Focus Training" },
+    art: "bulb",
+    path: "quantum-focus",
+    title: "Whole-Brain Neural Synchrony & Focus",
+    mentor: "Q-Vision Lead Coach",
+    meta: "Deep Concentration Drills",
+    watching: 46,
+  },
 ];
 
-const INTERVAL = 5000;
+const INTERVAL = 4200;
 
 /** The live-class window in the hero, cycling through classes. */
 export type WindowOverride = { photo?: { src: string; alt: string }; title?: string; mentor?: string; meta?: string };
@@ -29,7 +116,8 @@ export type WindowOverride = { photo?: { src: string; alt: string }; title?: str
 /** Pass `single` to show just the first class with no slider controls; `first` overrides its content. */
 export function HeroSlider({ single = false, first }: { single?: boolean; first?: WindowOverride }) {
   const head = { ...SLIDES[0], ...Object.fromEntries(Object.entries(first ?? {}).filter(([, v]) => v !== undefined)) };
-  const slides = single ? [head] : [head, ...SLIDES.slice(1)];
+  const rest = SLIDES.filter((sl) => sl.photo.src !== head.photo.src);
+  const slides = single ? [head] : [head, ...rest];
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
   const [motionOk, setMotionOk] = useState(false);

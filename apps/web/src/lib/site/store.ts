@@ -13,7 +13,7 @@ const DIR = DATA_DIR;
 const FILE = path.join(DIR, "site-content.json");
 export const MEDIA_DIR = path.join(DIR, "site-media");
 const HISTORY = 10;
-const CONTENT_VERSION = 4;
+const CONTENT_VERSION = 5;
 
 export interface SiteFile {
   contentVersion?: number;

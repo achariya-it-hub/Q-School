@@ -37,7 +37,7 @@ export function HeroVisual({ classWindow }: { classWindow?: WindowOverride } = {
       {/* Main Focal Window: Hero Slider / Interactive Class Preview */}
       <div className="relative z-10 transition-transform duration-500 hover:scale-[1.01]">
         <div className="rounded-3xl border border-white/25 bg-white/10 p-2 shadow-2xl backdrop-blur-xl">
-          <HeroSlider single first={classWindow} />
+          <HeroSlider first={classWindow} />
         </div>
       </div>
 
