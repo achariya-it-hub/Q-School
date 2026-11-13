@@ -11,7 +11,15 @@ import path from "path";
 import { DATA_DIR, dataFile } from "@/lib/data-dir";
 import { recordAuditLog } from "@/lib/audit/store";
 import { AGENTS, PIPELINE, STAGES, type PipelineLead, type Stage } from "@qschool/shared";
-import { isDbConfigured, getDbLeads, saveDbLead, saveDbLeadsBulk } from "@/lib/db";
+import {
+  isDbConfigured,
+  getDbLeads,
+  saveDbLead,
+  saveDbLeadsBulk,
+  deleteDbLead,
+  deleteDbLeadsByIds,
+  clearDbLeads,
+} from "@/lib/db";
 
 const LEADS_FILE = dataFile("crm-leads.json");
 const LOG_FILE = dataFile("crm-ingest-log.json");
@@ -109,23 +117,65 @@ async function writeJson(file: string, data: unknown) {
   }
 }
 
+const DEMO_NAMES = new Set([
+  "aarav sharma",
+  "diya patel",
+  "rohan iyer",
+  "meera nair",
+  "rohan verma",
+  "kavya menon",
+  "ananya r",
+]);
+
+const DEMO_PHONES = new Set([
+  "9876543210",
+  "9123456780",
+  "9988776655",
+  "9999999999",
+  "1234567890",
+  "0000000000",
+]);
+
+export function isTestOrDemoLead(lead: CrmLead): boolean {
+  if (!lead) return false;
+  if (lead.isTest) return true;
+  const name = (lead.name || "").trim().toLowerCase();
+  if (DEMO_NAMES.has(name)) return true;
+  if (/\b(test|testing|demo|sample|dummy|fake)\b/i.test(name)) return true;
+  if (/^(test parent|google test|wa test|web test|justdial test)\b/i.test(name)) return true;
+  const email = (lead.email || "").trim().toLowerCase();
+  if (email && (/@(example|test)\.com$/i.test(email) || email === "aarav.parent@gmail.com" || email === "diya.p@yahoo.com")) {
+    return true;
+  }
+  const ext = (lead.externalId || "").trim();
+  if (/^(meta:TEST|google:TeSter-|justdial:JD|wamid\.TEST)/i.test(ext)) return true;
+  const digits = (lead.phone || "").replace(/\D/g, "").slice(-10);
+  if (digits && DEMO_PHONES.has(digits)) return true;
+  return false;
+}
+
 async function readLeads(): Promise<CrmLead[]> {
   if (isDbConfigured()) {
     try {
       const dbLeads = await getDbLeads();
-      if (dbLeads && Array.isArray(dbLeads) && dbLeads.length > 0) {
+      if (dbLeads && Array.isArray(dbLeads)) {
+        const testIds = dbLeads.filter((l) => isTestOrDemoLead(l)).map((l) => l.id);
+        const cleanLeads = dbLeads.filter((l) => !isTestOrDemoLead(l));
+        if (testIds.length > 0) {
+          void deleteDbLeadsByIds(testIds);
+        }
         let migrated = false;
-        for (const l of dbLeads) {
+        for (const l of cleanLeads) {
           if ((l.stage as string) === "Demo") {
             l.stage = "BMIT";
             migrated = true;
           }
         }
-        if (migrated) {
-          void saveDbLeadsBulk(dbLeads);
+        if (migrated && cleanLeads.length > 0) {
+          void saveDbLeadsBulk(cleanLeads);
         }
-        await writeJson(LEADS_FILE, dbLeads).catch(() => {});
-        return dbLeads;
+        await writeJson(LEADS_FILE, cleanLeads).catch(() => {});
+        return cleanLeads;
       }
     } catch (e) {
       console.warn("[crm] failed to read from db, falling back to file:", e);
@@ -152,20 +202,22 @@ async function readLeads(): Promise<CrmLead[]> {
   }
 
   if (leads && Array.isArray(leads)) {
-    let migrated = false;
-    for (const l of leads) {
+    const hadTests = leads.some((l) => isTestOrDemoLead(l));
+    const cleanLeads = leads.filter((l) => !isTestOrDemoLead(l));
+    let migrated = hadTests;
+    for (const l of cleanLeads) {
       if ((l.stage as string) === "Demo") {
         l.stage = "BMIT";
         migrated = true;
       }
     }
     if (migrated) {
-      await writeJson(LEADS_FILE, leads).catch(() => {});
+      await writeJson(LEADS_FILE, cleanLeads).catch(() => {});
     }
-    if (isDbConfigured() && leads.length > 0) {
-      void saveDbLeadsBulk(leads);
+    if (isDbConfigured() && cleanLeads.length > 0) {
+      void saveDbLeadsBulk(cleanLeads);
     }
-    return leads;
+    return cleanLeads;
   }
   await writeJson(LEADS_FILE, []);
   return [];
@@ -209,7 +261,12 @@ export async function listLeads(): Promise<CrmLead[]> {
 }
 
 export async function readLog(): Promise<IngestEvent[]> {
-  return readJson<IngestEvent[]>(LOG_FILE, []);
+  const all = await readJson<IngestEvent[]>(LOG_FILE, []);
+  const clean = all.filter((e) => !e.name || !/\b(test|testing|demo|sample|dummy|fake)\b/i.test(e.name));
+  if (clean.length !== all.length) {
+    await writeJson(LOG_FILE, clean).catch(() => {});
+  }
+  return clean;
 }
 
 export async function readState(): Promise<State> {
@@ -463,4 +520,66 @@ export async function bulkIngestLeads(
     };
   });
 }
+
+export async function deleteLead(id: string): Promise<boolean> {
+  return serial(async () => {
+    const leads = await readLeads();
+    const target = leads.find((l) => l.id === id);
+    const next = leads.filter((l) => l.id !== id);
+    await writeJson(LEADS_FILE, next);
+    if (isDbConfigured()) {
+      await deleteDbLead(id);
+    }
+    const logs = await readJson<IngestEvent[]>(LOG_FILE, []);
+    const cleanLogs = logs.filter((e) => e.leadId !== id && (!target?.name || e.name !== target.name));
+    if (cleanLogs.length !== logs.length) {
+      await writeJson(LOG_FILE, cleanLogs).catch(() => {});
+    }
+    return leads.length !== next.length;
+  });
+}
+
+export async function removeTestLeads(): Promise<{ removed: number; remaining: number }> {
+  return serial(async () => {
+    let all: CrmLead[] = [];
+    if (isDbConfigured()) {
+      const dbLeads = await getDbLeads().catch(() => null);
+      if (dbLeads && Array.isArray(dbLeads)) {
+        all = dbLeads;
+      }
+    }
+    if (!all.length) {
+      all = await readJson<CrmLead[]>(LEADS_FILE, []);
+    }
+    const toRemove = all.filter((l) => isTestOrDemoLead(l));
+    const remaining = all.filter((l) => !isTestOrDemoLead(l));
+    if (isDbConfigured() && toRemove.length > 0) {
+      await deleteDbLeadsByIds(toRemove.map((l) => l.id));
+    }
+    await writeJson(LEADS_FILE, remaining);
+    const logs = await readJson<IngestEvent[]>(LOG_FILE, []);
+    const removedIds = new Set(toRemove.map((l) => l.id));
+    const cleanLogs = logs.filter(
+      (e) =>
+        (!e.leadId || !removedIds.has(e.leadId)) &&
+        (!e.name || !/\b(test|testing|demo|sample|dummy|fake)\b/i.test(e.name))
+    );
+    await writeJson(LOG_FILE, cleanLogs).catch(() => {});
+    return { removed: toRemove.length, remaining: remaining.length };
+  });
+}
+
+export async function clearAllLeads(): Promise<{ removed: number }> {
+  return serial(async () => {
+    const existing = await readLeads();
+    await writeJson(LEADS_FILE, []);
+    await writeJson(LOG_FILE, []);
+    await writeJson(STATE_FILE, { rr: 0, counts: {}, last: {} });
+    if (isDbConfigured()) {
+      await clearDbLeads();
+    }
+    return { removed: existing.length };
+  });
+}
+
 

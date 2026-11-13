@@ -1,12 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { COURSES } from "@qschool/shared";
 import { DashboardShell } from "@/components/dashboard/shell";
 import { Icon } from "@/components/icons";
+import { KIND_LABEL, fmtWhen, phase, type LiveSession } from "@/lib/live/types";
 
 export default function InstructorDashboardPage() {
-  const [gradedCount, setGradedCount] = useState(0);
+  const [courseCount, setCourseCount] = useState(COURSES.length);
+  const [studentCount, setStudentCount] = useState(0);
+  const [sessions, setSessions] = useState<LiveSession[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/courses", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (Array.isArray(d?.courses)) setCourseCount(d.courses.length);
+      })
+      .catch(() => {});
+    fetch("/api/students", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (Array.isArray(d?.students)) setStudentCount(d.students.length);
+      })
+      .catch(() => {});
+    fetch("/api/admin/live", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (Array.isArray(d?.sessions)) setSessions(d.sessions);
+      })
+      .catch(() => {});
+  }, []);
+
+  const upcomingSessions = sessions.filter((s) => ["live", "upcoming"].includes(phase(s)));
 
   return (
     <DashboardShell isInstructor={true}>
@@ -20,9 +47,9 @@ export default function InstructorDashboardPage() {
               </span>
               <span className="text-xs text-white/70">Verified Faculty</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Welcome Back, Prof. Alex Johnson 🎓</h1>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Welcome, Faculty Mentor 🎓</h1>
             <p className="text-xs sm:text-sm text-white/80 mt-1 font-medium">
-              Manage your active courses, schedule live classes, review student submissions & track monthly earnings.
+              Manage your active courses, schedule live classes, review student progress &amp; track sessions.
             </p>
           </div>
 
@@ -46,10 +73,10 @@ export default function InstructorDashboardPage() {
         {/* 4 Instructor Key Metric Cards */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[
-            { label: "Active Courses", val: "4", icon: "book", color: "#0E937E", sub: "12 Modules Active" },
-            { label: "Enrolled Students", val: "280", icon: "users", color: "#2563EB", sub: "+24 this week" },
-            { label: "Instructor Rating", val: "4.9 ⭐", icon: "sparkle", color: "#D97706", sub: "Based on 340 reviews" },
-            { label: "Monthly Earnings", val: "₹42,500", icon: "card", color: "#16A34A", sub: "Paid on 1st of month" },
+            { label: "Active Courses", val: String(courseCount), icon: "book", color: "#0E937E", sub: "Official Q-School Catalogue" },
+            { label: "Enrolled Students", val: String(studentCount), icon: "users", color: "#2563EB", sub: "Across learning centres" },
+            { label: "Live Sessions", val: String(upcomingSessions.length), icon: "live", color: "#D97706", sub: "Upcoming & active rooms" },
+            { label: "Pending Submissions", val: "0", icon: "clipboard", color: "#16A34A", sub: "All submissions reviewed" },
           ].map((c) => (
             <div
               key={c.label}
@@ -84,46 +111,40 @@ export default function InstructorDashboardPage() {
             </Link>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            {[
-              {
-                title: "Mind & Memory Mastery (Batch A)",
-                topic: "Scientific Memory Techniques & Practical Memory Palace Drills",
-                time: "TODAY • 4:00 PM",
-                enrolled: "48 Students",
-                urgent: true,
-              },
-              {
-                title: "Advanced Creative Thinking Workshop",
-                topic: "Ideation Frameworks & Design Thinking Group Activity",
-                time: "TOMORROW • 10:00 AM",
-                enrolled: "35 Students",
-                urgent: false,
-              },
-            ].map((s, idx) => (
-              <div key={idx} className="rounded-2xl border border-[#EEF3F1] bg-[#F7FAF9] p-4 flex flex-col justify-between space-y-3 hover:border-[#D7F0EB] transition">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className={`rounded-lg px-2.5 py-1 text-[10.5px] font-black uppercase ${s.urgent ? "bg-[#E5484D]/15 text-[#E5484D]" : "bg-[#0E937E]/15 text-[#0E937E]"}`}>
-                      {s.time}
-                    </span>
-                    <span className="text-xs font-bold text-[#6b807b]">{s.enrolled}</span>
+          {upcomingSessions.length === 0 ? (
+            <div className="rounded-2xl border border-[#EEF3F1] bg-[#F7FAF9] p-6 text-center">
+              <p className="text-sm font-semibold text-brand-ink">No live teaching sessions scheduled yet</p>
+              <p className="mt-1 text-xs text-[#6b807b]">
+                Schedule a live class or workshop in the Admin Console under Academics → Live sessions.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {upcomingSessions.map((s) => (
+                <div key={s.id} className="rounded-2xl border border-[#EEF3F1] bg-[#F7FAF9] p-4 flex flex-col justify-between space-y-3 hover:border-[#D7F0EB] transition">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="rounded-lg bg-[#0E937E]/15 px-2.5 py-1 text-[10.5px] font-black uppercase text-[#0E937E]">
+                        {KIND_LABEL[s.kind]} • {fmtWhen(s.startsAt)}
+                      </span>
+                      <span className="text-xs font-bold text-[#6b807b]">{s.registrations.length} Registered</span>
+                    </div>
+                    <h3 className="text-sm font-bold text-brand-ink">{s.title}</h3>
+                    {s.description && <p className="text-xs text-[#6b807b] mt-1 line-clamp-2">{s.description}</p>}
                   </div>
-                  <h3 className="text-sm font-bold text-brand-ink">{s.title}</h3>
-                  <p className="text-xs text-[#6b807b] mt-1">{s.topic}</p>
-                </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E2ECE9]">
-                  <Link
-                    href="/live"
-                    className="rounded-xl bg-[#054038] px-4 py-2 text-xs font-bold text-white hover:bg-[#0E937E] transition flex items-center gap-1.5"
-                  >
-                    <Icon name="play" size={14} /> Start Class
-                  </Link>
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E2ECE9]">
+                    <Link
+                      href="/live"
+                      className="rounded-xl bg-[#054038] px-4 py-2 text-xs font-bold text-white hover:bg-[#0E937E] transition flex items-center gap-1.5"
+                    >
+                      <Icon name="play" size={14} /> Open Session
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Student Assignments & Submissions to Review */}
@@ -137,34 +158,15 @@ export default function InstructorDashboardPage() {
               <p className="text-xs text-[#6b807b]">Grade student submissions and provide feedback.</p>
             </div>
             <span className="rounded-full bg-[#0E937E]/15 px-3 py-1 text-xs font-bold text-[#0E937E]">
-              {2 - gradedCount} Pending
+              0 Pending
             </span>
           </div>
 
-          <div className="space-y-3">
-            {[
-              { id: 1, title: "Design Thinking Prototype Submission", student: "Aarav Sharma", course: "Design Thinking", date: "Submitted 2 hours ago" },
-              { id: 2, title: "Mindfulness Reflection Journal & Goals", student: "Meera Nair", course: "Mind & Memory", date: "Submitted yesterday" },
-            ].map((a) => (
-              <div key={a.id} className="flex items-center justify-between rounded-2xl border border-[#EEF3F1] bg-[#F7FAF9] p-4 hover:bg-white transition">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0E937E]/15 text-[#0E937E]">
-                    <Icon name="clipboard" size={20} />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-brand-ink">{a.title}</h4>
-                    <p className="text-xs text-[#6b807b]">By {a.student} • {a.course} • {a.date}</p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setGradedCount((c) => Math.min(2, c + 1))}
-                  className="rounded-xl bg-[#054038] px-4 py-2 text-xs font-bold text-white hover:bg-[#0E937E] transition"
-                >
-                  Grade Submission ➔
-                </button>
-              </div>
-            ))}
+          <div className="rounded-2xl border border-[#EEF3F1] bg-[#F7FAF9] p-6 text-center">
+            <p className="text-sm font-semibold text-brand-ink">No pending student submissions</p>
+            <p className="mt-1 text-xs text-[#6b807b]">
+              New student project submissions and habit reflection logs will appear here for grading.
+            </p>
           </div>
         </div>
       </div>

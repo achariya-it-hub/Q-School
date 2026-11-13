@@ -177,7 +177,7 @@ export function SiteFooter({ stickyCtaSpace = false }: { stickyCtaSpace?: boolea
       <div className="border-t border-white/10 py-5">
         <div className="container-qs flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/60">
           <p className="font-semibold text-white/80">
-            © 2026 Q-School - A Unit of Divine Grace Foundation · Quantum Schooling™. All rights reserved.
+            © 2026  Q-School - A Unit of Divine Grace Foundation
           </p>
           <div className="flex items-center gap-5">
             <Link href="/privacy" className="hover:text-white transition">

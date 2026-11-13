@@ -104,6 +104,13 @@ export default function PaymentsPage() {
                   <Td className="font-mono text-[12px] text-[#41564f]">{p.receiptNo ?? "—"}</Td>
                 </tr>
               ))}
+              {list.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-10 text-center text-[13px] text-[#7B8E89]">
+                    {f.payments.length === 0 ? "No payment transactions recorded yet." : "No payments match your search."}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </DataGrid>
         </Card>

@@ -112,7 +112,7 @@ const STAGE_THEME: Record<Stage, StageTheme> = {
 
 export default function LeadsPage() {
   const { isHead } = useAdminRole();
-  const { leads, loading, fresh, clearFresh, patch, create, reload } = useCrmLeads();
+  const { leads, loading, fresh, clearFresh, patch, create, remove, reload } = useCrmLeads();
   const [q, setQ] = useState("");
   const [owner, setOwner] = useState("All");
   const [src, setSrc] = useState("all");
@@ -218,6 +218,13 @@ export default function LeadsPage() {
     }
     setDrag(null);
     setOver(null);
+  };
+
+  const handleDeleteLead = async (target: CrmLead) => {
+    if (!window.confirm(`Remove lead "${target.name}"?`)) return;
+    if (open === target.id) setOpen(null);
+    await remove(target.id);
+    show(`Lead "${target.name}" removed`);
   };
 
   return (
@@ -378,6 +385,7 @@ export default function LeadsPage() {
                         }}
                         onOpen={() => setOpen(l.id)}
                         onCall={() => initiateCall(l)}
+                        onDelete={() => handleDeleteLead(l)}
                       />
                     ))}
                     {!loading && !col.length && (
@@ -470,11 +478,25 @@ export default function LeadsPage() {
                           >
                             View
                           </button>
+                          <button
+                            onClick={() => handleDeleteLead(l)}
+                            className="flex items-center justify-center rounded-lg bg-[#FFF1F2] p-1.5 text-rose-600 hover:bg-rose-600 hover:text-white transition"
+                            title="Delete lead"
+                          >
+                            <Icon name="trash" size={13} />
+                          </button>
                         </div>
                       </td>
                     </tr>
                   );
                 })}
+                {!shown.length && (
+                  <tr>
+                    <td colSpan={8} className="py-10 text-center text-[13px] text-[#7B8E89]">
+                      No leads found.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -611,7 +633,15 @@ export default function LeadsPage() {
 
       {/* Detail Drawer & Modals */}
       <Drawer open={!!lead} title={lead ? lead.name : ""} onClose={() => setOpen(null)}>
-        {lead && <LeadDetail lead={lead} onPatch={(p) => patch(lead.id, p)} onToast={show} onCall={initiateCall} />}
+        {lead && (
+          <LeadDetail
+            lead={lead}
+            onPatch={(p) => patch(lead.id, p)}
+            onToast={show}
+            onCall={initiateCall}
+            onDelete={() => handleDeleteLead(lead)}
+          />
+        )}
       </Drawer>
 
       {/* Floating 1-Click Call HUD */}
@@ -673,6 +703,7 @@ function LeadCard({
   onDragEnd,
   onOpen,
   onCall,
+  onDelete,
 }: {
   l: CrmLead;
   theme: StageTheme;
@@ -682,6 +713,7 @@ function LeadCard({
   onDragEnd: () => void;
   onOpen: () => void;
   onCall: () => void;
+  onDelete: () => void;
 }) {
   return (
     <article
@@ -713,6 +745,17 @@ function LeadCard({
             className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#E9F6F2] text-[#0E937E] hover:bg-[#0E937E] hover:text-white transition"
           >
             <Icon name="phone" size={12} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            title={`Delete ${l.name}`}
+            className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#FFF1F2] text-rose-600 hover:bg-rose-600 hover:text-white transition"
+          >
+            <Icon name="trash" size={12} />
           </button>
           {l.slaBreached && (
             <span title="No follow-up within SLA" className="text-[#A9471F]">
@@ -1067,11 +1110,13 @@ function LeadDetail({
   onPatch,
   onToast,
   onCall,
+  onDelete,
 }: {
   lead: CrmLead;
   onPatch: (p: { stage?: Stage; owner?: string; value?: number; activity?: string; extra?: Record<string, any> }) => void;
   onToast: (m: string) => void;
   onCall: (l: { id: string; name: string; phone: string }, channelOverride?: string) => void;
+  onDelete: () => void;
 }) {
   const [selectedRoute, setSelectedRoute] = useState("auto");
   const [note, setNote] = useState("");
@@ -1336,6 +1381,16 @@ function LeadDetail({
         <Btn type="submit">Add</Btn>
       </form>
 
+      <div className="border-t border-[#E6EEEB] pt-3 flex justify-end">
+        <button
+          type="button"
+          onClick={onDelete}
+          className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-600 hover:text-white transition"
+        >
+          <Icon name="trash" size={13} /> Delete lead
+        </button>
+      </div>
+
       {/* Date Picker Modal for BMIT Test */}
       <BmitScheduleModal
         open={bmitModalOpen}
@@ -1433,11 +1488,7 @@ function BulkUploadLeadsModal({
   const [error, setError] = useState<string | null>(null);
 
   const sampleTemplate = () => {
-    const csv =
-      "Name,Phone,Email,Source,Interest,Owner,Stage,Value\n" +
-      "Aarav Sharma,9876543210,aarav.parent@gmail.com,Meta Ads,Robotics Foundations,Priya,Enquiry,15000\n" +
-      "Diya Patel,9123456780,diya.p@yahoo.com,Google Ads,AI & Python Bootcamp,Karthik,Contacted,18000\n" +
-      "Rohan Iyer,9988776655,,Walk-in,Junior Coding,Sangeetha,Enquiry,12000";
+    const csv = "Name,Phone,Email,Source,Interest,Owner,Stage,Value\n";
     downloadCsvFile("leads_import_template.csv", csv);
   };
 
@@ -1549,7 +1600,7 @@ function BulkUploadLeadsModal({
               setCsvText(e.target.value);
               setError(null);
             }}
-            placeholder="Name,Phone,Email,Source,Interest&#10;Aarav Sharma,9876543210,aarav@gmail.com,Meta Ads,Robotics"
+            placeholder="Name,Phone,Email,Source,Interest"
             className="w-full font-mono text-[11px] p-2.5 rounded-xl border border-[#D9E6E2] bg-white text-brand-ink outline-none focus:border-brand-teal"
           />
         </div>

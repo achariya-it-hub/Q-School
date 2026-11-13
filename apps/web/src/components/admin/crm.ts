@@ -15,20 +15,49 @@ export interface CrmLead extends PipelineLead {
   _clientModifiedAt?: number;
 }
 
-const CRM_CACHE_KEY = "qs_crm_leads_cache";
+const CRM_CACHE_KEY = "qs_crm_leads_cache_v2";
+const LEGACY_CACHE_KEYS = ["qs_crm_leads_cache"];
+
+const CLIENT_DEMO_NAMES = new Set([
+  "aarav sharma",
+  "diya patel",
+  "rohan iyer",
+  "meera nair",
+  "rohan verma",
+  "kavya menon",
+  "ananya r",
+]);
+
+export function isClientTestLead(lead: CrmLead): boolean {
+  if (!lead) return false;
+  if (lead.isTest) return true;
+  const name = (lead.name || "").trim().toLowerCase();
+  if (CLIENT_DEMO_NAMES.has(name)) return true;
+  if (/\b(test|testing|demo|sample|dummy|fake)\b/i.test(name)) return true;
+  const email = (lead.email || "").trim().toLowerCase();
+  if (email && /@(example|test)\.com$/i.test(email)) return true;
+  const ext = (lead.externalId || "").trim();
+  if (/^(meta:TEST|google:TeSter-|justdial:JD|wamid\.TEST)/i.test(ext)) return true;
+  return false;
+}
 
 function getCachedLeads(): CrmLead[] {
   if (typeof window === "undefined") return [];
   try {
+    for (const k of LEGACY_CACHE_KEYS) {
+      localStorage.removeItem(k);
+    }
     const raw = localStorage.getItem(CRM_CACHE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.map((l: CrmLead) => ({
-          ...l,
-          stage: (l.stage as string) === "Demo" ? "BMIT" : l.stage,
-          timeline: Array.isArray(l.timeline) ? l.timeline : [],
-        }));
+        return parsed
+          .filter((l: CrmLead) => !isClientTestLead(l))
+          .map((l: CrmLead) => ({
+            ...l,
+            stage: (l.stage as string) === "Demo" ? "BMIT" : l.stage,
+            timeline: Array.isArray(l.timeline) ? l.timeline : [],
+          }));
       }
     }
   } catch {}
@@ -69,11 +98,13 @@ export function useCrmLeads(pollMs = 20000) {
         return;
       }
 
-      const list: CrmLead[] = d.leads.map((l: CrmLead) => ({
-        ...l,
-        stage: (l.stage as string) === "Demo" ? "BMIT" : l.stage,
-        timeline: Array.isArray(l.timeline) ? l.timeline : [],
-      }));
+      const list: CrmLead[] = d.leads
+        .filter((l: CrmLead) => !isClientTestLead(l))
+        .map((l: CrmLead) => ({
+          ...l,
+          stage: (l.stage as string) === "Demo" ? "BMIT" : l.stage,
+          timeline: Array.isArray(l.timeline) ? l.timeline : [],
+        }));
 
       if (known.current) {
         const added = list.filter((l) => !known.current!.has(l.id)).map((l) => l.id);
@@ -83,14 +114,17 @@ export function useCrmLeads(pollMs = 20000) {
 
       setLeads((prev) => {
         if (!list || list.length === 0) {
-          // Keep existing leads in memory and cache if server has 0 leads
-          return prev;
+          saveCachedLeads([]);
+          return [];
         }
         // Merge strategy: map by ID, protecting recent local user edits from being overwritten by stale server polls
         const now = Date.now();
+        const serverIds = new Set(list.map((l) => l.id));
         const map = new Map<string, CrmLead>();
         for (const l of prev) {
-          map.set(l.id, l);
+          if (serverIds.has(l.id)) {
+            map.set(l.id, l);
+          }
         }
         for (const serverLead of list) {
           const existing = map.get(serverLead.id);
@@ -236,5 +270,55 @@ export function useCrmLeads(pollMs = 20000) {
     [load],
   );
 
-  return { leads, loading, fresh, clearFresh: () => setFresh([]), reload: load, patch, create };
+  const remove = useCallback(async (id: string) => {
+    setLeads((prev) => {
+      const next = prev.filter((l) => l.id !== id);
+      saveCachedLeads(next);
+      return next;
+    });
+    try {
+      await fetch(`/api/crm/leads?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    } catch (e) {
+      console.warn("[crm] delete failed:", e);
+    }
+  }, []);
+
+  const removeTestLeads = useCallback(async () => {
+    setLeads((prev) => {
+      const next = prev.filter((l) => !isClientTestLead(l));
+      saveCachedLeads(next);
+      return next;
+    });
+    try {
+      const r = await fetch("/api/crm/leads?mode=test", { method: "DELETE" });
+      if (r.ok) {
+        await load();
+      }
+    } catch (e) {
+      console.warn("[crm] removeTestLeads failed:", e);
+    }
+  }, [load]);
+
+  const clearAll = useCallback(async () => {
+    setLeads([]);
+    saveCachedLeads([]);
+    try {
+      await fetch("/api/crm/leads?mode=all", { method: "DELETE" });
+    } catch (e) {
+      console.warn("[crm] clearAll failed:", e);
+    }
+  }, []);
+
+  return {
+    leads,
+    loading,
+    fresh,
+    clearFresh: () => setFresh([]),
+    reload: load,
+    patch,
+    create,
+    remove,
+    removeTestLeads,
+    clearAll,
+  };
 }

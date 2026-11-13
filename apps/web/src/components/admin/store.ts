@@ -35,29 +35,35 @@ interface State {
 
 const ACCOUNTS_CACHE_KEY = "qs_finance_accounts_cache";
 const EXPENSES_CACHE_KEY = "qs_finance_expenses_cache";
+const LEAVES_CACHE_KEY = "qs_hr_leaves_cache";
+const STOCK_CACHE_KEY = "qs_inventory_stock_cache";
 
-function getInitialAccounts(): FeeAccount[] {
-  if (typeof window === "undefined") return [];
+function readCachedArray<T>(key: string, fallback: T[] = []): T[] {
+  if (typeof window === "undefined") return fallback;
   try {
-    const raw = localStorage.getItem(ACCOUNTS_CACHE_KEY);
+    const raw = localStorage.getItem(key);
     if (raw !== null) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) return parsed;
     }
   } catch {}
-  return [];
+  return fallback;
+}
+
+function getInitialAccounts(): FeeAccount[] {
+  return readCachedArray<FeeAccount>(ACCOUNTS_CACHE_KEY, []);
 }
 
 function getInitialExpenses(): Expense[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(EXPENSES_CACHE_KEY);
-    if (raw !== null) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch {}
-  return [];
+  return readCachedArray<Expense>(EXPENSES_CACHE_KEY, []);
+}
+
+function getInitialLeaves(): LeaveRequest[] {
+  return readCachedArray<LeaveRequest>(LEAVES_CACHE_KEY, [...LEAVES]);
+}
+
+function getInitialStock(): StockItem[] {
+  return readCachedArray<StockItem>(STOCK_CACHE_KEY, [...INVENTORY]);
 }
 
 function persistState(s: State) {
@@ -65,6 +71,8 @@ function persistState(s: State) {
   try {
     localStorage.setItem(ACCOUNTS_CACHE_KEY, JSON.stringify(s.accounts));
     localStorage.setItem(EXPENSES_CACHE_KEY, JSON.stringify(s.expenses));
+    localStorage.setItem(LEAVES_CACHE_KEY, JSON.stringify(s.leaves));
+    localStorage.setItem(STOCK_CACHE_KEY, JSON.stringify(s.stock));
   } catch {}
 }
 
@@ -72,19 +80,19 @@ let state: State = {
   accounts: getInitialAccounts(),
   leads: [],
   expenses: getInitialExpenses(),
-  leaves: [],
-  stock: [],
+  leaves: getInitialLeaves(),
+  stock: getInitialStock(),
   tasks: [], // loaded from the server by syncTasks()
 };
 
 // Re-sync from localStorage when running in client window
 if (typeof window !== "undefined") {
-  const savedAcc = getInitialAccounts();
-  const savedExp = getInitialExpenses();
   state = {
     ...state,
-    accounts: savedAcc,
-    expenses: savedExp,
+    accounts: getInitialAccounts(),
+    expenses: getInitialExpenses(),
+    leaves: getInitialLeaves(),
+    stock: getInitialStock(),
   };
 }
 
@@ -102,6 +110,28 @@ export function clearFeeAccounts() {
 
 export function restoreDefaultFeeAccounts() {
   set((s) => ({ ...s, accounts: [...FEE_ACCOUNTS] }));
+}
+
+export function resetAllConsoleData() {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem(ACCOUNTS_CACHE_KEY);
+      localStorage.removeItem(EXPENSES_CACHE_KEY);
+      localStorage.removeItem(LEAVES_CACHE_KEY);
+      localStorage.removeItem(STOCK_CACHE_KEY);
+      localStorage.removeItem("qs_crm_leads_cache");
+      localStorage.removeItem("qs_progress_tracker_cache");
+      localStorage.removeItem("qs_partner_code");
+    } catch {}
+  }
+  set(() => ({
+    accounts: [],
+    leads: [],
+    expenses: [],
+    leaves: [],
+    stock: [],
+    tasks: [],
+  }));
 }
 
 export function useConsole<T>(select: (s: State) => T): T {
@@ -210,6 +240,27 @@ export function addLead(l: Pick<PipelineLead, "name" | "phone" | "interest" | "s
 
 export function setLeave(id: string, status: LeaveRequest["status"]) {
   set((s) => ({ ...s, leaves: s.leaves.map((l) => (l.id === id ? { ...l, status } : l)) }));
+}
+
+export function addLeaveRequest(input: Omit<LeaveRequest, "id" | "status">) {
+  set((s) => ({
+    ...s,
+    leaves: [
+      {
+        ...input,
+        id: `LV-${101 + s.leaves.length}`,
+        status: "Pending",
+      },
+      ...s.leaves,
+    ],
+  }));
+}
+
+export function addStockItem(item: StockItem) {
+  set((s) => ({
+    ...s,
+    stock: [item, ...s.stock.filter((x) => x.sku !== item.sku)],
+  }));
 }
 
 /* Staff tasks — saved on the server (/api/admin/tasks); the UI updates instantly, then adopts the server's list. */

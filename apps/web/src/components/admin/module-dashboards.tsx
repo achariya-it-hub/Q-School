@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { COURSES, FUNNEL, INVENTORY, LEAD_SOURCES, REVENUE_MONTHLY, SESSIONS, inr } from "@qschool/shared";
+import { useEffect, useMemo, useState } from "react";
+import { COURSES, inr } from "@qschool/shared";
 import { Card, Figure, StatusBadge } from "@/components/admin/ui";
 import { useFinance, TXN_TONE } from "@/components/admin/finance";
 import { useCrmLeads } from "@/components/admin/crm";
@@ -12,6 +12,7 @@ import { AreaTrend, HBars, ViewToggle } from "@/components/admin/charts";
 import { PendingStudentsCard } from "@/components/admin/students-view";
 import { Icon } from "@/components/icons";
 import { useAdminRole } from "@/lib/centre-head";
+import { KIND_LABEL, phase, type LiveSession } from "@/lib/live/types";
 
 export type DashModule = "overview" | "crm" | "finance" | "academics" | "hr" | "purchase";
 export const DASH_MODULES: { value: DashModule; label: string }[] = [
@@ -34,25 +35,75 @@ function More({ href, children }: { href: string; children: React.ReactNode }) {
 const grid4 = "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4";
 const row2 = "mt-5 grid grid-cols-1 gap-5 xl:grid-cols-2";
 
+const monthKey = (iso: string) => iso.slice(0, 7);
+const monthLabel = (k: string) =>
+  new Date(`${k}-01T00:00:00`).toLocaleDateString("en-IN", { month: "short" });
+
 export function CrmDashboard() {
   const { leads } = useCrmLeads(60000);
   const [t1, setT1] = useState(false);
   const [t2, setT2] = useState(false);
   const breached = leads.filter((l) => l.slaBreached);
+
+  const funnel = useMemo(() => {
+    const total = leads.length;
+    const contacted = leads.filter((l) => ["Contacted", "BMIT", "Negotiation", "Admitted"].includes(l.stage)).length;
+    const bmit = leads.filter((l) => ["BMIT", "Negotiation", "Admitted"].includes(l.stage)).length;
+    const negotiation = leads.filter((l) => ["Negotiation", "Admitted"].includes(l.stage)).length;
+    const admitted = leads.filter((l) => l.stage === "Admitted").length;
+    return [
+      { stage: "Enquiries", value: total },
+      { stage: "Contacted", value: contacted },
+      { stage: "BMIT", value: bmit },
+      { stage: "Negotiation", value: negotiation },
+      { stage: "Admitted", value: admitted },
+    ];
+  }, [leads]);
+
+  const leadSources = useMemo(() => {
+    const counts = new Map<string, number>([
+      ["Meta Ads", 0],
+      ["Website", 0],
+      ["WhatsApp", 0],
+      ["Referral", 0],
+      ["Google Ads", 0],
+      ["Walk-in", 0],
+    ]);
+    for (const l of leads) {
+      const src = l.source || "Website";
+      counts.set(src, (counts.get(src) ?? 0) + 1);
+    }
+    return Array.from(counts, ([source, value]) => ({ source, value })).sort((a, b) => b.value - a.value);
+  }, [leads]);
+
   return (
     <>
       <section className={grid4}>
         <Figure label="Open leads" value={String(leads.length)} sub="In the pipeline now" icon="kanban" />
         <Figure label="SLA breached" value={String(breached.length)} sub="No follow-up in time" icon="alert" />
-        <Figure label="Enquiries (Oct)" value={String(FUNNEL[0]?.value ?? 0)} sub="Top of the funnel" icon="users" />
-        <Figure label="Enquiry → admission" value={FUNNEL[0]?.value ? `${((FUNNEL[4].value / FUNNEL[0].value) * 100).toFixed(1)}%` : "0%"} sub={`${FUNNEL[4]?.value ?? 0} admissions`} icon="checkCircle" />
+        <Figure label="Enquiries" value={String(funnel[0]?.value ?? 0)} sub="Top of the funnel" icon="users" />
+        <Figure
+          label="Enquiry → admission"
+          value={funnel[0]?.value ? `${((funnel[4].value / funnel[0].value) * 100).toFixed(1)}%` : "0%"}
+          sub={`${funnel[4]?.value ?? 0} admissions`}
+          icon="checkCircle"
+        />
       </section>
       <div className={row2}>
         <Card title="Admissions funnel" action={<ViewToggle table={t1} onChange={setT1} />}>
-          <HBars data={FUNNEL.map((f) => ({ label: f.stage, value: f.value }))} table={t1} valueCol="People" note={(i) => (i === 0 || !FUNNEL[i - 1]?.value ? null : `${Math.round((FUNNEL[i].value / FUNNEL[i - 1].value) * 100)}%`)} />
+          <HBars
+            data={funnel.map((f) => ({ label: f.stage, value: f.value }))}
+            table={t1}
+            valueCol="People"
+            note={(i) =>
+              i === 0 || !funnel[i - 1]?.value
+                ? null
+                : `${Math.round((funnel[i].value / funnel[i - 1].value) * 100)}%`
+            }
+          />
         </Card>
         <Card title="Leads by source" action={<ViewToggle table={t2} onChange={setT2} />}>
-          <HBars data={LEAD_SOURCES.map((s) => ({ label: s.source, value: s.value }))} table={t2} valueCol="Leads" />
+          <HBars data={leadSources.map((s) => ({ label: s.source, value: s.value }))} table={t2} valueCol="Leads" />
         </Card>
       </div>
       <Card title="Needs follow-up" action={<More href="/admin/leads">Leads &amp; pipeline</More>} className="mt-5">
@@ -78,6 +129,22 @@ export function FinanceDashboard() {
   const spend = expenses.reduce((a, e) => a + e.amount, 0);
   const pending = expenses.filter((e) => e.status === "Pending approval");
   const rate = fin.billed ? (fin.collected / fin.billed) * 100 : 0;
+
+  const revenueMonthly = useMemo(() => {
+    const m = new Map<string, number>();
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const k = new Date(now.getFullYear(), now.getMonth() - i, 1).toISOString().slice(0, 7);
+      m.set(k, 0);
+    }
+    for (const p of fin.payments) {
+      if (p.status === "Success" && m.has(monthKey(p.date))) {
+        m.set(monthKey(p.date), (m.get(monthKey(p.date)) ?? 0) + p.amount);
+      }
+    }
+    return Array.from(m, ([k, v]) => ({ month: monthLabel(k), value: v }));
+  }, [fin.payments]);
+
   return (
     <>
       <section className={grid4}>
@@ -88,7 +155,7 @@ export function FinanceDashboard() {
       </section>
       <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <Card title="Revenue" action={<ViewToggle table={t} onChange={setT} />}>
-          <AreaTrend data={REVENUE_MONTHLY} table={t} />
+          <AreaTrend data={revenueMonthly} table={t} />
         </Card>
         <Card title="Recent payments" action={<More href="/admin/payments">All payments</More>}>
           <ul className="divide-y divide-[#F0F4F3]">
@@ -99,6 +166,9 @@ export function FinanceDashboard() {
                 <StatusBadge tone={TXN_TONE[p.status]}>{p.status}</StatusBadge>
               </li>
             ))}
+            {fin.payments.length === 0 && (
+              <li className="py-3 text-[13px] text-[#6b807b]">No payments recorded yet.</li>
+            )}
           </ul>
         </Card>
       </div>
@@ -112,32 +182,68 @@ export function FinanceDashboard() {
 }
 
 export function AcademicsDashboard() {
-  const live = SESSIONS.filter((s) => s.status === "Live").length;
-  const upcoming = SESSIONS.filter((s) => s.status === "Upcoming").length;
-  const seats = SESSIONS.reduce((a, s) => a + s.enrolled, 0);
-  const cap = SESSIONS.reduce((a, s) => a + s.capacity, 0);
+  const [sessions, setSessions] = useState<LiveSession[]>([]);
+  const [courseCount, setCourseCount] = useState<number>(COURSES.length);
+
+  useEffect(() => {
+    fetch("/api/admin/live", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (Array.isArray(d?.sessions)) setSessions(d.sessions);
+      })
+      .catch(() => {});
+    fetch("/api/admin/courses", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (Array.isArray(d?.courses)) setCourseCount(d.courses.length);
+      })
+      .catch(() => {});
+  }, []);
+
+  const live = sessions.filter((s) => phase(s) === "live").length;
+  const upcoming = sessions.filter((s) => phase(s) === "upcoming").length;
+  const seats = sessions.reduce((a, s) => a + s.registrations.length, 0);
+  const cap = sessions.reduce((a, s) => a + (s.capacity || 0), 0);
+
   return (
     <>
       <section className={grid4}>
-        <Figure label="Courses" value={String(COURSES.length)} sub="In the catalogue" icon="book" />
+        <Figure label="Courses" value={String(courseCount)} sub="In the catalogue" icon="book" />
         <Figure label="Live now" value={String(live)} sub={`${upcoming} upcoming sessions`} icon="live" />
         <Figure label="Seats filled" value={`${seats}/${cap}`} meter={cap ? (seats / cap) * 100 : 0} sub="Across scheduled sessions" icon="users" />
-        <Figure label="Sessions scheduled" value={String(SESSIONS.length)} icon="calendar" />
+        <Figure label="Sessions scheduled" value={String(sessions.length)} icon="calendar" />
       </section>
       <div className={row2}>
         <PendingStudentsCard />
         <Card title="Sessions" action={<More href="/admin/schedule">Schedule</More>}>
-          <ul className="space-y-2.5">
-            {SESSIONS.slice(0, 7).map((s) => (
-              <li key={s.id} className="flex items-center gap-3 rounded-xl border border-[#EEF3F1] p-3">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-semibold text-brand-ink">{s.title}</p>
-                  <p className="text-[11.5px] text-[#6b807b]">{s.day} · {s.kind} · {s.host} · {s.enrolled}/{s.capacity}</p>
-                </div>
-                <StatusBadge tone={s.status === "Live" ? "info" : s.status === "Upcoming" ? "warning" : "good"}>{s.status}</StatusBadge>
-              </li>
-            ))}
-          </ul>
+          {sessions.length === 0 ? (
+            <p className="py-3 text-[13px] text-[#6b807b]">No sessions scheduled right now.</p>
+          ) : (
+            <ul className="space-y-2.5">
+              {sessions.slice(0, 7).map((s) => {
+                const p = phase(s);
+                const statusLabel = p === "live" ? "Live" : p === "upcoming" ? "Upcoming" : "Done";
+                const dayStr = new Date(s.startsAt).toLocaleDateString("en-IN", {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                });
+                return (
+                  <li key={s.id} className="flex items-center gap-3 rounded-xl border border-[#EEF3F1] p-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold text-brand-ink">{s.title}</p>
+                      <p className="text-[11.5px] text-[#6b807b]">
+                        {dayStr} · {KIND_LABEL[s.kind]} · {s.host || "Faculty"} · {s.registrations.length}/{s.capacity || "∞"}
+                      </p>
+                    </div>
+                    <StatusBadge tone={statusLabel === "Live" ? "info" : statusLabel === "Upcoming" ? "warning" : "good"}>
+                      {statusLabel}
+                    </StatusBadge>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </Card>
       </div>
       <div className="mt-4 flex flex-wrap gap-4">
@@ -195,9 +301,10 @@ export function HrDashboard() {
 
 export function PurchaseDashboard() {
   const expenses = useConsole((s) => s.expenses);
+  const stock = useConsole((s) => s.stock);
   const [t, setT] = useState(false);
-  const low = INVENTORY.filter((i) => i.onHand <= i.reorderAt);
-  const value = INVENTORY.reduce((a, i) => a + i.onHand * i.unitCost, 0);
+  const low = stock.filter((i) => i.onHand <= i.reorderAt);
+  const value = stock.reduce((a, i) => a + i.onHand * i.unitCost, 0);
   const reorderCost = low.reduce((a, i) => a + Math.max(0, i.reorderAt * 2 - i.onHand) * i.unitCost, 0);
   const pend = expenses.filter((e) => e.status === "Pending approval");
   const byVendor = Object.entries(expenses.reduce<Record<string, number>>((m, e) => ((m[e.vendor] = (m[e.vendor] ?? 0) + e.amount), m), {}))
@@ -207,7 +314,7 @@ export function PurchaseDashboard() {
   return (
     <>
       <section className={grid4}>
-        <Figure label="Stock value" value={inr(value, true)} sub={`${INVENTORY.length} items`} icon="box" />
+        <Figure label="Stock value" value={inr(value, true)} sub={`${stock.length} items`} icon="box" />
         <Figure label="Low stock" value={String(low.length)} sub="At or below reorder level" icon="alert" />
         <Figure label="Est. reorder cost" value={inr(reorderCost, true)} sub="Top up to 2x reorder level" icon="rupee" />
         <Figure label="Bills to approve" value={String(pend.length)} sub={inr(pend.reduce((a, e) => a + e.amount, 0))} icon="clock" />
@@ -226,6 +333,7 @@ export function PurchaseDashboard() {
         </Card>
         <Card title="Spend by vendor" action={<ViewToggle table={t} onChange={setT} />}>
           <HBars data={byVendor} table={t} valueCol="Spend" format={(v) => inr(v, true)} valueWidth={64} />
+          {byVendor.length === 0 && <p className="py-3 text-[13px] text-[#6b807b]">No vendor expenses recorded yet.</p>}
         </Card>
       </div>
       <div className="mt-4"><More href="/admin/expenses">Expenses &amp; approvals</More></div>

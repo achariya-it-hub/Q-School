@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { inr, type StockItem } from "@qschool/shared";
+import { ADMISSION_CENTRES, inr, type StockItem } from "@qschool/shared";
 import { AdminShell } from "@/components/admin/shell";
 import { Btn, Card, DataGrid, Field, Figure, Modal, PageHeader, StatusBadge, Td, Th, Toast, inputCls, useToast } from "@/components/admin/ui";
-import { restock, useConsole } from "@/components/admin/store";
+import { addStockItem, restock, useConsole } from "@/components/admin/store";
 
 function level(i: StockItem) {
   if (i.onHand === 0) return { tone: "critical" as const, label: "Out of stock" };
@@ -16,6 +16,7 @@ export default function InventoryPage() {
   const stock = useConsole((s) => s.stock);
   const [po, setPo] = useState<StockItem | null>(null);
   const [qty, setQty] = useState(0);
+  const [adding, setAdding] = useState(false);
   const [toast, show] = useToast();
 
   const value = stock.reduce((a, i) => a + i.onHand * i.unitCost, 0);
@@ -23,7 +24,11 @@ export default function InventoryPage() {
 
   return (
     <AdminShell>
-      <PageHeader title="Inventory" sub="Study kits, books and merchandise across centres" />
+      <PageHeader title="Inventory" sub="Study kits, books and merchandise across centres">
+        <Btn icon="plus" onClick={() => setAdding(true)}>
+          Add item
+        </Btn>
+      </PageHeader>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Figure label="Stock value" value={inr(value)} sub={`${stock.length} SKUs`} icon="box" />
@@ -47,9 +52,9 @@ export default function InventoryPage() {
           <tbody>
             {stock.map((i) => {
               const l = level(i);
-              const pct = Math.min(100, (i.onHand / (i.reorderAt * 2)) * 100);
+              const pct = i.reorderAt > 0 ? Math.min(100, (i.onHand / (i.reorderAt * 2)) * 100) : 100;
               return (
-                <tr key={i.sku} className="border-b border-[#F4F7F6] hover:bg-[#FAFCFB]">
+                <tr key={i.sku + i.centre} className="border-b border-[#F4F7F6] hover:bg-[#FAFCFB]">
                   <Td>
                     <p className="font-semibold text-brand-ink">{i.name}</p>
                     <p className="font-mono text-[11px] text-[#7B8E89]">{i.sku}</p>
@@ -88,6 +93,13 @@ export default function InventoryPage() {
                 </tr>
               );
             })}
+            {stock.length === 0 && (
+              <tr>
+                <td colSpan={7} className="py-10 text-center text-[13px] text-[#7B8E89]">
+                  No inventory items tracked yet. Click &ldquo;Add item&rdquo; to register study kits, workbooks, or merchandise.
+                </td>
+              </tr>
+            )}
           </tbody>
         </DataGrid>
       </Card>
@@ -123,7 +135,112 @@ export default function InventoryPage() {
           </form>
         )}
       </Modal>
+
+      <AddStockModal
+        open={adding}
+        count={stock.length}
+        onClose={() => setAdding(false)}
+        onDone={(msg) => {
+          setAdding(false);
+          show(msg);
+        }}
+      />
       <Toast msg={toast} />
     </AdminShell>
+  );
+}
+
+function AddStockModal({
+  open,
+  count,
+  onClose,
+  onDone,
+}: {
+  open: boolean;
+  count: number;
+  onClose: () => void;
+  onDone: (msg: string) => void;
+}) {
+  const [name, setName] = useState("");
+  const [sku, setSku] = useState("");
+  const [centre, setCentre] = useState(ADMISSION_CENTRES[0]?.name || "HQ");
+  const [onHand, setOnHand] = useState(25);
+  const [reorderAt, setReorderAt] = useState(10);
+  const [unitCost, setUnitCost] = useState(500);
+  const [vendor, setVendor] = useState("");
+
+  return (
+    <Modal open={open} title="Add inventory item" onClose={onClose}>
+      <form
+        className="grid grid-cols-2 gap-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!name.trim() || !vendor.trim()) return;
+          const finalSku = sku.trim().toUpperCase() || `QS-KIT-${String(count + 1).padStart(3, "0")}`;
+          addStockItem({
+            sku: finalSku,
+            name: name.trim(),
+            centre,
+            onHand: Math.max(0, Number(onHand) || 0),
+            reorderAt: Math.max(1, Number(reorderAt) || 5),
+            unitCost: Math.max(1, Number(unitCost) || 0),
+            vendor: vendor.trim(),
+          });
+          setName("");
+          setSku("");
+          setVendor("");
+          onDone(`${name.trim()} (${finalSku}) added to inventory`);
+        }}
+      >
+        <div className="col-span-2">
+          <Field label="Item name">
+            <input
+              required
+              className={inputCls}
+              placeholder="e.g. Q-Vision Sensory Kit & Workbook"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Field>
+        </div>
+        <Field label="SKU (optional)">
+          <input
+            className={inputCls}
+            placeholder="Auto-generated if blank"
+            value={sku}
+            onChange={(e) => setSku(e.target.value.toUpperCase())}
+          />
+        </Field>
+        <Field label="Centre">
+          <select className={inputCls} value={centre} onChange={(e) => setCentre(e.target.value)}>
+            {["HQ", ...ADMISSION_CENTRES.map((c) => c.name)].map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Quantity on hand">
+          <input type="number" min={0} className={inputCls} value={onHand} onChange={(e) => setOnHand(Number(e.target.value))} />
+        </Field>
+        <Field label="Reorder threshold">
+          <input type="number" min={1} className={inputCls} value={reorderAt} onChange={(e) => setReorderAt(Number(e.target.value))} />
+        </Field>
+        <Field label="Unit cost (₹)">
+          <input required type="number" min={1} className={inputCls} value={unitCost} onChange={(e) => setUnitCost(Number(e.target.value))} />
+        </Field>
+        <Field label="Vendor / supplier">
+          <input required className={inputCls} placeholder="e.g. Quantum Print & Learning Supplies" value={vendor} onChange={(e) => setVendor(e.target.value)} />
+        </Field>
+        <div className="col-span-2 flex justify-end gap-2 pt-2">
+          <Btn variant="ghost" onClick={onClose}>
+            Cancel
+          </Btn>
+          <Btn type="submit" icon="check">
+            Add item
+          </Btn>
+        </div>
+      </form>
+    </Modal>
   );
 }

@@ -354,16 +354,11 @@ const SEED_CAMPAIGNS: CampaignItem[] = [
 
 export async function listCampaigns(): Promise<CampaignItem[]> {
   const existing = await readJson<CampaignItem[] | null>(CAMPAIGNS_FILE, null);
-  if (existing && Array.isArray(existing) && existing.length > 0) {
-    const isOldSeed = existing.some(
-      (c) => c.writer === "Srikeha" || (c.id === "CMP-001" && c.postConcept.includes("Robotics Trial"))
-    );
-    if (!isOldSeed) {
-      return existing;
-    }
+  if (existing && Array.isArray(existing)) {
+    return existing;
   }
-  await writeJson(CAMPAIGNS_FILE, SEED_CAMPAIGNS);
-  return SEED_CAMPAIGNS;
+  await writeJson(CAMPAIGNS_FILE, []);
+  return [];
 }
 
 export async function resetToOfficialCalendar(): Promise<CampaignItem[]> {

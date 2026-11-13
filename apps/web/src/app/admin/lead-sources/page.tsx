@@ -191,9 +191,6 @@ export default function LeadSourcesPage() {
               )}
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <Btn variant="ghost" icon="sparkle" onClick={() => test(s.key)} disabled={busy === s.key}>
-                  {busy === s.key ? "Sending…" : "Send test lead"}
-                </Btn>
                 {s.key === "meta" && (
                   <Btn variant="ghost" icon="undo" onClick={sync} disabled={!s.canSync || busy === "sync"}>
                     {busy === "sync" ? "Syncing…" : "Sync now"}
@@ -227,7 +224,7 @@ export default function LeadSourcesPage() {
               <span className="min-w-0 flex-1 truncate text-[#41564f]">{e.name ?? e.detail}</span>
             </li>
           ))}
-          {data && !data.log.length && <li className="py-8 text-center text-[#7B8E89]">No leads received yet. Send a test lead to try it.</li>}
+          {data && !data.log.length && <li className="py-8 text-center text-[#7B8E89]">No leads received yet.</li>}
         </ul>
       </Card>
       <Toast msg={toast} />

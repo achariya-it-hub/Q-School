@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import type { Stage } from "@qschool/shared";
 import { isAdmin } from "@/lib/crm/auth";
-import { bulkIngestLeads, ingestLead, listLeads, updateLead, type IncomingLead } from "@/lib/crm/store";
+import {
+  bulkIngestLeads,
+  clearAllLeads,
+  deleteLead,
+  ingestLead,
+  listLeads,
+  removeTestLeads,
+  updateLead,
+  type IncomingLead,
+} from "@/lib/crm/store";
 
 export const dynamic = "force-dynamic";
 
@@ -86,4 +95,29 @@ export async function PATCH(req: Request) {
     extra: b.extra,
   });
   return lead ? NextResponse.json({ ok: true, lead }) : NextResponse.json({ error: "Not found" }, { status: 404 });
+}
+
+/** Delete a single lead by ?id=..., remove all test leads (?mode=test), or clear all leads (?mode=all). */
+export async function DELETE(req: Request) {
+  if (!isAdmin()) return deny();
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  const mode = searchParams.get("mode");
+
+  if (mode === "all") {
+    const res = await clearAllLeads();
+    return NextResponse.json({ ok: true, ...res, leads: [] });
+  }
+
+  if (mode === "test") {
+    const res = await removeTestLeads();
+    return NextResponse.json({ ok: true, ...res, leads: await listLeads() });
+  }
+
+  if (!id) {
+    return NextResponse.json({ error: "id or mode required" }, { status: 400 });
+  }
+
+  await deleteLead(id);
+  return NextResponse.json({ ok: true, id });
 }

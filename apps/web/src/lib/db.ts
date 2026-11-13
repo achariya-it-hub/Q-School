@@ -88,6 +88,27 @@ export async function ensureTables(): Promise<boolean> {
           );
         `;
 
+        await sql`
+          CREATE TABLE IF NOT EXISTS qs_meta (
+            key VARCHAR(128) PRIMARY KEY,
+            value TEXT,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+          );
+        `;
+
+        // One-time cleanup of all pre-launch test leads & demo data in production DB
+        const resetCheck = await sql`SELECT value FROM qs_meta WHERE key = 'reset_test_leads_2026_11_13_v1' LIMIT 1;`;
+        if (!resetCheck.length) {
+          await sql`DELETE FROM qs_crm_leads;`;
+          await sql`DELETE FROM qs_student_progress;`;
+          await sql`DELETE FROM qs_students;`;
+          await sql`
+            INSERT INTO qs_meta (key, value, updated_at)
+            VALUES ('reset_test_leads_2026_11_13_v1', 'done', NOW())
+            ON CONFLICT (key) DO UPDATE SET value = 'done', updated_at = NOW();
+          `;
+        }
+
         // Check if qs_users is empty, seed if so
         const userCount = await sql`SELECT COUNT(*)::int as count FROM qs_users;`;
         if (userCount[0]?.count === 0) {
@@ -374,6 +395,47 @@ export async function saveDbLeadsBulk(leads: any[]): Promise<boolean> {
   }
 }
 
+export async function deleteDbLead(id: string): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) return false;
+  await ensureTables();
+  try {
+    await sql`DELETE FROM qs_crm_leads WHERE id = ${id};`;
+    return true;
+  } catch (err) {
+    console.error("[db] deleteDbLead error:", err);
+    return false;
+  }
+}
+
+export async function deleteDbLeadsByIds(ids: string[]): Promise<boolean> {
+  const sql = getSql();
+  if (!sql || !ids.length) return false;
+  await ensureTables();
+  try {
+    for (const id of ids) {
+      await sql`DELETE FROM qs_crm_leads WHERE id = ${id};`;
+    }
+    return true;
+  } catch (err) {
+    console.error("[db] deleteDbLeadsByIds error:", err);
+    return false;
+  }
+}
+
+export async function clearDbLeads(): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) return false;
+  await ensureTables();
+  try {
+    await sql`DELETE FROM qs_crm_leads;`;
+    return true;
+  } catch (err) {
+    console.error("[db] clearDbLeads error:", err);
+    return false;
+  }
+}
+
 /* ─────────── Student Progress Operations ─────────── */
 
 export async function getDbProgress(): Promise<any[] | null> {
@@ -499,6 +561,21 @@ export async function saveDbStudentsBulk(students: any[]): Promise<boolean> {
     return true;
   } catch (err) {
     console.error("[db] saveDbStudentsBulk error:", err);
+    return false;
+  }
+}
+
+export async function resetDbDemoData(): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) return false;
+  await ensureTables();
+  try {
+    await sql`DELETE FROM qs_crm_leads;`;
+    await sql`DELETE FROM qs_student_progress;`;
+    await sql`DELETE FROM qs_students;`;
+    return true;
+  } catch (err) {
+    console.error("[db] resetDbDemoData error:", err);
     return false;
   }
 }

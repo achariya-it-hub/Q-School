@@ -200,7 +200,7 @@ export default function DashboardPage() {
               {[
                 { n: STUDENT.enrolled, l: "Enrolled", icon: "users" as IconName, c: "#0E937E" },
                 { n: STUDENT.completed, l: "Completed", icon: "check" as IconName, c: "#0E937E" },
-                { n: 3, l: "Certificates", icon: "award" as IconName, c: "#2563EB" },
+                { n: STUDENT.certificates, l: "Certificates", icon: "award" as IconName, c: "#2563EB" },
               ].map((s) => (
                 <div key={s.l} className="flex flex-col items-center gap-1.5 px-1 text-center">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `${s.c}17`, color: s.c }}>

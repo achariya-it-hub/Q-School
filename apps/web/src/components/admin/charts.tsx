@@ -126,6 +126,7 @@ export function ViewToggle({ table, onChange }: { table: boolean; onChange: (t: 
 /* ───────────── Area trend (single series) ───────────── */
 
 function niceStep(max: number, ticks = 4) {
+  if (!max || max <= 0 || !Number.isFinite(max)) return 25000;
   const raw = max / ticks;
   const mag = Math.pow(10, Math.floor(Math.log10(raw)));
   const n = raw / mag;
@@ -149,22 +150,24 @@ export function AreaTrend({
   if (table)
     return <DataTable cols={["Month", valueLabel]} rows={data.map((d) => [d.month, inr(d.value)])} />;
 
+  const safeData = data.length > 0 ? data : [{ month: "Now", value: 0 }];
   const pad = { l: 52, r: 56, t: 14, b: 28 };
   const iw = Math.max(0, w - pad.l - pad.r);
   const ih = height - pad.t - pad.b;
-  const step = niceStep(Math.max(...data.map((d) => d.value)));
-  const top = Math.ceil(Math.max(...data.map((d) => d.value)) / step) * step;
+  const maxVal = Math.max(0, ...safeData.map((d) => d.value));
+  const step = niceStep(maxVal);
+  const top = Math.max(step * 4, Math.ceil(maxVal / step) * step);
   const ticks = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step);
-  const x = (i: number) => pad.l + (data.length === 1 ? iw / 2 : (i * iw) / (data.length - 1));
-  const y = (v: number) => pad.t + ih - (v / top) * ih;
-  const line = data.map((d, i) => `${i ? "L" : "M"}${x(i)},${y(d.value)}`).join("");
-  const area = `${line}L${x(data.length - 1)},${y(0)}L${x(0)},${y(0)}Z`;
-  const last = data.length - 1;
+  const x = (i: number) => pad.l + (safeData.length === 1 ? iw / 2 : (i * iw) / (safeData.length - 1));
+  const y = (v: number) => pad.t + ih - (v / (top || 1)) * ih;
+  const line = safeData.map((d, i) => `${i ? "L" : "M"}${x(i)},${y(d.value)}`).join("");
+  const area = `${line}L${x(safeData.length - 1)},${y(0)}L${x(0)},${y(0)}Z`;
+  const last = safeData.length - 1;
 
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
     const px = e.clientX - r.left;
-    const i = Math.round(((px - pad.l) / (iw || 1)) * (data.length - 1));
+    const i = Math.round(((px - pad.l) / (iw || 1)) * (safeData.length - 1));
     setHover(Math.max(0, Math.min(last, i)));
   };
   const onKey = (e: React.KeyboardEvent) => {
@@ -180,7 +183,7 @@ export function AreaTrend({
           width={w}
           height={height}
           role="img"
-          aria-label={`${valueLabel} by month, ${data[0].month} to ${data[last].month}. Latest ${inr(data[last].value)}. Use arrow keys to inspect.`}
+          aria-label={`${valueLabel} by month, ${safeData[0].month} to ${safeData[last].month}. Latest ${inr(safeData[last].value)}. Use arrow keys to inspect.`}
           tabIndex={0}
           onPointerMove={onMove}
           onPointerLeave={() => setHover(null)}
@@ -196,7 +199,7 @@ export function AreaTrend({
               </text>
             </g>
           ))}
-          {data.map((d, i) => (
+          {safeData.map((d, i) => (
             <text key={d.month} x={x(i)} y={height - 8} textAnchor="middle" fontSize={11} fill={hover === i ? T.ink : T.axis}>
               {d.month}
             </text>
@@ -204,14 +207,14 @@ export function AreaTrend({
           <path d={area} fill={T.wash} />
           <path d={line} fill="none" stroke={T.series} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
           {/* end label */}
-          <circle cx={x(last)} cy={y(data[last].value)} r={4.5} fill={T.series} stroke="#fff" strokeWidth={2} />
-          <text x={x(last) + 9} y={y(data[last].value)} dy="0.32em" fontSize={12} fontWeight={600} fill={T.ink}>
-            {inr(data[last].value, true)}
+          <circle cx={x(last)} cy={y(safeData[last].value)} r={4.5} fill={T.series} stroke="#fff" strokeWidth={2} />
+          <text x={x(last) + 9} y={y(safeData[last].value)} dy="0.32em" fontSize={12} fontWeight={600} fill={T.ink}>
+            {inr(safeData[last].value, true)}
           </text>
           {hover !== null && (
             <g pointerEvents="none">
               <line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={y(0)} stroke="#B8C7C3" strokeWidth={1} />
-              <circle cx={x(hover)} cy={y(data[hover].value)} r={5} fill={T.series} stroke="#fff" strokeWidth={2} />
+              <circle cx={x(hover)} cy={y(safeData[hover].value)} r={5} fill={T.series} stroke="#fff" strokeWidth={2} />
             </g>
           )}
         </svg>
@@ -221,14 +224,14 @@ export function AreaTrend({
           className="pointer-events-none absolute z-10 rounded-xl border border-[#E2ECE9] bg-white px-3 py-2 shadow-lg"
           style={{
             left: Math.min(Math.max(x(hover) - 70, 0), w - 140),
-            top: Math.max(y(data[hover].value) - 64, 0),
+            top: Math.max(y(safeData[hover].value) - 64, 0),
             width: 140,
           }}
         >
-          <p className="text-[15px] font-semibold text-brand-ink">{inr(data[hover].value)}</p>
+          <p className="text-[15px] font-semibold text-brand-ink">{inr(safeData[hover].value)}</p>
           <p className="flex items-center gap-1.5 text-[11.5px] text-[#5C716C]">
             <span className="inline-block h-[2px] w-3 rounded" style={{ background: T.series }} />
-            {valueLabel} · {data[hover].month}
+            {valueLabel} · {safeData[hover].month}
           </p>
         </div>
       )}

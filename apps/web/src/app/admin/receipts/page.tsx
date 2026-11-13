@@ -66,6 +66,13 @@ export default function ReceiptsPage() {
                 </Td>
               </tr>
             ))}
+            {list.length === 0 && (
+              <tr>
+                <td colSpan={8} className="py-10 text-center text-[13px] text-[#7B8E89]">
+                  {f.receipts.length === 0 ? "No fee receipts issued yet. Receipts are generated automatically for every recorded payment." : "No receipts match your search."}
+                </td>
+              </tr>
+            )}
           </tbody>
         </DataGrid>
       </Card>

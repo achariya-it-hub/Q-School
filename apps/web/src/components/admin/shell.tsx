@@ -71,6 +71,13 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const path = usePathname();
   const router = useRouter();
   const { isHead } = useAdminRole();
+  const [searchStr, setSearchStr] = useState("");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setSearchStr(window.location.search);
+    }
+  }, [path]);
 
   const logout = () => {
     try {
@@ -92,12 +99,23 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           <p className="mb-1 px-3 text-[10.5px] font-semibold uppercase tracking-wider text-white/45">{g.title}</p>
           <nav className="space-y-0.5">
             {g.items.map((n) => {
-              const active = path === n.href || (n.href !== "/admin/dashboard" && path.startsWith(`${n.href}/`));
+              const isTrackerLink = n.href === "/admin/enrolments?tab=tracker";
+              const isStudentsLink = n.href === "/admin/enrolments";
+              const isTrackerActive = path === "/admin/enrolments" && searchStr.includes("tab=tracker");
+              const active = isTrackerLink
+                ? isTrackerActive
+                : isStudentsLink
+                ? path === "/admin/enrolments" && !isTrackerActive
+                : path === n.href || (n.href !== "/admin/dashboard" && path.startsWith(`${n.href}/`));
               return (
                 <Link
                   key={n.href}
                   href={n.href}
-                  onClick={onNavigate}
+                  onClick={() => {
+                    if (isTrackerLink) setSearchStr("?tab=tracker");
+                    else if (isStudentsLink) setSearchStr("");
+                    onNavigate?.();
+                  }}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] transition ${
                     active
                       ? "bg-gradient-to-r from-[#0E937E] to-[#13a88f] font-semibold text-white shadow-[0_6px_16px_-6px_rgba(43,179,156,.8)]"

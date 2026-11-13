@@ -52,17 +52,11 @@ async function writeJson(file: string, data: unknown) {
 
 export async function listPartners(): Promise<Partner[]> {
   const partners = await readJson<Partner[] | null>(PARTNERS_FILE, null);
-  if (partners && Array.isArray(partners) && partners.length > 0) {
-    const missing = INITIAL_PARTNERS.filter((i) => !partners.some((p) => p.code.toUpperCase() === i.code.toUpperCase()));
-    if (missing.length) {
-      const merged = [...partners, ...missing];
-      await writeJson(PARTNERS_FILE, merged);
-      return merged;
-    }
+  if (partners && Array.isArray(partners)) {
     return partners;
   }
-  await writeJson(PARTNERS_FILE, INITIAL_PARTNERS);
-  return INITIAL_PARTNERS;
+  await writeJson(PARTNERS_FILE, []);
+  return [];
 }
 
 export async function getPartnerById(id: string): Promise<Partner | null> {

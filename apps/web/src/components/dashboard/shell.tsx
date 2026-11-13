@@ -93,7 +93,7 @@ export function DashboardShell({ children, isInstructor }: { children: React.Rea
   const [sidebarWidth, setSidebarWidth] = useState(265);
   const [isResizing, setIsResizing] = useState(false);
 
-  const userName = isInstructor ? "Prof. Alex Johnson" : STUDENT.name;
+  const userName = isInstructor ? "Faculty Mentor" : STUDENT.name;
   const userRole = isInstructor ? "Instructor / Faculty 👨‍🏫" : STUDENT.role;
 
   // Handle Drag to Resize Sidebar

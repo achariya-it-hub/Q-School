@@ -113,6 +113,13 @@ export default function InvoicesPage() {
                 </Td>
               </tr>
             ))}
+            {list.length === 0 && (
+              <tr>
+                <td colSpan={8} className="py-10 text-center text-[13px] text-[#7B8E89]">
+                  {f.invoices.length === 0 ? "No invoices issued yet. Invoices are generated automatically when fee plans are created." : "No invoices match your search."}
+                </td>
+              </tr>
+            )}
           </tbody>
         </DataGrid>
       </Card>

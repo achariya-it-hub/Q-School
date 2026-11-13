@@ -103,12 +103,15 @@ export function StudentsProgressTracker({ mode = "admin" }: { mode?: "admin" | "
       if (data.ok && Array.isArray(data.items)) {
         setItems((prev) => {
           if (!data.items || data.items.length === 0) {
-            // Keep local cached records if server returns empty
-            return prev;
+            saveCachedProgress([]);
+            return [];
           }
-          // Merge preserving any locally edited items
+          // Merge preserving any locally edited items that still exist on server
+          const serverIds = new Set(data.items.map((it: StudentProgress) => it.id));
           const map = new Map<string, StudentProgress>();
-          for (const it of prev) map.set(it.id, it);
+          for (const it of prev) {
+            if (serverIds.has(it.id)) map.set(it.id, it);
+          }
           for (const it of data.items) map.set(it.id, it);
           const merged = Array.from(map.values());
           saveCachedProgress(merged);

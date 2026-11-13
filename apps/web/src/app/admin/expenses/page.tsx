@@ -105,6 +105,13 @@ export default function ExpensesPage() {
                   </Td>
                 </tr>
               ))}
+              {expenses.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-10 text-center text-[13px] text-[#7B8E89]">
+                    No expenses recorded yet. Click &ldquo;Add expense&rdquo; to submit a bill or operational cost.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </DataGrid>
         </Card>

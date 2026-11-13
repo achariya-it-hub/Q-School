@@ -7,7 +7,7 @@
     "mode": "hybrid",
     "price": 63000,
     "rating": 4.9,
-    "learners": 128,
+    "learners": 0,
     "durationHours": 48,
     "lessons": 24,
     "description": "Foundational yogic postures, pranayama breathing, and body awareness for children aged 6 to 8."
@@ -20,7 +20,7 @@
     "mode": "hybrid",
     "price": 70000,
     "rating": 4.9,
-    "learners": 94,
+    "learners": 0,
     "durationHours": 48,
     "lessons": 24,
     "description": "Sound resonance, sacred chanting, focus, and memory enhancement for children aged 9 to 10."
@@ -33,7 +33,7 @@
     "mode": "hybrid",
     "price": 74000,
     "rating": 4.8,
-    "learners": 86,
+    "learners": 0,
     "durationHours": 48,
     "lessons": 24,
     "description": "Energy gesture science, finger dexterity, reflexology, and mental concentration for ages 11 to 12."
@@ -46,7 +46,7 @@
     "mode": "hybrid",
     "price": 78000,
     "rating": 5.0,
-    "learners": 72,
+    "learners": 0,
     "durationHours": 48,
     "lessons": 24,
     "description": "Gazing and visual focus techniques for laser concentration, willpower, and clarity for ages 13 to 14."
