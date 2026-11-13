@@ -10,6 +10,29 @@ import { listStudents } from "@/lib/students/store";
 
 export const dynamic = "force-dynamic";
 
+const PLAY_STORE_REVIEW_USERS = [
+  {
+    id: "usr_play_student",
+    name: "Q-School Demo Student",
+    email: "student@theqschool.com",
+    role: "Student" as const,
+    status: "Active" as const,
+    phone: "9876543210",
+    password: "qschool2026",
+    joined: "2026-11-01",
+  },
+  {
+    id: "usr_play_teacher",
+    name: "Q-School Demo Teacher",
+    email: "teacher@theqschool.com",
+    role: "Faculty" as const,
+    status: "Active" as const,
+    phone: "9876543211",
+    password: "qschool2026",
+    joined: "2026-11-01",
+  },
+];
+
 export async function OPTIONS() {
   return handleCorsOptions();
 }
@@ -75,7 +98,11 @@ export async function POST(req: Request) {
       } catch {}
     }
     if (!matchedUser) {
-      const def = DEFAULT_USERS.find((u) => u.email.toLowerCase() === lowerId);
+      const def =
+        DEFAULT_USERS.find((u) => u.email.toLowerCase() === lowerId) ||
+        PLAY_STORE_REVIEW_USERS.find(
+          (u) => u.email.toLowerCase() === lowerId || u.phone === phoneDigits,
+        );
       if (def) {
         matchedUser = { ...def, phone: def.phone || "" };
       }

@@ -58,11 +58,44 @@ async function verifyGoogleEmail(idToken?: string, accessToken?: string): Promis
   return null;
 }
 
+const PLAY_STORE_DEMO_PARTNER = {
+  id: "prt_playstore_demo",
+  code: "QSP-DEMO",
+  name: "Q-School Demo Partner",
+  organization: "Divine Grace Foundation",
+  category: "Education Consultant",
+  phone: "9876543212",
+  email: "partner@theqschool.com",
+  centreId: "mk",
+  commissionPct: 15,
+  commissionPerAdmission: 1500,
+  status: "active" as const,
+  clicks: 12,
+  leadsCount: 0,
+  admissionsCount: 0,
+  totalEarned: 0,
+  paidAmount: 0,
+  createdAt: "2026-11-01T00:00:00.000Z",
+};
+
+function isDemoPartnerCode(code: string): boolean {
+  const clean = code.trim().toUpperCase();
+  return clean === "QSP-DEMO" || clean === "QSP-PLAY" || clean === "PARTNER@THEQSCHOOL.COM";
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
   if (!code) {
     return jsonWithCors({ error: "Partner code is required" }, { status: 400 });
+  }
+
+  if (isDemoPartnerCode(code)) {
+    return jsonWithCors({
+      ok: true,
+      partner: PLAY_STORE_DEMO_PARTNER,
+      admissions: [],
+    });
   }
 
   const partner = await getPartnerByCode(code);
@@ -131,6 +164,14 @@ export async function POST(req: Request) {
     const code = body?.code;
     if (!code || typeof code !== "string") {
       return jsonWithCors({ error: "Partner code is required" }, { status: 400 });
+    }
+
+    if (isDemoPartnerCode(code)) {
+      return jsonWithCors({
+        ok: true,
+        partner: PLAY_STORE_DEMO_PARTNER,
+        admissions: [],
+      });
     }
 
     const partner = await getPartnerByCode(code);
