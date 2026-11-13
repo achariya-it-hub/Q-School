@@ -49,13 +49,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (_selectedRole == 3) {
         if (outcome.partner != null) {
-          Navigator.of(context).push(
+          Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
               builder: (_) => PartnerShell(
                 partner: outcome.partner!,
                 initialAdmissions: outcome.admissions,
               ),
             ),
+            (_) => false,
           );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -130,15 +131,58 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _onLogin() async {
-    if (_selectedRole == 0) {
-      userRole.value = UserRole.student;
-      Navigator.of(context).pushNamed('/interests');
-    } else if (_selectedRole == 1) {
-      userRole.value = UserRole.teacher;
-      Navigator.of(context).pushNamedAndRemoveUntil('/app', (_) => false);
-    } else if (_selectedRole == 2) {
-      userRole.value = UserRole.admin;
-      Navigator.of(context).pushNamedAndRemoveUntil('/app', (_) => false);
+    if (_selectedRole != 3) {
+      final identifier = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+
+      if (identifier.isEmpty || password.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please enter your registered email/mobile and password.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        return;
+      }
+
+      setState(() => _isLoading = true);
+      try {
+        final verifiedUser = await PartnerApiService().loginMobileUser(
+          identifier: identifier,
+          password: password,
+          role: _roleKey,
+        );
+
+        if (!mounted) return;
+        currentUser.value = AuthUser(
+          id: verifiedUser['id']?.toString() ?? identifier,
+          name: verifiedUser['name']?.toString() ?? 'Q-School User',
+          email: verifiedUser['email']?.toString() ?? identifier,
+          provider: 'password',
+        );
+
+        if (_selectedRole == 0) {
+          userRole.value = UserRole.student;
+          Navigator.of(context).pushNamedAndRemoveUntil('/app', (_) => false);
+        } else if (_selectedRole == 1) {
+          userRole.value = UserRole.teacher;
+          Navigator.of(context).pushNamedAndRemoveUntil('/app', (_) => false);
+        } else {
+          userRole.value = UserRole.admin;
+          Navigator.of(context).pushNamedAndRemoveUntil('/app', (_) => false);
+        }
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     } else {
       // Partner Role
       final code = _emailController.text.trim().toUpperCase();
@@ -152,13 +196,14 @@ class _LoginScreenState extends State<LoginScreen> {
         final partner = res['partner'] as Partner;
         final admissions = res['admissions'] as List<PartnerAdmission>;
         if (!mounted) return;
-        Navigator.of(context).push(
+        Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (_) => PartnerShell(
               partner: partner,
               initialAdmissions: admissions,
             ),
           ),
+          (_) => false,
         );
       } catch (e) {
         if (!mounted) return;
@@ -243,7 +288,46 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _selectedRole == 3
+                          ? const Color(0xFFEAF7F4)
+                          : const Color(0xFFFFF8EA),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _selectedRole == 3
+                            ? const Color(0xFFBFE6DC)
+                            : const Color(0xFFF6E6C2),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _selectedRole == 3
+                              ? Icons.verified_user_outlined
+                              : Icons.admin_panel_settings_outlined,
+                          size: 18,
+                          color: _selectedRole == 3 ? QS.teal : const Color(0xFF8A5A00),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _selectedRole == 3
+                                ? 'Partners can self-register below to receive an instant referral code.'
+                                : 'Student & Teacher accounts require Q-School Admin approval. Only Partners can self-sign-up.',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: _selectedRole == 3 ? QS.deep : const Color(0xFF6B4A00),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
 
                   // Email or Partner Code Input
                   Text(
@@ -449,24 +533,24 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 28),
 
-            // Sign Up Footer Link
+            // Sign Up Footer Link (Self-registration is exclusively for Partners)
             Center(
               child: GestureDetector(
                 onTap: () {
-                  if (_selectedRole == 3) {
-                    _openPartnerSignupSheet(context);
-                  } else {
-                    Navigator.of(context).pushNamed('/signup');
+                  if (_selectedRole != 3) {
+                    _selectRole(3);
                   }
+                  _openPartnerSignupSheet(context);
                 },
                 child: RichText(
-                  text: TextSpan(
-                    text: "Don't have an account? ",
-                    style: const TextStyle(color: QS.sub, fontSize: 14),
+                  textAlign: TextAlign.center,
+                  text: const TextSpan(
+                    text: 'Only Partners can self-register · ',
+                    style: TextStyle(color: QS.sub, fontSize: 13.5),
                     children: [
                       TextSpan(
-                        text: _selectedRole == 3 ? 'Register as Partner' : 'Sign Up',
-                        style: const TextStyle(
+                        text: 'Sign Up as Partner',
+                        style: TextStyle(
                           color: QS.teal,
                           fontWeight: FontWeight.w800,
                         ),
@@ -669,14 +753,15 @@ class _PartnerSignupSheetState extends State<PartnerSignupSheet> {
       if (!mounted) return;
       Navigator.of(context).pop(); // close modal sheet
 
-      // Navigate to partner shell
-      Navigator.of(context).push(
+      // Navigate to partner shell and clear stack so partner cannot switch to student/admin
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) => PartnerShell(
             partner: partner,
             initialAdmissions: admissions,
           ),
         ),
+        (_) => false,
       );
 
       ScaffoldMessenger.of(context).showSnackBar(

@@ -112,9 +112,10 @@ class GoogleAuthService {
 
         final body = jsonDecode(res.body) as Map<String, dynamic>;
 
-        if (res.statusCode == 403) {
+        if (res.statusCode == 403 || res.statusCode == 401) {
           throw GoogleAuthException(
-            body['error']?.toString() ?? 'Account is inactive. Please contact Q-School Admin.',
+            body['error']?.toString() ??
+                'This account requires Q-School Admin approval. Only Partners can self-register.',
           );
         }
 
@@ -142,12 +143,21 @@ class GoogleAuthService {
           }
         } else if (role == 'partner') {
           partnerNeedsRegistration = true;
+        } else {
+          throw GoogleAuthException(
+            body['error']?.toString() ??
+                'Account is not approved by Q-School Admin. Only Partners can self-register.',
+          );
         }
       } on GoogleAuthException {
         rethrow;
       } catch (e) {
         if (role == 'partner') {
           partnerNeedsRegistration = true;
+        } else {
+          throw GoogleAuthException(
+            'Could not verify Admin approval for this ${role.toUpperCase()} account. Please ensure you are connected and approved by Q-School Admin.',
+          );
         }
         debugPrint('[GoogleAuthService] ERP sync warning: $e');
       }

@@ -32,14 +32,14 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
       if (!mounted || outcome == null) return;
 
       if (outcome.partner != null) {
-        Navigator.pushReplacement(
-          context,
+        Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (_) => PartnerShell(
               partner: outcome.partner!,
               initialAdmissions: outcome.admissions,
             ),
           ),
+          (_) => false,
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -86,14 +86,14 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
       final admissions = res['admissions'] as List<PartnerAdmission>;
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
+      Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) => PartnerShell(
             partner: partner,
             initialAdmissions: admissions,
           ),
         ),
+        (_) => false,
       );
     } catch (e) {
       if (!mounted) return;
@@ -153,8 +153,10 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: QS.deeper,
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: QS.deeper,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -375,6 +377,7 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }

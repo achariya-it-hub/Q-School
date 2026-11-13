@@ -1,4 +1,9 @@
+import { existsSync, readFileSync } from "fs";
 import { jsonWithCors, handleCorsOptions } from "@/lib/cors";
+import { dataFile } from "@/lib/data-dir";
+import { findDbStaffLogin, findDbUserByEmail } from "@/lib/db";
+import { DEFAULT_STAFF } from "@/lib/default-staff";
+import { DEFAULT_USERS } from "@/lib/default-users";
 import { getPartnerByEmail, listPartnerAdmissions } from "@/lib/partners/store";
 import { listStudents } from "@/lib/students/store";
 
@@ -152,19 +157,138 @@ export async function POST(req: Request) {
       });
     }
 
-    // Match enrolled student record if any
+    // Block partners from logging into Student, Teacher, or Admin modes
+    const existingPartner = await getPartnerByEmail(verified.email);
+    if (existingPartner) {
+      return jsonWithCors(
+        {
+          ok: false,
+          error:
+            "Partner accounts cannot switch to Student, Teacher, or Admin mode. Please sign in using the Partner tab.",
+        },
+        { status: 403 },
+      );
+    }
+
+    // Lookup user in DB / users.json / DEFAULT_USERS
+    let matchedUser = await findDbUserByEmail(verified.email);
+    if (!matchedUser) {
+      try {
+        const file = dataFile("users.json");
+        if (existsSync(file)) {
+          const parsed = JSON.parse(readFileSync(file, "utf8"));
+          if (Array.isArray(parsed)) {
+            matchedUser =
+              parsed.find((u: any) => u.email?.trim().toLowerCase() === verified.email) || null;
+          }
+        }
+      } catch {}
+    }
+    if (!matchedUser) {
+      const def = DEFAULT_USERS.find((u) => u.email.toLowerCase() === verified.email);
+      if (def) {
+        matchedUser = { ...def, phone: def.phone || "" };
+      }
+    }
+
+    if (matchedUser && matchedUser.status === "Suspended") {
+      return jsonWithCors(
+        { ok: false, error: "Your account has been suspended. Please contact Q-School Admin." },
+        { status: 403 },
+      );
+    }
+
+    if (role === "admin") {
+      const isAdminEmail =
+        (matchedUser && matchedUser.role === "Admin") ||
+        verified.email === (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+      if (!isAdminEmail) {
+        return jsonWithCors(
+          {
+            ok: false,
+            error: "Access denied: This account is not an approved Q-School Admin.",
+          },
+          { status: 403 },
+        );
+      }
+      return jsonWithCors({
+        ok: true,
+        user: {
+          id: matchedUser?.id || verified.sub,
+          name: matchedUser?.name || displayName,
+          email: verified.email,
+          photoUrl,
+          role: "admin",
+        },
+      });
+    }
+
+    if (role === "teacher") {
+      const isApprovedTeacher =
+        (matchedUser &&
+          ["Faculty", "Instructor", "Teacher", "CentreManager", "Admin"].includes(
+            matchedUser.role,
+          )) ||
+        Boolean(await findDbStaffLogin(verified.email)) ||
+        DEFAULT_STAFF.some((s) => s.email.toLowerCase() === verified.email);
+
+      if (!isApprovedTeacher) {
+        return jsonWithCors(
+          {
+            ok: false,
+            pendingApproval: true,
+            error:
+              "Teacher accounts require Q-School Admin approval. Only Partners can self-register in the mobile app.",
+          },
+          { status: 403 },
+        );
+      }
+
+      return jsonWithCors({
+        ok: true,
+        user: {
+          id: matchedUser?.id || verified.sub,
+          name: matchedUser?.name || displayName,
+          email: verified.email,
+          photoUrl,
+          role: "teacher",
+        },
+      });
+    }
+
+    // Student role: must be an Admin-approved ("Active") student or Admin-approved Student user
     const allStudents = await listStudents();
     const matchedStudent =
-      allStudents.find((s) => s.email?.trim().toLowerCase() === verified.email) || null;
+      allStudents.find(
+        (s) =>
+          s.email?.trim().toLowerCase() === verified.email &&
+          s.status === "Active",
+      ) || null;
+
+    const isApprovedStudentUser =
+      Boolean(matchedStudent) ||
+      Boolean(matchedUser && matchedUser.role === "Student" && matchedUser.status === "Active");
+
+    if (!isApprovedStudentUser) {
+      return jsonWithCors(
+        {
+          ok: false,
+          pendingApproval: true,
+          error:
+            "Student accounts must be enrolled and approved by Q-School Admin. Only Partners can self-register in the mobile app.",
+        },
+        { status: 403 },
+      );
+    }
 
     return jsonWithCors({
       ok: true,
       user: {
-        id: matchedStudent?.id || verified.sub,
-        name: matchedStudent?.studentName || displayName,
+        id: matchedStudent?.id || matchedUser?.id || verified.sub,
+        name: matchedStudent?.studentName || matchedUser?.name || displayName,
         email: verified.email,
         photoUrl,
-        role,
+        role: "student",
       },
       student: matchedStudent,
     });

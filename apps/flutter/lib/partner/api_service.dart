@@ -202,4 +202,34 @@ class PartnerApiService {
 
     return Partner.fromJson(data['partner']);
   }
+
+  /// Authenticate Student, Teacher, or Admin credentials against ERP Admin-approved accounts
+  Future<Map<String, dynamic>> loginMobileUser({
+    required String identifier,
+    required String password,
+    required String role,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/api/mobile/auth/login');
+    final res = await http
+        .post(
+          uri,
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'identifier': identifier.trim(),
+            'password': password.trim(),
+            'role': role,
+          }),
+        )
+        .timeout(const Duration(seconds: 12));
+
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    if (res.statusCode != 200 || data['ok'] != true) {
+      throw Exception(
+        data['error'] ??
+            'Account not found or pending Q-School Admin approval. Only Partners can self-register.',
+      );
+    }
+
+    return data['user'] as Map<String, dynamic>;
+  }
 }

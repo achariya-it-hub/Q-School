@@ -79,9 +79,9 @@ class _PartnerShellState extends State<PartnerShell> {
             style: ElevatedButton.styleFrom(backgroundColor: QS.teal),
             onPressed: () {
               Navigator.pop(ctx);
-              Navigator.pushReplacement(
-                context,
+              Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const PartnerLoginScreen()),
+                (_) => false,
               );
             },
             child: const Text('Sign Out', style: TextStyle(color: Colors.white)),
@@ -100,8 +100,10 @@ class _PartnerShellState extends State<PartnerShell> {
       'Earnings & Payouts',
     ];
 
-    return Scaffold(
-      backgroundColor: QS.soft,
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: QS.soft,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -218,6 +220,7 @@ class _PartnerShellState extends State<PartnerShell> {
           ],
         ),
       ),
+    ),
     );
   }
 }

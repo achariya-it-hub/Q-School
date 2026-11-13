@@ -3,7 +3,6 @@ import '../data.dart';
 import '../services/google_auth_service.dart';
 import '../theme.dart';
 import '../widgets/kit.dart';
-import 'shell.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -176,40 +175,6 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Role Selector Switcher in Profile (Quick Role Switch for Testing)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: fade(QS.teal, 0.06),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: fade(QS.teal, 0.2)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Switch Active Role Portal:',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: QS.deep,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          _roleSwitchBtn(context, UserRole.student, 'Student'),
-                          const SizedBox(width: 8),
-                          _roleSwitchBtn(context, UserRole.teacher, 'Teacher'),
-                          const SizedBox(width: 8),
-                          _roleSwitchBtn(context, UserRole.admin, 'Admin'),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
                 // Menu Items List
                 if (isTeacher) ...[
                   _menuTile(context, Icons.dashboard_outlined, 'Teacher Dashboard', () => Navigator.of(context).pushNamed('/app')),
@@ -228,7 +193,6 @@ class ProfileScreen extends StatelessWidget {
                   _menuTile(context, Icons.note_alt_outlined, 'My Notes', () => Navigator.of(context).pushNamed('/notes')),
                   _menuTile(context, Icons.file_download_outlined, 'Downloads', () => Navigator.of(context).pushNamed('/offline')),
                 ],
-                _menuTile(context, Icons.handshake_outlined, 'Partnership & Referral Portal', () => Navigator.of(context).pushNamed('/partner')),
                 _menuTile(context, Icons.notifications_none_rounded, 'Notifications', () => Navigator.of(context).pushNamed('/notifications')),
                 _menuTile(context, Icons.help_outline_rounded, 'Help & Support', () => Navigator.of(context).pushNamed('/help_support')),
                 _menuTile(context, Icons.tune_rounded, 'Settings', () => Navigator.of(context).pushNamed('/settings')),
@@ -251,46 +215,6 @@ class ProfileScreen extends StatelessWidget {
           },
         );
       },
-    );
-  }
-
-  Widget _roleSwitchBtn(BuildContext context, UserRole targetRole, String label) {
-    final active = userRole.value == targetRole;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          userRole.value = targetRole;
-          appTab.value = 0;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                targetRole == UserRole.teacher
-                    ? 'Switched to Teacher / Instructor Portal 👨‍🏫'
-                    : (targetRole == UserRole.admin ? 'Switched to Admin Console 🛡️' : 'Switched to Student Learner Mode 🎓'),
-              ),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          height: 34,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: active ? QS.deep : Colors.white,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: active ? QS.deep : QS.line),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-              color: active ? Colors.white : QS.ink,
-            ),
-          ),
-        ),
-      ),
     );
   }
 

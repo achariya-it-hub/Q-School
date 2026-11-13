@@ -41,7 +41,7 @@ export default function Login() {
         </View>
 
         <View style={st.tabs}>
-          {["Login", "Sign Up"].map((t, i) => (
+          {["Login", "Partner Sign Up"].map((t, i) => (
             <Pressable key={t} onPress={() => setTab(i)} style={st.tab}>
               <Text style={[st.tabText, tab === i && { color: K.deep, fontWeight: "700" }]}>{t}</Text>
               <View style={[st.tabLine, tab === i && { backgroundColor: K.teal }]} />
@@ -49,9 +49,17 @@ export default function Login() {
           ))}
         </View>
 
+        <View style={{ backgroundColor: "#FFF8EA", borderColor: "#F6E6C2", borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 16 }}>
+          <Text style={{ fontSize: 12, color: "#6B4A00", fontWeight: "600" }}>
+            {tab === 0
+              ? "Student & Teacher accounts require Q-School Admin approval. Partners cannot switch to Admin or Student mode."
+              : "Self-registration is exclusively for Referral Partners. Student & Teacher accounts are approved by Q-School Admins."}
+          </Text>
+        </View>
+
         <View style={{ gap: 14 }}>
-          {tab === 1 && <Field icon="person-outline" placeholder="Full Name" />}
-          <Field icon="mail-outline" placeholder="Email or Mobile Number" />
+          {tab === 1 && <Field icon="person-outline" placeholder="Partner Full Name" />}
+          <Field icon="mail-outline" placeholder={tab === 1 ? "Partner Email or Mobile" : "Email or Mobile Number"} />
           <Field icon="lock-closed-outline" placeholder="Password" secure />
         </View>
 
@@ -61,7 +69,7 @@ export default function Login() {
           </Pressable>
         )}
 
-        <Btn title={tab === 0 ? "Login" : "Create Account"} onPress={enter} style={{ marginTop: 22 }} />
+        <Btn title={tab === 0 ? "Login" : "Register as Partner"} onPress={enter} style={{ marginTop: 22 }} />
 
         <View style={st.orRow}>
           <View style={st.orLine} />
