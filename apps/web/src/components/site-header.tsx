@@ -8,8 +8,7 @@ const NAV = [
   { href: "/", label: "Home" },
   { href: "/#programs", label: "Programs" },
   { href: "/neo-sapiens", label: "Neo Sapiens" },
-  { href: "/q-verse", label: "Q - Verse" },
-  { href: "/quantum-habits", label: "Q - Habits" },
+  { href: "/q-school-ecosystem", label: "Q-School Ecosystem" },
   { href: "/rbiq", label: "RBIQ" },
   { href: "/#centres", label: "Our Centres" },
 ];

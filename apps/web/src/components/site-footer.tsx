@@ -111,13 +111,8 @@ export function SiteFooter({ stickyCtaSpace = false }: { stickyCtaSpace?: boolea
               </Link>
             </li>
             <li>
-              <Link href="/q-verse" className="hover:text-white transition">
-                Q-Verse
-              </Link>
-            </li>
-            <li>
-              <Link href="/quantum-habits" className="hover:text-white transition">
-                Quantum Habits
+              <Link href="/q-school-ecosystem" className="hover:text-white transition">
+                Q-School Ecosystem
               </Link>
             </li>
             <li className="pt-1 border-t border-white/10">

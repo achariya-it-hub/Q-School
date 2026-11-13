@@ -1073,53 +1073,84 @@ function ConceptBlocks() {
               </Link>
             </div>
           </div>
+        </div>
 
-          {/* 4. The Q-Verse */}
-          <div className="flex flex-col justify-between rounded-3xl border border-[#CFE3DD] bg-white p-7 sm:p-8 shadow-sm">
-            <div>
-              <Kicker>The Q-Verse</Kicker>
-              <h3 className="mt-2 text-xl sm:text-2xl font-extrabold text-brand-deep">
-                One ecosystem, ten connected tracks.
-              </h3>
-              <p className="mt-3 rounded-xl bg-[#F4FAF8] border border-[#E2ECE9] px-4 py-3 text-xs sm:text-sm font-bold text-brand-ink leading-relaxed">
-                Q-Memory · Q-Vision · Q-Learning · Q-Mastery · Q-Maths · Q-Science · Q-Creation · Q-Way · Q-Habit · Q-Parenting
-              </p>
-              <p className="mt-3 text-sm sm:text-base text-[#4b635e] leading-relaxed">
-                Eight core programs for children, with Q-Habit and Q-Parenting supporting learning at home.
-              </p>
-            </div>
-            <div className="mt-5 pt-4 border-t border-[#EEF3F1]">
-              <Link
-                href="/q-verse"
-                className="inline-flex items-center gap-1.5 text-sm font-extrabold text-brand-teal hover:text-brand-deep transition"
-              >
-                Explore the Q-Verse →
-              </Link>
-            </div>
+        {/* Q-School Ecosystem Movement Showcase */}
+        <div
+          id="q-school-ecosystem"
+          className="relative overflow-hidden rounded-[34px] border border-[#CFE3DD] bg-white p-6 sm:p-10 lg:p-12 shadow-lg"
+        >
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#E6F4F0] border border-[#BFE0D8] px-4 py-1.5 text-xs font-extrabold uppercase tracking-[0.16em] text-[#0E937E]">
+              <Icon name="sparkle" size={14} /> BE A PART OF THE Q-SCHOOL MOVEMENT
+            </span>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold tracking-tight text-brand-deep">
+              BEYOND LEARNING.{" "}
+              <span className="text-brand-teal">TOWARDS A BIGGER FUTURE.</span>
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-[#4b635e] leading-relaxed">
+              Different journeys. One vision. A future-ready generation.
+            </p>
           </div>
 
-          {/* 5. Quantum Habits */}
-          <div className="flex flex-col justify-between rounded-3xl border border-[#CFE3DD] bg-white p-7 sm:p-8 shadow-sm">
-            <div>
-              <Kicker>Quantum Habits</Kicker>
-              <h3 className="mt-2 text-xl sm:text-2xl font-extrabold text-brand-deep">
-                Small habits. Big possibilities.
-              </h3>
-              <p className="mt-3 text-sm sm:text-base text-[#4b635e] leading-relaxed">
-                Habit → Practice → Growth. Children build five lasting routines:
-              </p>
-              <p className="mt-2.5 rounded-xl bg-[#F4FAF8] border border-[#E2ECE9] px-4 py-3 text-xs sm:text-sm font-bold text-brand-ink leading-relaxed">
-                Physically healthy · Emotionally strong · Intellectually sharp · Financially responsible · Self-disciplined
-              </p>
-            </div>
-            <div className="mt-5 pt-4 border-t border-[#EEF3F1]">
-              <Link
-                href="/quantum-habits"
-                className="inline-flex items-center gap-1.5 text-sm font-extrabold text-brand-teal hover:text-brand-deep transition"
+          <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+            {[
+              {
+                tag: "01. FOR PARENTS",
+                desc: "Discover how Q-School can help your child learn better, think bigger and become future-ready.",
+                cta: "Explore Your Child's Q-Journey →",
+                href: "/q-school-ecosystem?tab=parents#ecosystem-detail-view",
+                icon: "users" as IconName,
+                color: "#0E937E",
+              },
+              {
+                tag: "02. FOR STUDENTS",
+                desc: "Discover your potential. Strengthen your abilities. Become a confident thinker, creator and leader.",
+                cta: "Discover Your Potential →",
+                href: "/q-school-ecosystem?tab=students#ecosystem-detail-view",
+                icon: "sparkle" as IconName,
+                color: "#5B6CF0",
+              },
+              {
+                tag: "03. FOR FRANCHISE PARTNERS",
+                desc: "Partner with Q-School to bring future-ready learning to more children and build a meaningful education venture.",
+                cta: "Explore Franchise Opportunities →",
+                href: "/q-school-ecosystem?tab=partners#ecosystem-detail-view",
+                icon: "building" as IconName,
+                color: "#F29A2E",
+              },
+            ].map((item) => (
+              <div
+                key={item.tag}
+                className="flex flex-col justify-between rounded-2xl border border-[#DCECE7] bg-gradient-to-b from-[#F9FCFB] to-white p-6 sm:p-7 transition-all duration-300 hover:-translate-y-1 hover:border-[#0E937E] hover:shadow-md"
               >
-                See how habits are built →
-              </Link>
-            </div>
+                <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="rounded-lg bg-[#E6F4F0] px-3 py-1 text-xs font-black uppercase tracking-wider text-[#0E937E]">
+                      {item.tag}
+                    </span>
+                    <span
+                      className="icon-3d flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+                      style={{ ["--c" as string]: item.color }}
+                    >
+                      <Icon name={item.icon} size={19} />
+                    </span>
+                  </div>
+                  <p className="mt-4 text-sm sm:text-base text-[#2b3d38] leading-relaxed font-medium">
+                    {item.desc}
+                  </p>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-[#EEF3F1]">
+                  <Link
+                    href={item.href}
+                    className="inline-flex items-center gap-1.5 text-sm font-extrabold text-brand-teal hover:text-brand-deep transition"
+                  >
+                    {item.cta}
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
