@@ -269,16 +269,38 @@ export function useCrmLeads(pollMs = 20000) {
     [load],
   );
 
-  const remove = useCallback(async (id: string) => {
-    setLeads((prev) => {
-      const next = prev.filter((l) => l.id !== id);
-      saveCachedLeads(next);
-      return next;
-    });
+  /** Delete one lead. The list updates only after the server confirms (non-admins get a 403). */
+  const remove = useCallback(async (id: string): Promise<{ ok: boolean; error?: string }> => {
     try {
-      await fetch(`/api/crm/leads?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const r = await fetch(`/api/crm/leads?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return { ok: false, error: d.error || `Delete failed (HTTP ${r.status})` };
+      setLeads((prev) => {
+        const next = prev.filter((l) => l.id !== id);
+        saveCachedLeads(next);
+        return next;
+      });
+      return { ok: true };
     } catch (e) {
-      console.warn("[crm] delete failed:", e);
+      return { ok: false, error: (e as Error).message };
+    }
+  }, []);
+
+  /** Delete several leads in one request. */
+  const removeMany = useCallback(async (ids: string[]): Promise<{ ok: boolean; removed?: number; error?: string }> => {
+    try {
+      const r = await fetch(`/api/crm/leads?ids=${encodeURIComponent(ids.join(","))}`, { method: "DELETE" });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return { ok: false, error: d.error || `Delete failed (HTTP ${r.status})` };
+      const gone = new Set(ids);
+      setLeads((prev) => {
+        const next = prev.filter((l) => !gone.has(l.id));
+        saveCachedLeads(next);
+        return next;
+      });
+      return { ok: true, removed: d.removed };
+    } catch (e) {
+      return { ok: false, error: (e as Error).message };
     }
   }, []);
 
@@ -317,6 +339,7 @@ export function useCrmLeads(pollMs = 20000) {
     patch,
     create,
     remove,
+    removeMany,
     removeTestLeads,
     clearAll,
   };

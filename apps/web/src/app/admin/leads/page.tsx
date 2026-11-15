@@ -111,8 +111,12 @@ const STAGE_THEME: Record<Stage, StageTheme> = {
 };
 
 export default function LeadsPage() {
-  const { isHead } = useAdminRole();
-  const { leads, loading, fresh, clearFresh, patch, create, remove, reload } = useCrmLeads();
+  const { isHead, role } = useAdminRole();
+  const { leads, loading, fresh, clearFresh, patch, create, remove, removeMany, removeTestLeads, clearAll, reload } = useCrmLeads();
+  /** Deleting leads is admin-only (the API enforces this too). */
+  const canDelete = !isHead && /admin/i.test(role);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [manageOpen, setManageOpen] = useState(false);
   const [q, setQ] = useState("");
   const [owner, setOwner] = useState("All");
   const [src, setSrc] = useState("all");
@@ -212,6 +216,7 @@ export default function LeadsPage() {
     );
   const testCount = leads.filter((l) => isClientTestLead(l)).length;
   const hiddenByFilters = leads.length - shown.length;
+  const selectedShown = shown.filter((l) => selected.has(l.id));
   const lead = leads.find((l) => l.id === open) ?? null;
   const pipelineValue = shown.filter((l) => !["Admitted", "Dropped"].includes(l.stage)).reduce((a, l) => a + l.value, 0);
 
@@ -226,10 +231,43 @@ export default function LeadsPage() {
   };
 
   const handleDeleteLead = async (target: CrmLead) => {
-    if (!window.confirm(`Remove lead "${target.name}"?`)) return;
+    if (!window.confirm(`Permanently delete lead "${target.name}" (${target.id})? This cannot be undone.`)) return;
     if (open === target.id) setOpen(null);
-    await remove(target.id);
-    show(`Lead "${target.name}" removed`);
+    const r = await remove(target.id);
+    show(r.ok ? `Lead "${target.name}" deleted` : r.error || "Could not delete lead");
+  };
+
+  const toggleSelect = (id: string) =>
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+
+  const deleteSelected = async () => {
+    const ids = selectedShown.map((l) => l.id);
+    if (!ids.length) return;
+    if (!window.confirm(`Permanently delete ${ids.length} selected lead${ids.length > 1 ? "s" : ""}? This cannot be undone.`)) return;
+    if (open && ids.includes(open)) setOpen(null);
+    const r = await removeMany(ids);
+    setSelected(new Set());
+    show(r.ok ? `${r.removed ?? ids.length} lead${ids.length > 1 ? "s" : ""} deleted` : r.error || "Could not delete leads");
+  };
+
+  const deleteAllTest = async () => {
+    if (!testCount) return show("No test leads to remove");
+    if (!window.confirm(`Delete all ${testCount} test leads? This cannot be undone.`)) return;
+    await removeTestLeads();
+    show(`${testCount} test leads removed`);
+  };
+
+  const deleteEverything = async () => {
+    const typed = window.prompt(`This permanently deletes ALL ${leads.length} leads from the CRM.\nType DELETE to confirm.`);
+    if (typed !== "DELETE") return show("Cancelled — nothing was deleted");
+    setOpen(null);
+    await clearAll();
+    show("All leads deleted");
   };
 
   return (
@@ -249,6 +287,50 @@ export default function LeadsPage() {
         <Btn variant="ghost" icon="upload" onClick={() => setBulkOpen(true)}>
           Bulk upload
         </Btn>
+        {canDelete && (
+          <div className="relative">
+            <Btn variant="ghost" icon="trash" onClick={() => setManageOpen((v) => !v)}>
+              Delete leads
+            </Btn>
+            {manageOpen && (
+              <div
+                className="absolute right-0 z-30 mt-2 w-64 rounded-xl border border-[#E2ECE9] bg-white p-1.5 shadow-xl"
+                onMouseLeave={() => setManageOpen(false)}
+              >
+                <button
+                  onClick={() => {
+                    setManageOpen(false);
+                    setViewMode("table");
+                    show("Tick the leads to delete, then click “Delete selected”");
+                  }}
+                  className="w-full rounded-lg px-3 py-2 text-left text-[13px] font-semibold text-brand-ink hover:bg-[#F3F7F6]"
+                >
+                  Select leads to delete…
+                  <span className="block text-[11px] font-normal text-[#6b807b]">Opens table view with checkboxes</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setManageOpen(false);
+                    deleteAllTest();
+                  }}
+                  className="w-full rounded-lg px-3 py-2 text-left text-[13px] font-semibold text-brand-ink hover:bg-[#F3F7F6]"
+                >
+                  Remove all test leads ({testCount})
+                </button>
+                <button
+                  onClick={() => {
+                    setManageOpen(false);
+                    deleteEverything();
+                  }}
+                  className="w-full rounded-lg px-3 py-2 text-left text-[13px] font-bold text-rose-700 hover:bg-rose-50"
+                >
+                  Delete ALL leads…
+                  <span className="block text-[11px] font-normal text-rose-600/80">Requires typing DELETE</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         <Btn icon="plus" onClick={() => setAdding(true)}>
           New lead
         </Btn>
@@ -409,7 +491,7 @@ export default function LeadsPage() {
                         }}
                         onOpen={() => setOpen(l.id)}
                         onCall={() => initiateCall(l)}
-                        onDelete={() => handleDeleteLead(l)}
+                        onDelete={canDelete ? () => handleDeleteLead(l) : undefined}
                       />
                     ))}
                     {!loading && !col.length && (
@@ -428,10 +510,38 @@ export default function LeadsPage() {
       {/* ───────────────── 2. TABLE VIEW ───────────────── */}
       {viewMode === "table" && (
         <div className="rounded-2xl border border-[#E2ECE9] bg-white overflow-hidden shadow-sm">
+          {canDelete && selectedShown.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rose-100 bg-rose-50 px-4 py-2.5">
+              <span className="text-[12.5px] font-bold text-rose-800">
+                {selectedShown.length} lead{selectedShown.length > 1 ? "s" : ""} selected
+              </span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setSelected(new Set())} className="rounded-lg px-3 py-1.5 text-[12px] font-semibold text-[#41564f] hover:bg-white">
+                  Clear selection
+                </button>
+                <button
+                  onClick={deleteSelected}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-3 py-1.5 text-[12px] font-bold text-white hover:bg-rose-700"
+                >
+                  <Icon name="trash" size={13} /> Delete selected
+                </button>
+              </div>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full text-left text-[13px]">
               <thead>
                 <tr className="border-b border-[#EEF3F1] bg-[#F7FAF9] text-[12px] font-bold text-[#41564f]">
+                  {canDelete && (
+                    <th className="py-3 pl-4 w-8">
+                      <input
+                        type="checkbox"
+                        aria-label="Select all shown leads"
+                        checked={shown.length > 0 && selectedShown.length === shown.length}
+                        onChange={(e) => setSelected(e.target.checked ? new Set(shown.map((l) => l.id)) : new Set())}
+                      />
+                    </th>
+                  )}
                   <th className="py-3 px-4">Lead ID</th>
                   <th className="py-3 px-4">Name & Course</th>
                   <th className="py-3 px-4">Phone</th>
@@ -446,7 +556,17 @@ export default function LeadsPage() {
                 {shown.map((l) => {
                   const theme = STAGE_THEME[l.stage];
                   return (
-                    <tr key={l.id} className="hover:bg-[#F9FBFB] transition">
+                    <tr key={l.id} className={`hover:bg-[#F9FBFB] transition ${selected.has(l.id) ? "bg-rose-50/50" : ""}`}>
+                      {canDelete && (
+                        <td className="py-3 pl-4">
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${l.name}`}
+                            checked={selected.has(l.id)}
+                            onChange={() => toggleSelect(l.id)}
+                          />
+                        </td>
+                      )}
                       <td className="py-3 px-4 font-mono text-[12px] text-[#5C716C]">{l.id}</td>
                       <td className="py-3 px-4">
                         <p className="font-bold text-brand-ink hover:text-brand-teal cursor-pointer" onClick={() => setOpen(l.id)}>
@@ -502,13 +622,15 @@ export default function LeadsPage() {
                           >
                             View
                           </button>
-                          <button
-                            onClick={() => handleDeleteLead(l)}
-                            className="flex items-center justify-center rounded-lg bg-[#FFF1F2] p-1.5 text-rose-600 hover:bg-rose-600 hover:text-white transition"
-                            title="Delete lead"
-                          >
-                            <Icon name="trash" size={13} />
-                          </button>
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDeleteLead(l)}
+                              className="flex items-center justify-center rounded-lg bg-[#FFF1F2] p-1.5 text-rose-600 hover:bg-rose-600 hover:text-white transition"
+                              title="Delete lead"
+                            >
+                              <Icon name="trash" size={13} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -516,7 +638,7 @@ export default function LeadsPage() {
                 })}
                 {!shown.length && (
                   <tr>
-                    <td colSpan={8} className="py-10 text-center text-[13px] text-[#7B8E89]">
+                    <td colSpan={canDelete ? 9 : 8} className="py-10 text-center text-[13px] text-[#7B8E89]">
                       No leads found.
                     </td>
                   </tr>
@@ -663,7 +785,7 @@ export default function LeadsPage() {
             onPatch={(p) => patch(lead.id, p)}
             onToast={show}
             onCall={initiateCall}
-            onDelete={() => handleDeleteLead(lead)}
+            onDelete={canDelete ? () => handleDeleteLead(lead) : undefined}
           />
         )}
       </Drawer>
@@ -750,7 +872,7 @@ function LeadCard({
   onDragEnd: () => void;
   onOpen: () => void;
   onCall: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
 }) {
   return (
     <article
@@ -783,17 +905,19 @@ function LeadCard({
           >
             <Icon name="phone" size={12} />
           </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            title={`Delete ${l.name}`}
-            className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#FFF1F2] text-rose-600 hover:bg-rose-600 hover:text-white transition"
-          >
-            <Icon name="trash" size={12} />
-          </button>
+          {onDelete && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              title={`Delete ${l.name}`}
+              className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#FFF1F2] text-rose-600 hover:bg-rose-600 hover:text-white transition"
+            >
+              <Icon name="trash" size={12} />
+            </button>
+          )}
           {l.slaBreached && (
             <span title="No follow-up within SLA" className="text-[#A9471F]">
               <Icon name="alert" size={15} />
@@ -1153,7 +1277,7 @@ function LeadDetail({
   onPatch: (p: { stage?: Stage; owner?: string; value?: number; activity?: string; extra?: Record<string, any> }) => void;
   onToast: (m: string) => void;
   onCall: (l: { id: string; name: string; phone: string }, channelOverride?: string) => void;
-  onDelete: () => void;
+  onDelete?: () => void;
 }) {
   const [selectedRoute, setSelectedRoute] = useState("auto");
   const [note, setNote] = useState("");
@@ -1418,15 +1542,17 @@ function LeadDetail({
         <Btn type="submit">Add</Btn>
       </form>
 
-      <div className="border-t border-[#E6EEEB] pt-3 flex justify-end">
-        <button
-          type="button"
-          onClick={onDelete}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-600 hover:text-white transition"
-        >
-          <Icon name="trash" size={13} /> Delete lead
-        </button>
-      </div>
+      {onDelete && (
+        <div className="border-t border-[#E6EEEB] pt-3 flex justify-end">
+          <button
+            type="button"
+            onClick={onDelete}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-700 hover:bg-rose-600 hover:text-white transition"
+          >
+            <Icon name="trash" size={13} /> Delete lead
+          </button>
+        </div>
+      )}
 
       {/* Date Picker Modal for BMIT Test */}
       <BmitScheduleModal

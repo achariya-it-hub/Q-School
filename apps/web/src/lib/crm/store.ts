@@ -602,6 +602,23 @@ export async function deleteLead(id: string): Promise<boolean> {
   });
 }
 
+/** Delete several leads at once (admin bulk delete). Returns how many existed and were removed. */
+export async function deleteLeads(ids: string[]): Promise<number> {
+  const set = new Set(ids);
+  if (!set.size) return 0;
+  return serial(async () => {
+    const leads = await readLeads();
+    const next = leads.filter((l) => !set.has(l.id));
+    await writeJson(LEADS_FILE, next);
+    if (isDbConfigured()) await deleteDbLeadsByIds([...set]);
+    await tombstone([...set]);
+    const logs = await readJson<IngestEvent[]>(LOG_FILE, []);
+    const cleanLogs = logs.filter((e) => !e.leadId || !set.has(e.leadId));
+    if (cleanLogs.length !== logs.length) await writeJson(LOG_FILE, cleanLogs).catch(() => {});
+    return leads.length - next.length;
+  });
+}
+
 export async function removeTestLeads(): Promise<{ removed: number; remaining: number }> {
   return serial(async () => {
     let all: CrmLead[] = [];

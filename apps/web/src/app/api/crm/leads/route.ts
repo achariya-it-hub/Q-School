@@ -7,6 +7,7 @@ import {
   bulkIngestLeads,
   clearAllLeads,
   deleteLead,
+  deleteLeads,
   ingestLead,
   listLeads,
   removeTestLeads,
@@ -119,15 +120,18 @@ export async function PATCH(req: Request) {
   return lead ? NextResponse.json({ ok: true, lead }) : NextResponse.json({ error: "Not found" }, { status: 404 });
 }
 
-/** Delete a single lead by ?id=..., remove all test leads (?mode=test), or clear all leads (?mode=all). */
+/**
+ * Admin only. Delete a single lead (?id=...), several (?ids=a,b,c), all test leads (?mode=test),
+ * or every lead (?mode=all).
+ */
 export async function DELETE(req: Request) {
   const scope = await who();
   if (!scope) return deny();
+  if (scope.role !== "Admin") return forbid("Only an admin can delete leads");
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
+  const ids = (searchParams.get("ids") || "").split(",").map((s) => s.trim()).filter(Boolean).slice(0, 1000);
   const mode = searchParams.get("mode");
-
-  if ((mode === "all" || mode === "test") && scope.centreId) return forbid("Only an admin can bulk-delete leads");
 
   if (mode === "all") {
     const res = await clearAllLeads();
@@ -139,14 +143,16 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ ok: true, ...res, leads: await listLeads() });
   }
 
-  if (!id) {
-    return NextResponse.json({ error: "id or mode required" }, { status: 400 });
+  if (ids.length) {
+    const removed = await deleteLeads(ids);
+    return NextResponse.json({ ok: true, removed, ids });
   }
 
-  if (scope.centreId) {
-    const cur = (await listLeads()).find((l) => l.id === id);
-    if (cur && !inScope(scope, cur)) return forbid();
+  if (!id) {
+    return NextResponse.json({ error: "id, ids or mode required" }, { status: 400 });
   }
-  await deleteLead(id);
+
+  const removed = await deleteLead(id);
+  if (!removed) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
   return NextResponse.json({ ok: true, id });
 }
