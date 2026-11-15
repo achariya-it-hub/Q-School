@@ -15,8 +15,8 @@ export interface CrmLead extends PipelineLead {
   _clientModifiedAt?: number;
 }
 
-const CRM_CACHE_KEY = "qs_crm_leads_cache_v2";
-const LEGACY_CACHE_KEYS = ["qs_crm_leads_cache"];
+const CRM_CACHE_KEY = "qs_crm_leads_cache_v3";
+const LEGACY_CACHE_KEYS = ["qs_crm_leads_cache", "qs_crm_leads_cache_v2"];
 
 const CLIENT_DEMO_NAMES = new Set([
   "aarav sharma",
@@ -28,6 +28,7 @@ const CLIENT_DEMO_NAMES = new Set([
   "ananya r",
 ]);
 
+/** True for leads that look like tests. Used to badge / optionally hide them — never to drop them silently. */
 export function isClientTestLead(lead: CrmLead): boolean {
   if (!lead) return false;
   if (lead.isTest) return true;
@@ -52,7 +53,6 @@ function getCachedLeads(): CrmLead[] {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed
-          .filter((l: CrmLead) => !isClientTestLead(l))
           .map((l: CrmLead) => ({
             ...l,
             stage: (l.stage as string) === "Demo" ? "BMIT" : l.stage,
@@ -99,7 +99,6 @@ export function useCrmLeads(pollMs = 20000) {
       }
 
       const list: CrmLead[] = d.leads
-        .filter((l: CrmLead) => !isClientTestLead(l))
         .map((l: CrmLead) => ({
           ...l,
           stage: (l.stage as string) === "Demo" ? "BMIT" : l.stage,
@@ -262,7 +261,7 @@ export function useCrmLeads(pollMs = 20000) {
           });
         }
         await load();
-        return d as { result?: "created" | "duplicate"; lead?: CrmLead; error?: string };
+        return d as { result?: "created" | "duplicate"; lead?: CrmLead; hidden?: boolean; error?: string };
       } catch (err) {
         return { error: (err as Error).message };
       }

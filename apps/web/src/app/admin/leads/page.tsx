@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { ADMISSION_CENTRES, AGENTS, STAGES, inr, type Stage } from "@qschool/shared";
+import { ADMISSION_CENTRES, AGENTS, STAGES, inr, leadCentreId, type Stage } from "@qschool/shared";
 import { AdminShell } from "@/components/admin/shell";
 import { Btn, Drawer, Field, Modal, PageHeader, SearchInput, StatusBadge, Toast, inputCls, useToast } from "@/components/admin/ui";
-import { useCrmLeads, type CrmLead } from "@/components/admin/crm";
+import { isClientTestLead, useCrmLeads, type CrmLead } from "@/components/admin/crm";
 import { Icon } from "@/components/icons";
 import { WaChat } from "@/components/admin/whatsapp";
 import { downloadCsvFile, parseCsvRows } from "@/lib/csv-helper";
@@ -117,6 +117,7 @@ export default function LeadsPage() {
   const [owner, setOwner] = useState("All");
   const [src, setSrc] = useState("all");
   const [locationFilter, setLocationFilter] = useState("All");
+  const [showTest, setShowTest] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [drag, setDrag] = useState<string | null>(null);
   const [over, setOver] = useState<Stage | null>(null);
@@ -195,18 +196,22 @@ export default function LeadsPage() {
   };
 
   const shown = leads
+    .filter((l) => showTest || !isClientTestLead(l))
     .filter((l) => owner === "All" || l.owner === owner)
     .filter((l) => src === "all" || l.sourceKey === src)
     .filter((l) => {
       if (locationFilter === "All") return true;
-      return (
-        (l.location && l.location.toLowerCase().includes(locationFilter.toLowerCase())) ||
-        (l.centreId && ADMISSION_CENTRES.find((c) => c.name === locationFilter)?.id === l.centreId)
-      );
+      const cid = leadCentreId(l);
+      if (locationFilter === "__none") return !cid;
+      // Match by branch id, so "Chennai – Adyar" (website form), "Adyar, Chennai" (console) and
+      // centreId "ad" (admission form) all land under the same location.
+      return cid === locationFilter;
     })
     .filter((l) =>
       `${l.name} ${l.phone} ${l.interest} ${l.source} ${l.location ?? ""} ${l.campaign ?? ""}`.toLowerCase().includes(q.toLowerCase())
     );
+  const testCount = leads.filter((l) => isClientTestLead(l)).length;
+  const hiddenByFilters = leads.length - shown.length;
   const lead = leads.find((l) => l.id === open) ?? null;
   const pipelineValue = shown.filter((l) => !["Admitted", "Dropped"].includes(l.stage)).reduce((a, l) => a + l.value, 0);
 
@@ -294,11 +299,30 @@ export default function LeadsPage() {
           >
             <option value="All">All locations</option>
             {ADMISSION_CENTRES.map((c) => (
-              <option key={c.id} value={c.name}>
+              <option key={c.id} value={c.id}>
                 {c.name}
               </option>
             ))}
+            <option value="__none">Online / no centre</option>
           </select>
+          <label className="flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-[#E2ECE9] bg-[#F7FAF9] px-3 text-[13px] font-medium text-brand-ink">
+            <input type="checkbox" checked={showTest} onChange={(e) => setShowTest(e.target.checked)} />
+            Show test leads{testCount ? ` (${testCount})` : ""}
+          </label>
+          {hiddenByFilters > 0 && (q || owner !== "All" || src !== "all" || locationFilter !== "All") && (
+            <button
+              type="button"
+              onClick={() => {
+                setQ("");
+                setOwner("All");
+                setSrc("all");
+                setLocationFilter("All");
+              }}
+              className="h-10 rounded-xl px-3 text-[12.5px] font-semibold text-brand-teal hover:underline"
+            >
+              {hiddenByFilters} hidden by filters · Clear
+            </button>
+          )}
         </div>
 
         {/* View Mode Switcher Pills */}
@@ -661,12 +685,25 @@ export default function LeadsPage() {
         onCreate={async (b) => {
           const r = await create(b);
           setAdding(false);
+          if (r.error) {
+            show(r.error);
+            return;
+          }
+          if (r.hidden) {
+            show(`${b.name} already exists as ${r.lead?.id} in ${r.lead?.location || "another centre"} — ask an admin to move it`);
+            return;
+          }
+          // Make sure the lead is visible: clear any filter that would hide it, then open it.
+          setQ("");
+          setOwner("All");
+          setSrc("all");
+          setLocationFilter("All");
+          setShowTest(true);
+          if (r.lead?.id) setOpen(r.lead.id);
           show(
-            r.error
-              ? r.error
-              : r.result === "duplicate"
-              ? `${b.name} already exists — enquiry added to timeline`
-              : `${b.name} added to Enquiry`
+            r.result === "duplicate"
+              ? `${b.name} already exists (same phone) — enquiry added to the existing lead's timeline`
+              : `${b.name} added to Enquiry${r.lead?.location ? ` · ${r.lead.location}` : ""}`
           );
         }}
       />
@@ -1420,7 +1457,7 @@ function NewLead({
         onSubmit={(e) => {
           e.preventDefault();
           if (!f.name.trim() || !f.phone.trim()) return;
-          onCreate({ ...f, interest: f.interest || "General enquiry", owner: AGENTS[0], value: 0 });
+          onCreate({ ...f, interest: f.interest || "General enquiry", value: 0 });
           setF({ name: "", phone: "", interest: "", source: "Walk-in", location: ADMISSION_CENTRES[0].name, centreId: ADMISSION_CENTRES[0].id });
         }}
       >
@@ -1488,7 +1525,7 @@ function BulkUploadLeadsModal({
   const [error, setError] = useState<string | null>(null);
 
   const sampleTemplate = () => {
-    const csv = "Name,Phone,Email,Source,Interest,Owner,Stage,Value\n";
+    const csv = "Name,Phone,Email,Source,Interest,Location,Owner,Stage,Value\n";
     downloadCsvFile("leads_import_template.csv", csv);
   };
 
@@ -1514,6 +1551,7 @@ function BulkUploadLeadsModal({
     email: r.email || r.mail || "",
     source: r.source || r.leadsource || r.channel || "Bulk Upload",
     interest: r.interest || r.course || r.program || r.interestedin || "General enquiry",
+    location: r.location || r.centre || r.center || r.branch || r.city || "",
     owner: r.owner || r.assignedto || r.counselor || "",
     stage: ((r.stage || r.status || "Enquiry") === "Demo" ? "BMIT" : (r.stage || r.status || "Enquiry")) as Stage,
     value: Number(r.value || r.fee || r.amount || 0) || 0,

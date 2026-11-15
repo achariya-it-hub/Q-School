@@ -10,7 +10,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { DATA_DIR, dataFile } from "@/lib/data-dir";
 import { recordAuditLog } from "@/lib/audit/store";
-import { AGENTS, PIPELINE, STAGES, type PipelineLead, type Stage } from "@qschool/shared";
+import { AGENTS, PIPELINE, STAGES, centreName, leadCentreId, resolveCentreId, type PipelineLead, type Stage } from "@qschool/shared";
 import {
   isDbConfigured,
   getDbLeads,
@@ -84,6 +84,8 @@ interface State {
   counts: Partial<Record<SourceKey, number>>;
   last: Partial<Record<SourceKey, string>>;
   metaSyncedUntil?: number; // unix seconds
+  /** Ids of deleted leads (last 500), so a stale local copy is never re-synced back. */
+  deleted?: string[];
 }
 
 /* ───────── file helpers (serialised to avoid interleaved writes) ───────── */
@@ -154,35 +156,89 @@ export function isTestOrDemoLead(lead: CrmLead): boolean {
   return false;
 }
 
+/**
+ * Old bundled sample data (seeded demo pipeline / connector test pings). Only these are hidden on read.
+ * Leads that merely *look* like tests (name "Test", phone 9999999999) are kept and badged "Test" —
+ * they are removed only when an admin clicks "Remove test leads". Previously every read silently
+ * deleted them, so a test lead created to verify the flow vanished within seconds.
+ */
+function isSeedDemoLead(lead: CrmLead): boolean {
+  if (!lead) return false;
+  const ext = (lead.externalId || "").trim();
+  if (/^(meta:TEST|google:TeSter-|justdial:JD|wamid\.TEST)/i.test(ext)) return true;
+  const email = (lead.email || "").trim().toLowerCase();
+  if (email === "aarav.parent@gmail.com" || email === "diya.p@yahoo.com") return true;
+  const name = (lead.name || "").trim().toLowerCase();
+  const digits = (lead.phone || "").replace(/\D/g, "").slice(-10);
+  return DEMO_NAMES.has(name) && DEMO_PHONES.has(digits);
+}
+
+/** Normalise stored leads. `changed` lists leads whose fields were fixed (to be re-saved); `seedIds` are sample rows to drop. */
+function migrate(leads: CrmLead[]): { leads: CrmLead[]; changed: CrmLead[]; seedIds: string[] } {
+  const changed: CrmLead[] = [];
+  const seedIds = leads.filter((l) => l && l.id && isSeedDemoLead(l)).map((l) => l.id);
+  const out = leads.filter((l) => l && l.id && !isSeedDemoLead(l));
+  for (const l of out) {
+    let dirty = false;
+    if ((l.stage as string) === "Demo") {
+      l.stage = "BMIT";
+      dirty = true;
+    }
+    if (!Array.isArray(l.timeline)) {
+      l.timeline = [];
+      dirty = true;
+    }
+    // Pin free-text locations ("Chennai – Adyar") to a branch so centre filters / centre heads see them.
+    const cid = leadCentreId(l);
+    if (cid && l.centreId !== cid) {
+      l.centreId = cid;
+      dirty = true;
+    }
+    if (cid && !l.location) {
+      l.location = centreName(cid);
+      dirty = true;
+    }
+    if (!l.isTest && isTestOrDemoLead(l)) {
+      l.isTest = true;
+      dirty = true;
+    }
+    if (dirty) changed.push(l);
+  }
+  return { leads: out, changed, seedIds };
+}
+
 async function readLeads(): Promise<CrmLead[]> {
+  const fileLeads = await readJson<CrmLead[] | null>(LEADS_FILE, null);
+
   if (isDbConfigured()) {
     try {
       const dbLeads = await getDbLeads();
       if (dbLeads && Array.isArray(dbLeads)) {
-        const testIds = dbLeads.filter((l) => isTestOrDemoLead(l)).map((l) => l.id);
-        const cleanLeads = dbLeads.filter((l) => !isTestOrDemoLead(l));
-        if (testIds.length > 0) {
-          void deleteDbLeadsByIds(testIds);
-        }
-        let migrated = false;
-        for (const l of cleanLeads) {
-          if ((l.stage as string) === "Demo") {
-            l.stage = "BMIT";
-            migrated = true;
-          }
-        }
-        if (migrated && cleanLeads.length > 0) {
-          void saveDbLeadsBulk(cleanLeads);
-        }
-        await writeJson(LEADS_FILE, cleanLeads).catch(() => {});
-        return cleanLeads;
+        // Union with the local file: a lead whose DB write failed recently must not disappear from the
+        // pipeline. Only recent (24h), never-deleted leads qualify, so a lead deleted on another server
+        // instance is not resurrected from a stale local copy. Orphans are re-synced to the DB.
+        const dbIds = new Set(dbLeads.map((l: CrmLead) => l.id));
+        const st = await readState();
+        const tomb = new Set(st.deleted ?? []);
+        const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+        const orphans = (fileLeads ?? []).filter(
+          (l) => l && l.id && !dbIds.has(l.id) && !tomb.has(l.id) && Date.parse(l.createdAt || "") > cutoff,
+        );
+        const merged = [...orphans, ...dbLeads].sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+        const { leads, changed, seedIds } = migrate(merged);
+        const toSave = new Map<string, CrmLead>();
+        for (const l of [...orphans, ...changed]) if (!seedIds.includes(l.id)) toSave.set(l.id, l);
+        if (toSave.size) await saveDbLeadsBulk([...toSave.values()]);
+        if (seedIds.length) await deleteDbLeadsByIds(seedIds.filter((id) => dbIds.has(id)));
+        await writeJson(LEADS_FILE, leads).catch(() => {});
+        return leads;
       }
     } catch (e) {
       console.warn("[crm] failed to read from db, falling back to file:", e);
     }
   }
 
-  let leads = await readJson<CrmLead[] | null>(LEADS_FILE, null);
+  let leads = fileLeads;
   if (leads === null) {
     const candidates = [
       path.join(DATA_DIR, "crm-leads.json"),
@@ -202,22 +258,9 @@ async function readLeads(): Promise<CrmLead[]> {
   }
 
   if (leads && Array.isArray(leads)) {
-    const hadTests = leads.some((l) => isTestOrDemoLead(l));
-    const cleanLeads = leads.filter((l) => !isTestOrDemoLead(l));
-    let migrated = hadTests;
-    for (const l of cleanLeads) {
-      if ((l.stage as string) === "Demo") {
-        l.stage = "BMIT";
-        migrated = true;
-      }
-    }
-    if (migrated) {
-      await writeJson(LEADS_FILE, cleanLeads).catch(() => {});
-    }
-    if (isDbConfigured() && cleanLeads.length > 0) {
-      void saveDbLeadsBulk(cleanLeads);
-    }
-    return cleanLeads;
+    const res = migrate(leads);
+    if (res.changed.length || res.seedIds.length) await writeJson(LEADS_FILE, res.leads).catch(() => {});
+    return res.leads;
   }
   await writeJson(LEADS_FILE, []);
   return [];
@@ -254,6 +297,9 @@ export function prettyPhone(p: string) {
 
 const clip = (s: unknown, n: number) => (s === undefined || s === null ? "" : String(s).trim().slice(0, n));
 
+/** Unique lead id (timestamp alone collides when two leads arrive in the same millisecond). */
+const newLeadId = () => `L-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
 /* ───────── public API ───────── */
 
 export async function listLeads(): Promise<CrmLead[]> {
@@ -261,12 +307,8 @@ export async function listLeads(): Promise<CrmLead[]> {
 }
 
 export async function readLog(): Promise<IngestEvent[]> {
-  const all = await readJson<IngestEvent[]>(LOG_FILE, []);
-  const clean = all.filter((e) => !e.name || !/\b(test|testing|demo|sample|dummy|fake)\b/i.test(e.name));
-  if (clean.length !== all.length) {
-    await writeJson(LOG_FILE, clean).catch(() => {});
-  }
-  return clean;
+  // Test pings are kept: they're how staff confirm a connector works.
+  return readJson<IngestEvent[]>(LOG_FILE, []);
 }
 
 export async function readState(): Promise<State> {
@@ -317,57 +359,68 @@ export async function ingestLead(input: IncomingLead): Promise<{ result: "create
       if (!already) {
         dup.timeline.push({
           when,
-          what: `Re-enquired via ${source}${input.interest ? ` — ${clip(input.interest, 80)}` : ""}${input.message ? `: “${clip(input.message, 120)}”` : ""}`,
+          what: `Re-enquired via ${source}${input.interest ? ` — ${clip(input.interest, 80)}` : ""}${input.location ? ` (${clip(input.location, 60)})` : ""}${input.message ? `: “${clip(input.message, 120)}”` : ""}`,
         });
         dup.lastActivity = "Just now";
         if (["Dropped"].includes(dup.stage)) dup.stage = "Enquiry";
-        await writeJson(LEADS_FILE, leads);
-        if (isDbConfigured()) {
-          void saveDbLead(dup);
+        // A re-enquiry that names a branch fills in a lead that had none (it used to be ignored, so the
+        // lead never showed under that location).
+        const cid = clip(input.centreId, 32) || resolveCentreId(input.location);
+        if (cid && !leadCentreId(dup)) {
+          dup.centreId = cid;
+          dup.location = centreName(cid);
+        } else if (!dup.location && input.location) {
+          dup.location = clip(input.location, 120);
         }
+        if (input.isTest) dup.isTest = true;
+        await writeJson(LEADS_FILE, leads);
+        if (isDbConfigured()) await saveDbLead(dup);
       }
       await log({ at: new Date().toISOString(), sourceKey: input.sourceKey, source, result: "duplicate", leadId: dup.id, name: dup.name });
       return { result: "duplicate" as const, lead: dup };
     }
 
+    const centreId = clip(input.centreId, 32) || resolveCentreId(input.location) || undefined;
+    const location = centreId ? centreName(centreId) : clip(input.location, 120) || undefined;
     const owner = input.owner || AGENTS[st.rr % AGENTS.length];
     const lead: CrmLead = {
-      id: `L-${Date.now().toString(36).toUpperCase()}`,
+      id: newLeadId(),
       name: clip(input.name, 120) || (phone ? `Lead ${prettyPhone(phone)}` : "Unknown lead"),
       phone: prettyPhone(phone),
       email: email || undefined,
       interest: clip(input.interest, 120) || clip(input.formName, 120) || "General enquiry",
       source,
       sourceKey: input.sourceKey,
-      stage: input.stage || "Enquiry",
+      stage: input.stage && STAGES.includes(input.stage) ? input.stage : "Enquiry",
       owner,
       value: typeof input.value === "number" ? input.value : 0,
-      location: clip(input.location, 120) || undefined,
-      centreId: clip(input.centreId, 32) || undefined,
+      location,
+      centreId,
       createdAt: now.toISOString(),
       lastActivity: "Just now",
       externalId: input.externalId,
       campaign: clip(input.campaign, 120) || undefined,
       formName: clip(input.formName, 120) || undefined,
       extra: input.extra,
-      isTest: input.isTest || undefined,
+      isTest: undefined,
       timeline: [
         {
           when,
-          what: `Lead captured from ${source}${input.location ? ` (${input.location})` : ""}${input.formName ? ` · form “${clip(input.formName, 60)}”` : ""}${input.campaign ? ` · ${clip(input.campaign, 60)}` : ""}${input.externalId ? ` · ref ${input.externalId}` : ""}`,
+          what: `Lead captured from ${source}${location ? ` (${location})` : ""}${input.formName ? ` · form “${clip(input.formName, 60)}”` : ""}${input.campaign ? ` · ${clip(input.campaign, 60)}` : ""}${input.externalId ? ` · ref ${input.externalId}` : ""}`,
         },
         ...(input.message ? [{ when, what: `Message: “${clip(input.message, 200)}”` }] : []),
-        { when, what: input.owner ? `Assigned to ${owner} (${input.location || "Centre"})` : `Auto-assigned to ${owner} (round-robin)` },
+        { when, what: input.owner ? `Assigned to ${owner} (${location || "Centre"})` : `Auto-assigned to ${owner} (round-robin)` },
       ],
     };
+    if (input.isTest || isTestOrDemoLead(lead)) lead.isTest = true;
     leads.unshift(lead);
-    st.rr = (st.rr + 1) % AGENTS.length;
+    if (!input.owner) st.rr = (st.rr + 1) % AGENTS.length;
     st.counts[input.sourceKey] = (st.counts[input.sourceKey] ?? 0) + 1;
     st.last[input.sourceKey] = new Date().toISOString();
     await writeJson(LEADS_FILE, leads);
-    if (isDbConfigured()) {
-      void saveDbLead(lead);
-    }
+    // Awaited: on serverless hosts a fire-and-forget write can be frozen after the response is sent,
+    // and the next read (from the DB) would then not contain the new lead.
+    if (isDbConfigured()) await saveDbLead(lead);
     await writeJson(STATE_FILE, st);
     await log({ at: new Date().toISOString(), sourceKey: input.sourceKey, source, result: "created", leadId: lead.id, name: lead.name });
     // WhatsApp welcome (loaded lazily: the WhatsApp module isn't needed for ingestion itself)
@@ -401,9 +454,7 @@ export async function updateLead(
     l.slaBreached = false;
     l.lastActivity = "Just now";
     await writeJson(LEADS_FILE, leads);
-    if (isDbConfigured()) {
-      void saveDbLead(l);
-    }
+    if (isDbConfigured()) await saveDbLead(l);
     return l;
   });
 }
@@ -426,6 +477,7 @@ export async function bulkIngestLeads(
     });
 
     const results: CrmLead[] = [];
+    const touched = new Map<string, CrmLead>();
 
     for (let i = 0; i < inputs.length; i++) {
       const input = inputs[i];
@@ -451,8 +503,14 @@ export async function bulkIngestLeads(
         if (input.owner && AGENTS.includes(input.owner)) dup.owner = input.owner;
         if (typeof input.value === "number" && input.value > 0) dup.value = input.value;
         if (input.stage && STAGES.includes(input.stage)) dup.stage = input.stage;
+        const dupCid = clip(input.centreId, 32) || resolveCentreId(input.location);
+        if (dupCid && !leadCentreId(dup)) {
+          dup.centreId = dupCid;
+          dup.location = centreName(dupCid);
+        }
         duplicateCount++;
         results.push(dup);
+        touched.set(dup.id, dup);
       } else {
         const owner =
           input.owner && AGENTS.includes(input.owner)
@@ -462,9 +520,10 @@ export async function bulkIngestLeads(
         const stage: Stage =
           input.stage && STAGES.includes(input.stage) ? input.stage : "Enquiry";
 
-        const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const centreId = clip(input.centreId, 32) || resolveCentreId(input.location) || undefined;
+        const location = centreId ? centreName(centreId) : clip(input.location, 120) || undefined;
         const lead: CrmLead = {
-          id: `L-${Date.now().toString(36).toUpperCase()}-${randomSuffix}`,
+          id: newLeadId(),
           name: clip(input.name, 120) || (phone ? `Lead ${prettyPhone(phone)}` : "Unknown lead"),
           phone: prettyPhone(phone),
           email: email || undefined,
@@ -474,6 +533,8 @@ export async function bulkIngestLeads(
           stage,
           owner,
           value: typeof input.value === "number" ? Math.max(0, input.value) : 0,
+          location,
+          centreId,
           createdAt: now.toISOString(),
           lastActivity: "Just now",
           externalId: input.externalId,
@@ -482,11 +543,12 @@ export async function bulkIngestLeads(
           timeline: [
             {
               when,
-              what: `Imported via Bulk Upload · Source: ${source}${input.campaign ? ` · ${clip(input.campaign, 60)}` : ""}`,
+              what: `Imported via Bulk Upload · Source: ${source}${location ? ` (${location})` : ""}${input.campaign ? ` · ${clip(input.campaign, 60)}` : ""}`,
             },
             { when, what: `Assigned to ${owner}` },
           ],
         };
+        if (input.isTest || isTestOrDemoLead(lead)) lead.isTest = true;
 
         leads.unshift(lead);
         st.rr = (st.rr + 1) % AGENTS.length;
@@ -494,13 +556,13 @@ export async function bulkIngestLeads(
         st.last[sourceKey] = now.toISOString();
         createdCount++;
         results.push(lead);
+        touched.set(lead.id, lead);
       }
     }
 
     await writeJson(LEADS_FILE, leads);
-    if (isDbConfigured()) {
-      void saveDbLeadsBulk(leads);
-    }
+    // Only the rows this upload touched (it used to re-write every lead in the CRM, fire-and-forget).
+    if (isDbConfigured() && touched.size) await saveDbLeadsBulk([...touched.values()]);
     await writeJson(STATE_FILE, st);
 
     await recordAuditLog({
@@ -530,6 +592,7 @@ export async function deleteLead(id: string): Promise<boolean> {
     if (isDbConfigured()) {
       await deleteDbLead(id);
     }
+    await tombstone([id]);
     const logs = await readJson<IngestEvent[]>(LOG_FILE, []);
     const cleanLogs = logs.filter((e) => e.leadId !== id && (!target?.name || e.name !== target.name));
     if (cleanLogs.length !== logs.length) {
@@ -565,6 +628,7 @@ export async function removeTestLeads(): Promise<{ removed: number; remaining: n
         (!e.name || !/\b(test|testing|demo|sample|dummy|fake)\b/i.test(e.name))
     );
     await writeJson(LOG_FILE, cleanLogs).catch(() => {});
+    await tombstone(toRemove.map((l) => l.id));
     return { removed: toRemove.length, remaining: remaining.length };
   });
 }
@@ -578,8 +642,17 @@ export async function clearAllLeads(): Promise<{ removed: number }> {
     if (isDbConfigured()) {
       await clearDbLeads();
     }
+    await tombstone(existing.map((l) => l.id));
     return { removed: existing.length };
   });
+}
+
+/** Remember deleted ids so the DB/file union in readLeads never re-syncs them back. */
+async function tombstone(ids: string[]) {
+  if (!ids.length) return;
+  const st = await readState();
+  st.deleted = [...ids, ...(st.deleted ?? []).filter((x) => !ids.includes(x))].slice(0, 500);
+  await writeJson(STATE_FILE, st).catch(() => {});
 }
 
 

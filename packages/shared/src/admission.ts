@@ -23,6 +23,45 @@ export const ADMISSION_CENTRES = [
 
 export const centreName = (id: string) => ADMISSION_CENTRES.find((c) => c.id === id)?.name ?? id;
 
+/** Short aliases staff / forms use for a branch (e.g. "pondy" → Moolakulam). */
+const CENTRE_ALIASES: Record<string, string> = {
+  pondy: "mk",
+  pondicherry: "mk",
+  puducherry: "mk",
+  moolakulam: "mk",
+  trichy: "tn",
+  tiruchirappalli: "tn",
+  coimbatore: "sc",
+  hyderabad: "bh",
+  pune: "au",
+};
+
+/**
+ * Resolve any free-text location ("Chennai – Adyar", "Adyar, Chennai", "adyar", "ad", "Pondy")
+ * to an ADMISSION_CENTRES id. Returns undefined when it can't be pinned to one branch
+ * (e.g. "Chennai" alone matches two branches, "Live Online Cohort" matches none).
+ */
+export function resolveCentreId(raw?: string | null): string | undefined {
+  if (!raw) return undefined;
+  const s = String(raw).toLowerCase().replace(/[–—-]/g, " ").replace(/[,]/g, " ").replace(/\s+/g, " ").trim();
+  if (!s) return undefined;
+  const byId = ADMISSION_CENTRES.find((c) => c.id === s);
+  if (byId) return byId.id;
+  // Area names are unique, so an area match wins.
+  const byArea = ADMISSION_CENTRES.find((c) => s.includes(c.name.split(",")[0].toLowerCase()));
+  if (byArea) return byArea.id;
+  for (const [alias, id] of Object.entries(CENTRE_ALIASES)) {
+    if (s.split(" ").includes(alias)) return id;
+  }
+  // A city with exactly one branch.
+  const byCity = ADMISSION_CENTRES.filter((c) => s.includes(c.city.toLowerCase()));
+  return byCity.length === 1 ? byCity[0].id : undefined;
+}
+
+/** Centre id for a lead: explicit centreId first, else resolved from its free-text location. */
+export const leadCentreId = (l: { centreId?: string; location?: string }) =>
+  (l.centreId && ADMISSION_CENTRES.some((c) => c.id === l.centreId) ? l.centreId : undefined) ?? resolveCentreId(l.location);
+
 export interface AdmissionPayment {
   amount: number;
   mode: PaymentMode;
