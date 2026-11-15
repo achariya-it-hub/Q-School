@@ -86,6 +86,25 @@ const DEFAULT_NOTIFICATIONS: NotificationItem[] = [
   },
 ];
 
+/** Notifications the user marked as read are removed and remembered here, so they don't come back on reload. */
+const DISMISSED_KEY = "qs_notifications_dismissed_v1";
+
+function readDismissed(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = JSON.parse(localStorage.getItem(DISMISSED_KEY) || "[]");
+    return new Set(Array.isArray(raw) ? raw.map(String) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveDismissed(ids: Set<string>) {
+  try {
+    localStorage.setItem(DISMISSED_KEY, JSON.stringify([...ids].slice(-500)));
+  } catch {}
+}
+
 export function NotificationsMenu({
   variant = "admin",
   className = "",
@@ -95,9 +114,15 @@ export function NotificationsMenu({
 }) {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>(DEFAULT_NOTIFICATIONS);
-  const [expandedId, setExpandedId] = useState<string | null>("notif-1");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "unread" | "important">("all");
   const boxRef = useRef<HTMLDivElement>(null);
+
+  // Drop notifications dismissed earlier (read after mount to avoid a hydration mismatch).
+  useEffect(() => {
+    const gone = readDismissed();
+    if (gone.size) setItems((prev) => prev.filter((i) => !gone.has(i.id)));
+  }, []);
 
   // Close when clicked outside
   useEffect(() => {
@@ -115,15 +140,26 @@ export function NotificationsMenu({
 
   const toggleExpand = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
-    // Mark as read on expand
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, unread: false } : i))
-    );
+  };
+
+  /** Mark as read = remove the notification from the list (and remember it). */
+  const dismiss = (ids: string[]) => {
+    if (!ids.length) return;
+    const gone = readDismissed();
+    ids.forEach((id) => gone.add(id));
+    saveDismissed(gone);
+    setItems((prev) => prev.filter((i) => !ids.includes(i.id)));
+    setExpandedId((prev) => (prev && ids.includes(prev) ? null : prev));
+  };
+
+  const markAsRead = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    dismiss([id]);
   };
 
   const markAllAsRead = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setItems((prev) => prev.map((i) => ({ ...i, unread: false })));
+    dismiss(items.map((i) => i.id));
   };
 
   const filteredItems = items.filter((i) => {
@@ -163,12 +199,16 @@ export function NotificationsMenu({
               <div>
                 <h3 className="text-sm font-bold text-brand-ink leading-none">Notifications</h3>
                 <span className="text-[11px] text-[#5C716C]">
-                  {unreadCount > 0 ? `${unreadCount} unread message${unreadCount > 1 ? "s" : ""}` : "All messages read"}
+                  {items.length === 0
+                    ? "No new notifications"
+                    : unreadCount > 0
+                    ? `${unreadCount} unread message${unreadCount > 1 ? "s" : ""}`
+                    : `${items.length} notification${items.length > 1 ? "s" : ""}`}
                 </span>
               </div>
             </div>
 
-            {unreadCount > 0 && (
+            {items.length > 0 && (
               <button
                 onClick={markAllAsRead}
                 className="text-[11.5px] font-semibold text-brand-teal hover:text-brand-deep transition hover:underline"
@@ -211,7 +251,7 @@ export function NotificationsMenu({
             {filteredItems.length === 0 ? (
               <div className="py-12 text-center text-sm text-[#7B8E89]">
                 <Icon name="bell" size={32} className="mx-auto mb-2 opacity-30" />
-                <p className="font-semibold text-brand-ink">No notifications in this tab</p>
+                <p className="font-semibold text-brand-ink">{items.length === 0 ? "No notifications" : "No notifications in this tab"}</p>
                 <p className="text-xs text-[#7B8E89] mt-0.5">You are all caught up!</p>
               </div>
             ) : (
@@ -286,9 +326,17 @@ export function NotificationsMenu({
                             <Icon name={isExpanded ? "chevUp" : "chevDown"} size={12} />
                           </span>
 
-                          {item.unread && (
-                            <span className="inline-block h-2 w-2 rounded-full bg-brand-teal" />
-                          )}
+                          <span className="flex items-center gap-2">
+                            {item.unread && <span className="inline-block h-2 w-2 rounded-full bg-brand-teal" />}
+                            <button
+                              type="button"
+                              onClick={(e) => markAsRead(e, item.id)}
+                              title="Mark as read and remove"
+                              className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold text-[#5C716C] hover:bg-[#E3F4F0] hover:text-brand-deep"
+                            >
+                              <Icon name="check" size={12} /> Mark as read
+                            </button>
+                          </span>
                         </div>
                       </div>
                     </div>
