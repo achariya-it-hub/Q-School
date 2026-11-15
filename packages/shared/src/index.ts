@@ -84,14 +84,27 @@ export const QSCHOOL_PROGRAMS: QSchoolProgram[] = [
     id: "divya-tratak",
     name: "Divya Tratak",
     minAge: 13,
-    maxAge: 14,
-    ageRange: "Age 13 – 14",
+    maxAge: 13,
+    ageRange: "Age 13",
     monthlyFee: 6500,
     annualFee: 78000,
     feeBasis: "Monthly / Annual",
     includes: "Q School + Q Learning + annual kit/material fee",
     fee: 78000,
-    description: "Gazing and visual focus techniques for laser concentration, willpower, and clarity for ages 13 to 14.",
+    description: "Gazing and visual focus techniques for laser concentration, willpower, and clarity for age 13.",
+  },
+  {
+    id: "divya-tratak-14",
+    name: "Divya Tratak 14 yrs",
+    minAge: 14,
+    maxAge: 14,
+    ageRange: "Age 14",
+    monthlyFee: 0, // 1-month course: one-time fee, no monthly option
+    annualFee: 30000,
+    feeBasis: "1-month course",
+    includes: "Full course fee",
+    fee: 30000,
+    description: "A one-month Divya Tratak course for 14-year-olds: gazing and visual focus techniques for concentration, willpower and clarity.",
   },
 ];
 
@@ -101,9 +114,9 @@ export function getProgramForAge(age: number | string | undefined): QSchoolProgr
   if (n >= 6 && n <= 8) return QSCHOOL_PROGRAMS[0];
   if (n >= 9 && n <= 10) return QSCHOOL_PROGRAMS[1];
   if (n >= 11 && n <= 12) return QSCHOOL_PROGRAMS[2];
-  if (n >= 13 && n <= 14) return QSCHOOL_PROGRAMS[3];
+  if (n === 13) return QSCHOOL_PROGRAMS[3];
   if (n < 6) return QSCHOOL_PROGRAMS[0];
-  return QSCHOOL_PROGRAMS[3];
+  return QSCHOOL_PROGRAMS[4];
 }
 
 export const COURSES: Course[] = [
@@ -149,7 +162,7 @@ export const COURSES: Course[] = [
   {
     id: "crs-divya-tratak",
     slug: "divya-tratak",
-    title: "Divya Tratak (Age 13 – 14)",
+    title: "Divya Tratak (Age 13)",
     category: "Quantum Schooling",
     mode: "hybrid",
     price: 78000,
@@ -157,7 +170,7 @@ export const COURSES: Course[] = [
     learners: 0,
     durationHours: 48,
     lessons: 24,
-    description: "Gazing and visual focus techniques for laser concentration, willpower, and clarity for ages 13 to 14.",
+    description: "Gazing and visual focus techniques for laser concentration, willpower, and clarity for age 13.",
   },
 ];
 

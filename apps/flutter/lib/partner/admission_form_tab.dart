@@ -34,7 +34,8 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
     'Divya Yoga (Age 6 – 8)': 63000,
     'Divya Mantra (Age 9 – 10)': 70000,
     'Divya Mudra (Age 11 – 12)': 74000,
-    'Divya Tratak (Age 13 – 14)': 78000,
+    'Divya Tratak (Age 13)': 78000,
+    'Divya Tratak 14 yrs (Age 14)': 30000,
   };
 
   String _selectedGrade = 'Grade 5';
@@ -75,7 +76,8 @@ class _PartnerAdmissionFormTabState extends State<PartnerAdmissionFormTab> {
     'Divya Yoga (Age 6 – 8)',
     'Divya Mantra (Age 9 – 10)',
     'Divya Mudra (Age 11 – 12)',
-    'Divya Tratak (Age 13 – 14)',
+    'Divya Tratak (Age 13)',
+    'Divya Tratak 14 yrs (Age 14)',
   ];
 
   @override

@@ -302,13 +302,14 @@ button:disabled{opacity:.6;pointer-events:none}
       </label>
 
       <label class="w">
-        Program / Class <i>*</i> <span class="hint" id="progHint" style="color:var(--teal);font-weight:600">(Auto-mapped from Age: 6-8 Yoga, 9-10 Mantra, 11-12 Mudra, 13-14 Tratak)</span>
+        Program / Class <i>*</i> <span class="hint" id="progHint" style="color:var(--teal);font-weight:600">(Auto-mapped from Age: 6-8 Yoga, 9-10 Mantra, 11-12 Mudra, 13 Tratak, 14 Tratak 1-month)</span>
         <select name="grade" id="grade" required>
           <option value="">Select program</option>
           <option value="Divya Yoga">Divya Yoga (Age 6 – 8)</option>
           <option value="Divya Mantra">Divya Mantra (Age 9 – 10)</option>
           <option value="Divya Mudra">Divya Mudra (Age 11 – 12)</option>
-          <option value="Divya Tratak">Divya Tratak (Age 13 – 14)</option>
+          <option value="Divya Tratak">Divya Tratak (Age 13)</option>
+          <option value="Divya Tratak 14 yrs">Divya Tratak 14 yrs (Age 14 · 1-month course)</option>
         </select>
       </label>
 
@@ -559,9 +560,12 @@ function syncProgramFromAge(age) {
   } else if (n >= 11 && n <= 12) {
     gradeEl.value = "Divya Mudra";
     if (hintEl) hintEl.textContent = `(✓ Selected Divya Mudra for Age ${n})`;
-  } else if (n >= 13 && n <= 14) {
+  } else if (n === 13) {
     gradeEl.value = "Divya Tratak";
     if (hintEl) hintEl.textContent = `(✓ Selected Divya Tratak for Age ${n})`;
+  } else if (n === 14) {
+    gradeEl.value = "Divya Tratak 14 yrs";
+    if (hintEl) hintEl.textContent = `(✓ Selected Divya Tratak 14 yrs (1-month course) for Age ${n})`;
   }
 }
 

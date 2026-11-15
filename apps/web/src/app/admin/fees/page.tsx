@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ADMISSION_CENTRES, accountTotals, aging, fmtDate, inr, TODAY_ISO, type FeeAccount } from "@qschool/shared";
+import { ADMISSION_CENTRES, QSCHOOL_FEE_SCHEDULE, accountTotals, aging, fmtDate, inr, TODAY_ISO, type FeeAccount } from "@qschool/shared";
 import { AdminShell } from "@/components/admin/shell";
 import {
   Btn,
@@ -100,7 +100,7 @@ export default function FeesPage() {
               <h3 className="text-[15px] font-bold text-brand-ink">Official Program Fee Structure</h3>
             </div>
             <p className="mt-0.5 text-[12px] text-[#5C716C]">
-              Includes: Q School + Q Learning + annual kit &amp; study material fee
+              Ages 6–13: Q School + Q Learning + annual kit &amp; study material fee · Age 14: 1-month course (full course fee)
             </p>
           </div>
           <Btn icon="plus" onClick={() => setPlan(true)}>
@@ -121,31 +121,23 @@ export default function FeesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2EFEA]">
-              {[
-                { course: "Divya Yoga", age: "Age 6 – 8", basis: "Monthly / Annual", monthly: 5250, annual: 63000 },
-                { course: "Divya Mantra", age: "Age 9 – 10", basis: "Monthly / Annual", monthly: 5833, annual: 70000 },
-                { course: "Divya Mudra", age: "Age 11 – 12", basis: "Monthly / Annual", monthly: 6167, annual: 74000 },
-                { course: "Divya Tratak", age: "Age 13 – 14", basis: "Monthly / Annual", monthly: 6500, annual: 78000 },
-              ].map((p) => (
-                <tr key={p.course} className="hover:bg-white/60">
-                  <td className="py-2.5 pr-4 font-bold text-brand-deep">{p.course}</td>
-                  <td className="py-2.5 pr-4">
-                    <span className="rounded bg-[#E3F4F0] px-2 py-0.5 text-[11px] font-semibold text-brand-deep">
-                      {p.age}
-                    </span>
-                  </td>
-                  <td className="py-2.5 pr-4 text-[#41564f]">{p.basis}</td>
-                  <td className="py-2.5 pr-4 text-right font-mono font-semibold text-[#0B6E5F]">
-                    ₹ {p.monthly.toLocaleString("en-IN")}
-                  </td>
-                  <td className="py-2.5 pr-4 text-right font-mono font-bold text-brand-ink">
-                    ₹ {p.annual.toLocaleString("en-IN")}
-                  </td>
-                  <td className="py-2.5 pl-4 text-[12px] text-[#5C716C]">
-                    Q School + Q Learning + annual kit/material fee
-                  </td>
-                </tr>
-              ))}
+              {QSCHOOL_FEE_SCHEDULE.map((p) => {
+                const oneTime = !p.monthlyFee;
+                return (
+                  <tr key={p.course} className={oneTime ? "bg-[#FFF6E0]/70 hover:bg-[#FFF6E0]" : "hover:bg-white/60"}>
+                    <td className="py-2.5 pr-4 font-bold text-brand-deep">{p.course}</td>
+                    <td className="py-2.5 pr-4">
+                      <span className="rounded bg-[#E3F4F0] px-2 py-0.5 text-[11px] font-semibold text-brand-deep">{p.ageRange}</span>
+                    </td>
+                    <td className="py-2.5 pr-4 text-[#41564f]">{p.basis}</td>
+                    <td className="py-2.5 pr-4 text-right font-mono font-semibold text-[#0B6E5F]">
+                      {oneTime ? "—" : `₹ ${p.monthlyFee.toLocaleString("en-IN")}`}
+                    </td>
+                    <td className="py-2.5 pr-4 text-right font-mono font-bold text-brand-ink">₹ {p.annualFee.toLocaleString("en-IN")}</td>
+                    <td className="py-2.5 pl-4 text-[12px] text-[#5C716C]">{p.includes}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -359,12 +351,10 @@ function Ledger({ a, onCollect }: { a: FeeAccount; onCollect: () => void }) {
   );
 }
 
-const COURSE_FEES: Record<string, { annual: number; monthly: number; label: string }> = {
-  "Divya Yoga": { annual: 63000, monthly: 5250, label: "Divya Yoga (Age 6 – 8)" },
-  "Divya Mantra": { annual: 70000, monthly: 5833, label: "Divya Mantra (Age 9 – 10)" },
-  "Divya Mudra": { annual: 74000, monthly: 6167, label: "Divya Mudra (Age 11 – 12)" },
-  "Divya Tratak": { annual: 78000, monthly: 6500, label: "Divya Tratak (Age 13 – 14)" },
-};
+/** Course → fee, from the official schedule. monthly = 0 means a one-time course fee (no instalments). */
+const COURSE_FEES: Record<string, { annual: number; monthly: number; label: string }> = Object.fromEntries(
+  QSCHOOL_FEE_SCHEDULE.map((p) => [p.course, { annual: p.annualFee, monthly: p.monthlyFee, label: `${p.course} (${p.ageRange})` }]),
+);
 
 function NewPlanModal({ open, onClose, onDone }: { open: boolean; onClose: () => void; onDone: (m: string) => void }) {
   const [form, setForm] = useState({
@@ -377,6 +367,8 @@ function NewPlanModal({ open, onClose, onDone }: { open: boolean; onClose: () =>
     parts: 1,
     firstDue: TODAY_ISO,
   });
+  const fee = COURSE_FEES[form.course] ?? COURSE_FEES["Divya Yoga"];
+  const oneTime = !fee.monthly;
 
   const onCourseChange = (c: string) => {
     const feeInfo = COURSE_FEES[c] || COURSE_FEES["Divya Yoga"];
@@ -384,6 +376,8 @@ function NewPlanModal({ open, onClose, onDone }: { open: boolean; onClose: () =>
       ...f,
       course: c,
       total: feeInfo.annual,
+      // a one-time course (Age 14) has no instalment options
+      parts: feeInfo.monthly ? f.parts : 1,
     }));
   };
 
@@ -423,10 +417,12 @@ function NewPlanModal({ open, onClose, onDone }: { open: boolean; onClose: () =>
         <div className="col-span-2">
           <Field label="Class / Course Program">
             <select className={inputCls} value={form.course} onChange={(e) => onCourseChange(e.target.value)}>
-              <option value="Divya Yoga">Divya Yoga (Age 6 – 8) — ₹63,000 / ₹5,250 mo</option>
-              <option value="Divya Mantra">Divya Mantra (Age 9 – 10) — ₹70,000 / ₹5,833 mo</option>
-              <option value="Divya Mudra">Divya Mudra (Age 11 – 12) — ₹74,000 / ₹6,167 mo</option>
-              <option value="Divya Tratak">Divya Tratak (Age 13 – 14) — ₹78,000 / ₹6,500 mo</option>
+              {QSCHOOL_FEE_SCHEDULE.map((p) => (
+                <option key={p.course} value={p.course}>
+                  {p.course} ({p.ageRange}) — ₹{p.annualFee.toLocaleString("en-IN")}
+                  {p.monthlyFee ? ` / ₹${p.monthlyFee.toLocaleString("en-IN")} mo` : ` · ${p.basis}`}
+                </option>
+              ))}
             </select>
           </Field>
         </div>
@@ -434,12 +430,18 @@ function NewPlanModal({ open, onClose, onDone }: { open: boolean; onClose: () =>
           <input className={inputCls} value={form.batch} onChange={up("batch")} placeholder="e.g. Section A" />
         </Field>
         <Field label="Fee Basis / Installments">
-          <select className={inputCls} value={form.parts} onChange={up("parts")}>
-            <option value={1}>Annual Plan (One-time ₹{(COURSE_FEES[form.course]?.annual ?? 63000).toLocaleString("en-IN")})</option>
-            <option value={12}>Monthly Plan (12 × ₹{(COURSE_FEES[form.course]?.monthly ?? 5250).toLocaleString("en-IN")}/mo)</option>
-            <option value={2}>Half-Yearly (2 × ₹{Math.round((COURSE_FEES[form.course]?.annual ?? 63000) / 2).toLocaleString("en-IN")})</option>
-            <option value={4}>Quarterly (4 × ₹{Math.round((COURSE_FEES[form.course]?.annual ?? 63000) / 4).toLocaleString("en-IN")})</option>
-          </select>
+          {oneTime ? (
+            <select className={inputCls} value={1} onChange={up("parts")}>
+              <option value={1}>1-month course (One-time ₹{fee.annual.toLocaleString("en-IN")})</option>
+            </select>
+          ) : (
+            <select className={inputCls} value={form.parts} onChange={up("parts")}>
+              <option value={1}>Annual Plan (One-time ₹{fee.annual.toLocaleString("en-IN")})</option>
+              <option value={12}>Monthly Plan (12 × ₹{fee.monthly.toLocaleString("en-IN")}/mo)</option>
+              <option value={2}>Half-Yearly (2 × ₹{Math.round(fee.annual / 2).toLocaleString("en-IN")})</option>
+              <option value={4}>Quarterly (4 × ₹{Math.round(fee.annual / 4).toLocaleString("en-IN")})</option>
+            </select>
+          )}
         </Field>
         <Field label="Total fee (₹, incl. GST & kit)">
           <input type="number" min={1} className={inputCls} value={form.total} onChange={up("total")} />

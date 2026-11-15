@@ -41,7 +41,7 @@
   {
     "id": "crs-divya-tratak",
     "slug": "divya-tratak",
-    "title": "Divya Tratak (Age 13 – 14)",
+    "title": "Divya Tratak (Age 13)",
     "category": "Quantum Schooling",
     "mode": "hybrid",
     "price": 78000,
@@ -49,6 +49,6 @@
     "learners": 0,
     "durationHours": 48,
     "lessons": 24,
-    "description": "Gazing and visual focus techniques for laser concentration, willpower, and clarity for ages 13 to 14."
+    "description": "Gazing and visual focus techniques for laser concentration, willpower, and clarity for age 13."
   }
 ]

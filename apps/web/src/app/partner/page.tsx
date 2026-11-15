@@ -17,7 +17,8 @@ const PARTNER_COURSE_FEES: Record<string, string> = {
   "Divya Yoga (Age 6 – 8)": "63000",
   "Divya Mantra (Age 9 – 10)": "70000",
   "Divya Mudra (Age 11 – 12)": "74000",
-  "Divya Tratak (Age 13 – 14)": "78000",
+  "Divya Tratak (Age 13)": "78000",
+  "Divya Tratak 14 yrs (Age 14)": "30000",
 };
 
 function PartnerContent() {
@@ -1275,10 +1276,11 @@ function PartnerContent() {
                           }}
                           className="w-full h-11 px-3 rounded-xl border border-[#D5E3DF] bg-[#F7FAF9] text-sm focus:border-brand-teal focus:bg-white focus:outline-none"
                         >
-                          <option value="Divya Yoga (Age 6 – 8)">Divya Yoga (Age 6 – 8)</option>
-                          <option value="Divya Mantra (Age 9 – 10)">Divya Mantra (Age 9 – 10)</option>
-                          <option value="Divya Mudra (Age 11 – 12)">Divya Mudra (Age 11 – 12)</option>
-                          <option value="Divya Tratak (Age 13 – 14)">Divya Tratak (Age 13 – 14)</option>
+                          {Object.keys(PARTNER_COURSE_FEES).map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
                         </select>
                       </div>
 

@@ -70,11 +70,19 @@ export const QSCHOOL_FEE_SCHEDULE: FeeScheduleItem[] = [
   },
   {
     course: "Divya Tratak",
-    ageRange: "Age 13 – 14",
+    ageRange: "Age 13",
     basis: "Monthly / Annual",
     monthlyFee: 6500,
     annualFee: 78000,
     includes: "Q School + Q Learning + annual kit/material fee",
+  },
+  {
+    course: "Divya Tratak 14 yrs",
+    ageRange: "Age 14",
+    basis: "1-month course",
+    monthlyFee: 0, // no monthly option: one-time course fee
+    annualFee: 30000,
+    includes: "Full course fee",
   },
 ];
 
