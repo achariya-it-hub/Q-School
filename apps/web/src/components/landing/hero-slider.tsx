@@ -116,7 +116,7 @@ export type WindowOverride = { photo?: { src: string; alt: string }; title?: str
 /** Pass `single` to show just the first class with no slider controls; `first` overrides its content. */
 export function HeroSlider({ single = false, first }: { single?: boolean; first?: WindowOverride }) {
   const head = { ...SLIDES[0], ...Object.fromEntries(Object.entries(first ?? {}).filter(([, v]) => v !== undefined)) };
-  const rest = SLIDES.filter((sl) => sl.photo.src !== head.photo.src);
+  const rest = SLIDES.slice(1).filter((sl) => sl.photo.src !== head.photo.src);
   const slides = single ? [head] : [head, ...rest];
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);

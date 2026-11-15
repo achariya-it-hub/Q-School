@@ -554,7 +554,7 @@ export default function LeadsPage() {
               </thead>
               <tbody className="divide-y divide-[#F0F4F3]">
                 {shown.map((l) => {
-                  const theme = STAGE_THEME[l.stage];
+                  const theme = STAGE_THEME[l.stage] ?? STAGE_THEME.Enquiry;
                   return (
                     <tr key={l.id} className={`hover:bg-[#F9FBFB] transition ${selected.has(l.id) ? "bg-rose-50/50" : ""}`}>
                       {canDelete && (

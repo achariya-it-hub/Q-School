@@ -49,17 +49,7 @@ function getCachedLeads(): CrmLead[] {
       localStorage.removeItem(k);
     }
     const raw = localStorage.getItem(CRM_CACHE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed
-          .map((l: CrmLead) => ({
-            ...l,
-            stage: (l.stage as string) === "Demo" ? "BMIT" : l.stage,
-            timeline: Array.isArray(l.timeline) ? l.timeline : [],
-          }));
-      }
-    }
+    if (raw) return normaliseAll(JSON.parse(raw));
   } catch {}
   return [];
 }
@@ -70,6 +60,36 @@ function saveCachedLeads(leads: CrmLead[]) {
     localStorage.setItem(CRM_CACHE_KEY, JSON.stringify(leads));
   } catch {}
 }
+
+const VALID_STAGES = new Set<string>(["Enquiry", "Contacted", "BMIT", "Negotiation", "Admitted", "Dropped"]);
+
+/**
+ * Make every lead safe to render: a missing/unknown stage, non-string name/phone, non-numeric value or
+ * non-array timeline (old cached data, partial API replies) used to crash the Leads page with
+ * "Application error: a client-side exception has occurred".
+ */
+export function normaliseLead(l: any): CrmLead | null {
+  if (!l || typeof l !== "object" || !l.id) return null;
+  const stage = l.stage === "Demo" ? "BMIT" : l.stage;
+  return {
+    ...l,
+    id: String(l.id),
+    name: typeof l.name === "string" && l.name ? l.name : "Unnamed lead",
+    phone: typeof l.phone === "string" ? l.phone : String(l.phone ?? ""),
+    interest: typeof l.interest === "string" ? l.interest : "General enquiry",
+    source: typeof l.source === "string" ? l.source : "Other",
+    owner: typeof l.owner === "string" ? l.owner : "",
+    stage: (VALID_STAGES.has(stage) ? stage : "Enquiry") as Stage,
+    value: Number.isFinite(Number(l.value)) ? Number(l.value) : 0,
+    lastActivity: typeof l.lastActivity === "string" ? l.lastActivity : "",
+    createdAt: typeof l.createdAt === "string" ? l.createdAt : new Date().toISOString(),
+    extra: l.extra && typeof l.extra === "object" ? l.extra : undefined,
+    timeline: Array.isArray(l.timeline) ? l.timeline.filter((t: any) => t && typeof t === "object") : [],
+  };
+}
+
+const normaliseAll = (arr: unknown): CrmLead[] =>
+  Array.isArray(arr) ? (arr.map(normaliseLead).filter(Boolean) as CrmLead[]) : [];
 
 export function useCrmLeads(pollMs = 20000) {
   const [leads, setLeads] = useState<CrmLead[]>(getCachedLeads);
@@ -98,12 +118,8 @@ export function useCrmLeads(pollMs = 20000) {
         return;
       }
 
-      const list: CrmLead[] = d.leads
-        .map((l: CrmLead) => ({
-          ...l,
-          stage: (l.stage as string) === "Demo" ? "BMIT" : l.stage,
-          timeline: Array.isArray(l.timeline) ? l.timeline : [],
-        }));
+      // De-duplicate by id as well (two leads with one id made React keys collide).
+      const list: CrmLead[] = Array.from(new Map(normaliseAll(d.leads).map((l) => [l.id, l])).values());
 
       if (known.current) {
         const added = list.filter((l) => !known.current!.has(l.id)).map((l) => l.id);
@@ -217,9 +233,7 @@ export function useCrmLeads(pollMs = 20000) {
           const { lead } = await r.json();
           if (lead) {
             const formatted: CrmLead = {
-              ...lead,
-              stage: (lead.stage as string) === "Demo" ? "BMIT" : lead.stage,
-              timeline: Array.isArray(lead.timeline) ? lead.timeline : [],
+              ...(normaliseLead(lead) ?? lead),
               _clientModifiedAt: now,
             };
             setLeads((ls) => {
@@ -246,11 +260,10 @@ export function useCrmLeads(pollMs = 20000) {
           body: JSON.stringify(b),
         });
         const d = await r.json().catch(() => ({}));
-        if (d.ok && d.lead) {
+        // `hidden` = the phone already belongs to a lead in another centre; the reply is only a stub, don't list it.
+        if (d.ok && d.lead && !d.hidden && normaliseLead(d.lead)) {
           const newLead: CrmLead = {
-            ...d.lead,
-            stage: (d.lead.stage as string) === "Demo" ? "BMIT" : d.lead.stage,
-            timeline: Array.isArray(d.lead.timeline) ? d.lead.timeline : [],
+            ...normaliseLead(d.lead)!,
             _clientModifiedAt: now,
           };
           setLeads((prev) => {
