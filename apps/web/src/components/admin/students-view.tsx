@@ -167,15 +167,16 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
                 <Td className="whitespace-nowrap text-[#41564f]">{fmt(s.createdAt)}</Td>
                 <Td><StatusBadge tone={TONE[s.status]}>{s.status}</StatusBadge></Td>
                 <Td right>
-                  {s.status === "Pending" ? (
-                    <button onClick={() => setPay(s)} className="rounded-lg bg-brand-deep px-2.5 py-1.5 text-[12px] font-semibold text-white hover:bg-brand-teal">
-                      Confirm payment
-                    </button>
-                  ) : (
+                  <div className="flex items-center justify-end gap-1.5">
+                    {s.status === "Pending" && (
+                      <button onClick={() => setPay(s)} className="rounded-lg bg-brand-deep px-2.5 py-1.5 text-[12px] font-semibold text-white hover:bg-brand-teal">
+                        Pay / Confirm
+                      </button>
+                    )}
                     <button onClick={() => setView(s)} className="rounded-lg border border-[#E2ECE9] px-2.5 py-1.5 text-[12px] font-medium text-[#41564f] hover:border-brand-teal">
                       View
                     </button>
-                  )}
+                  </div>
                 </Td>
               </tr>
             ))}
@@ -257,6 +258,10 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
       <ConfirmPayment
         student={pay}
         onClose={() => setPay(null)}
+        onLinkCreated={(msg) => {
+          show(msg);
+          reload();
+        }}
         onDone={(s) => {
           setPay(null);
           show(`${s.studentName} is now Active`);
@@ -514,25 +519,97 @@ function ImportCsv({ open, mode, onClose, onDone }: { open: boolean; mode: "admi
   );
 }
 
-function ConfirmPayment({ student, onClose, onDone }: { student: StudentRecord | null; onClose: () => void; onDone: (s: StudentRecord) => void }) {
+function ConfirmPayment({
+  student,
+  onClose,
+  onLinkCreated,
+  onDone,
+}: {
+  student: StudentRecord | null;
+  onClose: () => void;
+  onLinkCreated: (msg: string) => void;
+  onDone: (s: StudentRecord) => void;
+}) {
+  const [tab, setTab] = useState<"online" | "offline">("online");
   const [amount, setAmount] = useState("");
+  const [desc, setDesc] = useState("");
   const [mode, setMode] = useState<string>(PAYMENT_MODES[0]);
   const [receiptNo, setReceiptNo] = useState("");
   const [note, setNote] = useState("");
+  const [createdUrl, setCreatedUrl] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (student) {
+      setTab("online");
       setAmount("");
+      setDesc(`Admission fee - ${student.studentName}`);
       setReceiptNo("");
       setNote("");
+      setCreatedUrl("");
       setErr("");
       setMode(PAYMENT_MODES[0]);
     }
   }, [student]);
 
-  const submit = async (e: React.FormEvent) => {
+  const createEasebuzzLink = async () => {
+    if (!student) return null;
+    const amt = Number(amount);
+    if (!(amt >= 1)) {
+      setErr("Enter an amount (minimum ₹1)");
+      return null;
+    }
+    setBusy(true);
+    setErr("");
+    const r = await fetch("/api/students", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: student.id,
+        action: "payLink",
+        provider: "easebuzz",
+        amount: amt,
+        description: desc || `Admission fee - ${student.studentName}`,
+      }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      setBusy(false);
+      setErr(j.error ?? "Could not create Easebuzz payment link");
+      return null;
+    }
+    return j.link as { id: string; url: string; amount: number };
+  };
+
+  const payNowOnEasebuzz = async () => {
+    const link = await createEasebuzzLink();
+    if (!link) return;
+    const st = await fetch("/api/payments/easebuzz/start", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ linkId: link.id }),
+    });
+    const sj = await st.json().catch(() => ({}));
+    setBusy(false);
+    if (!st.ok || !sj.url) {
+      setErr(sj.error ?? "Could not start Easebuzz checkout");
+      return;
+    }
+    onLinkCreated("Opening Easebuzz checkout…");
+    window.location.href = sj.url;
+  };
+
+  const generateShareableLink = async () => {
+    const link = await createEasebuzzLink();
+    setBusy(false);
+    if (!link) return;
+    setCreatedUrl(link.url);
+    navigator.clipboard?.writeText(link.url).catch(() => {});
+    onLinkCreated("Easebuzz payment link created and copied to clipboard");
+  };
+
+  const submitOffline = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!student) return;
     setBusy(true);
@@ -544,10 +621,18 @@ function ConfirmPayment({ student, onClose, onDone }: { student: StudentRecord |
     onDone(j.student);
   };
 
+  const waHref = () => {
+    if (!student || !createdUrl) return "#";
+    const d = student.phone.replace(/\D/g, "");
+    const to = d.length === 10 ? `91${d}` : d;
+    const text = `Dear ${student.parentName}, please pay ${inr(Number(amount) || 0)} for ${student.studentName}'s admission at Q-School using this secure Easebuzz link: ${createdUrl}`;
+    return `https://wa.me/${to}?text=${encodeURIComponent(text)}`;
+  };
+
   return (
-    <Modal open={!!student} title="Confirm payment & activate" onClose={onClose}>
+    <Modal open={!!student} title="Collect fee & activate" onClose={onClose}>
       {student && (
-        <form className="space-y-3" onSubmit={submit}>
+        <div className="space-y-3.5">
           <div className="flex items-center gap-3 rounded-xl bg-[#F3F8F6] p-3">
             <Photo s={student} size={44} />
             <div className="text-[13px]">
@@ -555,23 +640,105 @@ function ConfirmPayment({ student, onClose, onDone }: { student: StudentRecord |
               <p className="text-[#6b807b]">{student.grade} · {student.parentName} · {centreName(student.centreId)}</p>
             </div>
           </div>
-          <p className="text-[12.5px] text-[#6b807b]">Only confirm after the fee has actually been received. The student becomes <b>Active</b> once you save.</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Amount paid (₹)"><input required type="number" min="1" step="0.01" className={inputCls} value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
-            <Field label="Payment mode">
-              <select className={inputCls} value={mode} onChange={(e) => setMode(e.target.value)}>
-                {PAYMENT_MODES.map((m) => <option key={m}>{m}</option>)}
-              </select>
-            </Field>
+
+          <div className="grid grid-cols-2 gap-1 rounded-xl border border-[#DCE8E4] bg-[#F4F8F7] p-1 text-[12.5px] font-semibold">
+            <button
+              type="button"
+              onClick={() => { setTab("online"); setErr(""); }}
+              className={`rounded-lg py-2 transition ${tab === "online" ? "bg-brand-deep text-white shadow-sm" : "text-[#41564f] hover:text-brand-ink"}`}
+            >
+              Pay Online (Easebuzz)
+            </button>
+            <button
+              type="button"
+              onClick={() => { setTab("offline"); setErr(""); }}
+              className={`rounded-lg py-2 transition ${tab === "offline" ? "bg-brand-deep text-white shadow-sm" : "text-[#41564f] hover:text-brand-ink"}`}
+            >
+              Offline / Manual Receipt
+            </button>
           </div>
-          <Field label="Receipt no."><input required className={inputCls} value={receiptNo} onChange={(e) => setReceiptNo(e.target.value)} /></Field>
-          <Field label="Note (optional)"><input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
-          {err && <p className="text-[12.5px] font-semibold text-[#B42E2E]">{err}</p>}
-          <div className="flex justify-end gap-2 pt-1">
-            <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-            <Btn type="submit" icon="check" disabled={busy}>{busy ? "Saving…" : "Activate student"}</Btn>
-          </div>
-        </form>
+
+          {tab === "online" ? (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-[#C6E5DD] bg-[#EEF8F5] px-3 py-2 text-[12px] text-[#054038]">
+                <b>Easebuzz Gateway:</b> Pay via UPI, Debit/Credit Card, Net Banking, Wallets or EMI. The student becomes <b>Active</b> automatically on payment.
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Amount (₹)">
+                  <input
+                    required
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    placeholder="e.g. 63000 or 10"
+                    className={inputCls}
+                    value={amount}
+                    onChange={(e) => { setAmount(e.target.value); setCreatedUrl(""); }}
+                  />
+                </Field>
+                <Field label="For (shown on checkout)">
+                  <input
+                    className={inputCls}
+                    value={desc}
+                    onChange={(e) => setDesc(e.target.value)}
+                    placeholder="Admission fee"
+                  />
+                </Field>
+              </div>
+
+              {createdUrl && (
+                <div className="rounded-xl border border-[#CFE3DD] bg-[#F7FAF9] p-3 text-[12.5px] space-y-2">
+                  <p className="font-semibold text-brand-deep">Payment link ready &amp; copied:</p>
+                  <p className="truncate font-mono text-[11.5px] text-[#41564f]">{createdUrl}</p>
+                  <div className="flex flex-wrap gap-2 pt-0.5">
+                    <a href={createdUrl} target="_blank" rel="noreferrer" className="rounded-lg bg-brand-deep px-3 py-1.5 text-[12px] font-semibold text-white hover:bg-brand-teal">
+                      Open pay page ↗
+                    </a>
+                    <a href={waHref()} target="_blank" rel="noreferrer" className="rounded-lg border border-[#CFE3DD] bg-white px-3 py-1.5 text-[12px] font-semibold text-[#0B6E5F] hover:border-brand-teal">
+                      Send on WhatsApp
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {err && <p className="text-[12.5px] font-semibold text-[#B42E2E]">{err}</p>}
+
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+                <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={generateShareableLink}
+                  className="rounded-xl border border-[#CFE3DD] bg-white px-3.5 py-2 text-[13px] font-semibold text-brand-deep hover:border-brand-teal disabled:opacity-60"
+                >
+                  Copy Payment Link
+                </button>
+                <Btn type="button" icon="arrowRight" disabled={busy} onClick={payNowOnEasebuzz}>
+                  {busy ? "Connecting…" : "Pay Now on Easebuzz"}
+                </Btn>
+              </div>
+            </div>
+          ) : (
+            <form className="space-y-3" onSubmit={submitOffline}>
+              <p className="text-[12.5px] text-[#6b807b]">Only confirm after the fee has actually been received at the counter. The student becomes <b>Active</b> once you save.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Amount paid (₹)"><input required type="number" min="1" step="0.01" className={inputCls} value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
+                <Field label="Payment mode">
+                  <select className={inputCls} value={mode} onChange={(e) => setMode(e.target.value)}>
+                    {PAYMENT_MODES.map((m) => <option key={m}>{m}</option>)}
+                  </select>
+                </Field>
+              </div>
+              <Field label="Receipt no."><input required className={inputCls} value={receiptNo} onChange={(e) => setReceiptNo(e.target.value)} /></Field>
+              <Field label="Note (optional)"><input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
+              {err && <p className="text-[12.5px] font-semibold text-[#B42E2E]">{err}</p>}
+              <div className="flex justify-end gap-2 pt-1">
+                <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
+                <Btn type="submit" icon="check" disabled={busy}>{busy ? "Saving…" : "Activate student"}</Btn>
+              </div>
+            </form>
+          )}
+        </div>
       )}
     </Modal>
   );

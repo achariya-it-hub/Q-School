@@ -35,7 +35,7 @@ const clean = {
   product: (s: string) => (s || "Q-School fee").replace(/[^A-Za-z0-9 ,.\-_()/&]/g, " ").replace(/\s+/g, " ").trim().slice(0, 100) || "Q-School fee",
   phone: (s: string) => (s || "").replace(/\D/g, "").slice(-10),
   email: (s?: string) => (s && /^\S+@\S+\.\S+$/.test(s.trim()) ? s.trim() : "payments@theqschool.com"),
-  udf: (s?: string) => (s || "").replace(/[^A-Za-z0-9 \-_.:@]/g, "").slice(0, 100),
+  udf: (s?: string) => (s || "").replace(/[^A-Za-z0-9 \-_.:@/]/g, "").slice(0, 100),
 };
 
 export interface InitiateInput {
