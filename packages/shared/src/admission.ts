@@ -73,8 +73,8 @@ export interface AdmissionPayment {
 
 /** A Razorpay payment link sent to the parent. When paid, the admission is confirmed automatically. */
 export interface PayLink {
-  /** razorpay = created and tracked through the API; grayquest = link made in the GrayQuest dashboard and pasted in (confirmed by hand until their API is connected). */
-  provider: "razorpay" | "grayquest";
+  /** razorpay = created and tracked through the API; grayquest = link made in the GrayQuest dashboard and pasted in (confirmed by hand until their API is connected); easebuzz = our /pay/<id> link that opens Easebuzz checkout. */
+  provider: "razorpay" | "grayquest" | "easebuzz";
   id: string; // Razorpay link id (plink_...) or the GrayQuest reference
   url: string;
   amount: number;
@@ -85,6 +85,8 @@ export interface PayLink {
   paidAt?: string;
   method?: string;
   paymentId?: string;
+  /** Easebuzz: transaction ids of each checkout attempt (a new one per try, Easebuzz needs unique txnids). */
+  attempts?: string[];
 }
 
 export interface StudentRecord {

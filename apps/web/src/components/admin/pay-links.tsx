@@ -5,7 +5,8 @@ import { inr, type PayLink, type StudentRecord } from "@qschool/shared";
 import { Btn, Field, Modal, StatusBadge, inputCls } from "@/components/admin/ui";
 
 const TONE = { Created: "warning", Paid: "good", Expired: "neutral", Cancelled: "neutral" } as const;
-const PROVIDER = { razorpay: "Razorpay", grayquest: "GrayQuest" } as const;
+const PROVIDER = { razorpay: "Razorpay", grayquest: "GrayQuest", easebuzz: "Easebuzz" } as const;
+type Provider = keyof typeof PROVIDER;
 
 const waLink = (s: StudentRecord, l: PayLink) => {
   const d = s.phone.replace(/\D/g, "");
@@ -24,7 +25,7 @@ export function PayLinks({ student, onChanged }: { student: StudentRecord; onCha
     setMsg("");
     const r = await fetch("/api/students", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: student.id, action: "checkLink", linkId: l.id }) });
     const j = await r.json().catch(() => ({}));
-    setMsg(!r.ok ? j.error ?? "Could not check" : j.status === "paid" ? "Paid. The student is now Active." : `Link status: ${String(j.status).replace("_", " ")}`);
+    setMsg(!r.ok ? j.error ?? "Could not check" : j.status === "paid" ? "Paid. The student is now Active." : `Payment status: ${String(j.status).replace("_", " ")}`);
     onChanged();
   };
   const copy = (t: string) => navigator.clipboard?.writeText(t).then(() => setMsg("Link copied"));
@@ -46,7 +47,10 @@ export function PayLinks({ student, onChanged }: { student: StudentRecord; onCha
             <div className="mt-1.5 flex flex-wrap gap-3 text-[12px] font-semibold text-brand-teal">
               <button onClick={() => copy(l.url)} className="hover:underline">Copy link</button>
               <a href={waLink(student, l)} target="_blank" rel="noreferrer" className="hover:underline">WhatsApp</a>
-              {l.status === "Created" && l.provider === "razorpay" && <button onClick={() => check(l)} className="hover:underline">Check payment status</button>}
+              {l.status === "Created" && (l.provider === "razorpay" || l.provider === "easebuzz") && <button onClick={() => check(l)} className="hover:underline">Check payment status</button>}
+              {l.provider === "easebuzz" && l.status === "Created" && (
+                <a href={l.url} target="_blank" rel="noreferrer" className="hover:underline">Open pay page</a>
+              )}
               {l.status === "Paid" && l.method && <span className="font-normal text-[#6b807b]">paid by {l.method}</span>}
             </div>
           </li>
@@ -60,7 +64,7 @@ export function PayLinks({ student, onChanged }: { student: StudentRecord; onCha
 }
 
 function NewLink({ student, open, onClose, onDone }: { student: StudentRecord; open: boolean; onClose: () => void; onDone: (m: string) => void }) {
-  const [provider, setProvider] = useState<"razorpay" | "grayquest">("razorpay");
+  const [provider, setProvider] = useState<Provider>("easebuzz");
   const [amount, setAmount] = useState("");
   const [desc, setDesc] = useState("");
   const [url, setUrl] = useState("");
@@ -77,7 +81,13 @@ function NewLink({ student, open, onClose, onDone }: { student: StudentRecord; o
     setBusy(false);
     if (!r.ok) return setErr(j.error ?? "Could not create the link");
     navigator.clipboard?.writeText(j.link.url).catch(() => {});
-    onDone(provider === "razorpay" ? "Link created and copied. Razorpay also texts it to the parent." : "GrayQuest link saved and copied.");
+    onDone(
+      provider === "razorpay"
+        ? "Link created and copied. Razorpay also texts it to the parent."
+        : provider === "easebuzz"
+        ? "Easebuzz link created and copied. Share it on WhatsApp — the student is activated automatically once paid."
+        : "GrayQuest link saved and copied.",
+    );
     setAmount("");
     setDesc("");
     setUrl("");
@@ -89,7 +99,8 @@ function NewLink({ student, open, onClose, onDone }: { student: StudentRecord; o
       <form className="space-y-3" onSubmit={submit}>
         <p className="text-[12.5px] text-[#6b807b]">For <b>{student.studentName}</b> · parent {student.parentName} ({student.phone})</p>
         <Field label="Collect through">
-          <select className={inputCls} value={provider} onChange={(e) => setProvider(e.target.value as "razorpay" | "grayquest")}>
+          <select className={inputCls} value={provider} onChange={(e) => setProvider(e.target.value as Provider)}>
+            <option value="easebuzz">Easebuzz: UPI, cards, net banking, wallets, EMI (auto-confirms)</option>
             <option value="razorpay">Razorpay: UPI, cards, net banking, card EMI (auto-confirms)</option>
             <option value="grayquest">GrayQuest: education EMI (paste the link you generated there)</option>
           </select>
@@ -106,6 +117,7 @@ function NewLink({ student, open, onClose, onDone }: { student: StudentRecord; o
           </>
         )}
         {provider === "razorpay" && <p className="text-[12px] text-[#6b807b]">Parents with eligible cards see EMI options on the checkout page (enable EMI in your Razorpay Dashboard). Link is valid for 14 days.</p>}
+        {provider === "easebuzz" && <p className="text-[12px] text-[#6b807b]">Creates a Q-School pay page for this fee. The parent pays on Easebuzz&apos;s secure checkout and the admission is confirmed automatically. Needs the parent&apos;s 10-digit mobile number.</p>}
         {err && <p className="text-[12.5px] font-semibold text-[#B42E2E]">{err}</p>}
         <div className="flex justify-end gap-2 pt-1">
           <Btn variant="ghost" onClick={onClose}>Cancel</Btn>

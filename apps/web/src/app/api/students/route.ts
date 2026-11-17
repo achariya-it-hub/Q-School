@@ -13,6 +13,7 @@ import { ADMISSION_CENTRES, type PayLink } from "@qschool/shared";
 import { caller } from "@/lib/students/access";
 import { activateStudent, addPayLink, addStudent, addStudentsBulk, getStudent, listStudents, setCentre, setPayLinkStatus, settlePayLink, type NewStudent } from "@/lib/students/store";
 import { createPayLink, fetchPayLink, modeFor, razorpayConfigured } from "@/lib/payments/razorpay";
+import { easebuzzConfigured, easebuzzEnv, easebuzzModeFor, publicBase, retrieveTransaction } from "@/lib/payments/easebuzz";
 
 const digits = (s: string) => s.replace(/\D/g, "");
 const str = (v: unknown, max: number) => String(v ?? "").trim().slice(0, max);
@@ -80,7 +81,7 @@ export async function GET() {
   const who = await caller();
   if (!who) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   const students = await listStudents(who.kind === "centre" ? who.centreId : undefined);
-  return NextResponse.json({ ok: true, scope: who.kind === "centre" ? who.centreId : "all", name: who.name, razorpay: razorpayConfigured(), students });
+  return NextResponse.json({ ok: true, scope: who.kind === "centre" ? who.centreId : "all", name: who.name, razorpay: razorpayConfigured(), easebuzz: easebuzzConfigured() ? easebuzzEnv() : false, students });
 }
 
 export async function PATCH(req: Request) {
@@ -111,6 +112,11 @@ export async function PATCH(req: Request) {
         const url = String(b.url ?? "").trim();
         if (!/^https:\/\//i.test(url)) return NextResponse.json({ error: "Paste the GrayQuest payment link (https://...)" }, { status: 400 });
         link = { provider: "grayquest", id: String(b.ref ?? "").trim().slice(0, 60) || `GQ-${Date.now()}`, url, amount, description, createdBy: who.name, createdAt: new Date().toISOString(), status: "Created" };
+      } else if (b.provider === "easebuzz") {
+        if (!easebuzzConfigured()) return NextResponse.json({ error: "Easebuzz is not set up yet. Add EASEBUZZ_KEY and EASEBUZZ_SALT on the server and restart." }, { status: 400 });
+        if (s.phone.replace(/\D/g, "").length < 10) return NextResponse.json({ error: "Add the parent's 10-digit mobile number first (Easebuzz needs it)" }, { status: 400 });
+        const linkId = `EB${s.id.replace(/[^A-Za-z0-9]/g, "")}${Date.now().toString(36).toUpperCase()}`;
+        link = { provider: "easebuzz", id: linkId, url: `${publicBase(req)}/pay/${linkId}`, amount, description, createdBy: who.name, createdAt: new Date().toISOString(), status: "Created", attempts: [] };
       } else {
         const r = await createPayLink({ amount, description, reference: `${s.id}-${Date.now().toString(36)}`, name: s.parentName, phone: s.phone, email: s.email || undefined, notes: { studentId: s.id, centreId: s.centreId, student: s.studentName }, expireDays: 14 });
         link = { provider: "razorpay", id: r.id, url: r.url, amount, description, createdBy: who.name, createdAt: new Date().toISOString(), status: "Created" };
@@ -121,6 +127,21 @@ export async function PATCH(req: Request) {
       const linkId = String(b.linkId ?? "");
       const link = s.payLinks?.find((l) => l.id === linkId);
       if (!link) return NextResponse.json({ error: "Link not found" }, { status: 404 });
+      if (link.provider === "easebuzz") {
+        // Ask Easebuzz about every checkout attempt on this link; a success settles it.
+        const tried = link.attempts ?? [];
+        if (!tried.length) return NextResponse.json({ ok: true, status: "not opened yet", student: s });
+        let last = "pending";
+        for (const txnid of [...tried].reverse()) {
+          const t = await retrieveTransaction(txnid);
+          if (t.status === "success") {
+            await settlePayLink(linkId, { paymentId: t.easepayid || txnid, method: t.mode ? `Easebuzz ${t.mode}` : "Easebuzz", amount: t.amount || link.amount }, easebuzzModeFor(t.mode));
+            return NextResponse.json({ ok: true, status: "paid", student: await getStudent(id) });
+          }
+          if (txnid === tried[tried.length - 1]) last = t.status;
+        }
+        return NextResponse.json({ ok: true, status: last === "unknown" || last === "pending" ? "not paid yet" : last, student: s });
+      }
       if (link.provider !== "razorpay") return NextResponse.json({ error: "GrayQuest links are confirmed by hand: use Confirm payment once the money arrives" }, { status: 400 });
       const st = await fetchPayLink(linkId);
       if (st.status === "paid") await settlePayLink(linkId, { paymentId: st.paymentId, method: st.method, amount: st.amountPaid || link.amount }, modeFor(st.method));

@@ -45,8 +45,9 @@ async function read(): Promise<StudentRecord[]> {
 }
 const write = async (all: StudentRecord[]) => {
   await fs.writeFile(FILE, JSON.stringify(all, null, 2));
+  // Awaited: a payment confirmation must not be lost if the process is paused right after responding.
   if (isDbConfigured() && all.length > 0) {
-    void saveDbStudentsBulk(all);
+    await saveDbStudentsBulk(all);
   }
 };
 
@@ -240,6 +241,30 @@ export function setPayLinkStatus(linkId: string, status: PayLink["status"]): Pro
     let changed = false;
     for (const s of all) for (const l of s.payLinks ?? []) if (l.id === linkId && l.status === "Created" && status !== "Created") (l.status = status), (changed = true);
     if (changed) await write(all);
+  });
+}
+
+/** Find a payment link and its student (public pay page / gateway callbacks). */
+export async function findPayLink(linkId: string): Promise<{ student: StudentRecord; link: PayLink } | null> {
+  const all = await read();
+  for (const s of all) {
+    const l = s.payLinks?.find((x) => x.id === linkId);
+    if (l) return { student: s, link: l };
+  }
+  return null;
+}
+
+/** Record a new checkout attempt (Easebuzz txnid) on a link. */
+export function addPayLinkAttempt(linkId: string, txnid: string): Promise<void> {
+  return locked(async () => {
+    const all = await read();
+    for (const s of all)
+      for (const l of s.payLinks ?? [])
+        if (l.id === linkId) {
+          l.attempts = [...(l.attempts ?? []), txnid].slice(-20);
+          await write(all);
+          return;
+        }
   });
 }
 
