@@ -97,7 +97,7 @@ export async function GET() {
   // Ensure any CRM leads in "Admitted" stage are enrolled into the Students list automatically.
   try {
     const crmLeads = await listLeads();
-    const admitted = crmLeads.filter((l) => l.stage === "Admitted");
+    const admitted = crmLeads.filter((l) => l.stage === "Admitted" || l.formName === "Q-School Admission Form");
     if (admitted.length > 0) await syncAdmittedLeads(admitted);
   } catch (e) {
     console.warn("[students] syncAdmittedLeads warning:", e);

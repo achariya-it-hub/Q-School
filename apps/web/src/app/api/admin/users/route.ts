@@ -6,6 +6,9 @@ import { dataFile } from "@/lib/data-dir";
 import { recordAuditLog } from "@/lib/audit/store";
 import { DEFAULT_USERS } from "@/lib/default-users";
 import { deleteDbUser, getDbUsers, insertDbUser, updateDbUser, type DbUser } from "@/lib/db";
+import { listLeads } from "@/lib/crm/store";
+import { listStudents, syncAdmittedLeads } from "@/lib/students/store";
+import { centreName } from "@qschool/shared";
 
 async function readUsers(): Promise<DbUser[]> {
   const dbUsers = await getDbUsers();
@@ -45,6 +48,36 @@ async function writeUsers(users: unknown[]) {
 export async function GET() {
   if (!isAdmin()) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   try {
+    // Ensure any admitted CRM leads and enrolled students are synced into qs_users as Student accounts.
+    try {
+      const crmLeads = await listLeads();
+      const admitted = crmLeads.filter((l) => l.stage === "Admitted" || l.formName === "Q-School Admission Form");
+      if (admitted.length > 0) await syncAdmittedLeads(admitted);
+      const students = await listStudents();
+      const currentUsers = await readUsers();
+      const existingIds = new Set(currentUsers.map((u) => u.id));
+      const existingNames = new Set(currentUsers.filter((u) => u.role === "Student").map((u) => u.name.trim().toLowerCase()));
+      for (const s of students) {
+        const uid = `usr_${s.id.toLowerCase().replace(/[^a-z0-9]/g, "")}`;
+        if (!existingIds.has(uid) && !existingNames.has(s.studentName.trim().toLowerCase())) {
+          const email = (s.email && s.email.trim().toLowerCase()) || `${s.id.toLowerCase().replace(/[^a-z0-9]/g, "")}@student.theqschool.com`;
+          await insertDbUser({
+            id: uid,
+            name: s.studentName,
+            email,
+            role: "Student",
+            location: centreName(s.centreId),
+            centreId: s.centreId,
+            status: "Active",
+            joined: (s.createdAt || new Date().toISOString()).slice(0, 10),
+            phone: s.phone || "",
+          });
+        }
+      }
+    } catch (syncErr) {
+      console.warn("[users] student sync warning:", syncErr);
+    }
+
     const users = await readUsers();
     return NextResponse.json({ ok: true, count: users.length, users });
   } catch (error) {

@@ -141,12 +141,12 @@ export async function POST(req: Request) {
         name: leadName,
         phone: rec.phone,
         email: rec.email || undefined,
-        interest: `Admission Application (${locName})`,
+        interest: rec.grade ? `${rec.grade} (${locName})` : `Admission Application (${locName})`,
         formName: "Q-School Admission Form",
         location: locName,
         centreId: rec.centreId,
         owner: CENTRE_MANAGERS[rec.centreId],
-        stage: "Enquiry",
+        stage: "Admitted",
         extra: extraData,
       });
     } catch (crmErr) {

@@ -101,6 +101,8 @@ export interface StudentRecord {
   school?: string;
   /** File name of the uploaded photo (served by /api/students/photo/<file>). */
   photo: string;
+  /** Data URL backup of the photo so serverless deployments never lose photos across cold starts. */
+  photoData?: string;
   parentName: string;
   fatherName?: string;
   fatherProfession?: string;

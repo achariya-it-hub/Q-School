@@ -7,6 +7,7 @@ import path from "path";
 import {
   ADMISSION_CENTRES,
   PAYMENT_MODES,
+  centreName,
   inferStudentCourseFee,
   leadCentreId,
   studentPayments,
@@ -16,7 +17,7 @@ import {
   type StudentRecord,
 } from "@qschool/shared";
 import { DATA_DIR, dataFile } from "@/lib/data-dir";
-import { isDbConfigured, getDbStudents, saveDbStudentsBulk } from "@/lib/db";
+import { isDbConfigured, getDbStudents, insertDbUser, saveDbStudentsBulk } from "@/lib/db";
 
 const FILE = dataFile("students.json");
 const PHOTO_DIR = path.join(DATA_DIR, "student-photos");
@@ -53,17 +54,36 @@ async function read(): Promise<StudentRecord[]> {
   } catch {}
   return [];
 }
+const syncStudentToUsersDb = async (s: StudentRecord) => {
+  if (!isDbConfigured()) return;
+  const email = (s.email && s.email.trim().toLowerCase()) || `${s.id.toLowerCase().replace(/[^a-z0-9]/g, "")}@student.theqschool.com`;
+  await insertDbUser({
+    id: `usr_${s.id.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
+    name: s.studentName,
+    email,
+    role: "Student",
+    location: centreName(s.centreId),
+    centreId: s.centreId,
+    status: "Active",
+    joined: (s.createdAt || new Date().toISOString()).slice(0, 10),
+    phone: s.phone || "",
+  }).catch(() => {});
+};
+
 const write = async (all: StudentRecord[]) => {
-  await fs.writeFile(FILE, JSON.stringify(all, null, 2));
-  // Awaited: a payment confirmation must not be lost if the process is paused right after responding.
+  await fs.writeFile(FILE, JSON.stringify(all, null, 2)).catch(() => {});
+  // Awaited: a payment confirmation or admission must not be lost if serverless pauses right after responding.
   if (isDbConfigured() && all.length > 0) {
     await saveDbStudentsBulk(all);
+    await Promise.all(all.map(syncStudentToUsersDb));
   }
 };
 
 export async function listStudents(centreId?: string): Promise<StudentRecord[]> {
   const all = await read();
-  return (centreId ? all.filter((s) => s.centreId === centreId) : all).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return (centreId ? all.filter((s) => s.centreId === centreId) : all)
+    .map(({ photoData: _omit, ...rest }) => rest)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function getStudent(id: string) {
@@ -142,6 +162,7 @@ export function addStudent(input: NewStudent, photoDataUrl: string | null): Prom
       ...input,
       totalFee: input.totalFee && input.totalFee > 0 ? input.totalFee : inferred.totalFee,
       photo,
+      ...(photoDataUrl ? { photoData: photoDataUrl } : {}),
       status: "Pending",
       createdAt: new Date().toISOString(),
     };
@@ -467,10 +488,20 @@ export function addPayLinkAttempt(linkId: string, txnid: string): Promise<void> 
 
 export async function readPhoto(file: string): Promise<{ buf: Buffer; type: string } | null> {
   if (!/^STU-\d+\.(jpg|png|webp)$/.test(file)) return null;
+  const mime = file.endsWith(".png") ? "image/png" : file.endsWith(".webp") ? "image/webp" : "image/jpeg";
   try {
     const buf = await fs.readFile(path.join(PHOTO_DIR, file));
-    return { buf, type: file.endsWith(".png") ? "image/png" : file.endsWith(".webp") ? "image/webp" : "image/jpeg" };
+    return { buf, type: mime };
   } catch {
+    // Fallback on serverless cold start: decode photoData stored in Postgres qs_students
+    const all = await read();
+    const s = all.find((x) => x.photo === file && x.photoData);
+    if (s?.photoData) {
+      try {
+        const { buf } = decodePhoto(s.photoData);
+        return { buf, type: mime };
+      } catch {}
+    }
     return null;
   }
 }
