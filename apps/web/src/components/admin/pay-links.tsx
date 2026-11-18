@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { inr, type PayLink, type StudentRecord } from "@qschool/shared";
+import { useEffect, useState } from "react";
+import { inr, studentFeeSummary, type PayLink, type StudentRecord } from "@qschool/shared";
 import { Btn, Field, Modal, StatusBadge, inputCls } from "@/components/admin/ui";
 
 const TONE = { Created: "warning", Paid: "good", Expired: "neutral", Cancelled: "neutral" } as const;
@@ -30,11 +30,16 @@ export function PayLinks({ student, onChanged }: { student: StudentRecord; onCha
   };
   const copy = (t: string) => navigator.clipboard?.writeText(t).then(() => setMsg("Link copied"));
 
+  const fee = studentFeeSummary(student);
   return (
     <div className="rounded-xl border border-[#E2ECE9] p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-[13px] font-semibold text-brand-ink">Payment links</p>
-        {!(student.status === "Active" && student.payment) && <Btn variant="ghost" icon="plus" onClick={() => setOpen(true)}>Send payment link</Btn>}
+        {fee.feeState !== "Paid" && (
+          <Btn variant="ghost" icon="plus" onClick={() => setOpen(true)}>
+            {fee.paid > 0 ? "Send part-payment link" : "Send payment link"}
+          </Btn>
+        )}
       </div>
       <ul className="space-y-2">
         {links.map((l) => (
@@ -64,6 +69,8 @@ export function PayLinks({ student, onChanged }: { student: StudentRecord; onCha
 }
 
 function NewLink({ student, open, onClose, onDone }: { student: StudentRecord; open: boolean; onClose: () => void; onDone: (m: string) => void }) {
+  const fee = studentFeeSummary(student);
+  const partNumber = fee.payments.length + 1;
   const [provider, setProvider] = useState<Provider>("easebuzz");
   const [amount, setAmount] = useState("");
   const [desc, setDesc] = useState("");
@@ -71,6 +78,21 @@ function NewLink({ student, open, onClose, onDone }: { student: StudentRecord; o
   const [ref, setRef] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setAmount(fee.balance > 0 ? String(fee.balance) : "");
+      setDesc(fee.paid > 0 ? `Part payment ${partNumber} - ${student.studentName}` : `Admission fee - ${student.studentName}`);
+      setErr("");
+    }
+  }, [open, fee.balance, fee.paid, partNumber, student.studentName]);
+
+  const applyPreset = (val: number, label: string) => {
+    const clean = Math.max(1, Math.round(fee.balance > 0 ? Math.min(val, fee.balance) : val));
+    setAmount(String(clean));
+    const isFull = clean >= fee.balance && fee.paid === 0;
+    setDesc(isFull ? `Admission fee - ${student.studentName}` : `${label} (Part ${partNumber}) - ${student.studentName}`);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +119,34 @@ function NewLink({ student, open, onClose, onDone }: { student: StudentRecord; o
   return (
     <Modal open={open} title="Send payment link" onClose={onClose}>
       <form className="space-y-3" onSubmit={submit}>
-        <p className="text-[12.5px] text-[#6b807b]">For <b>{student.studentName}</b> · parent {student.parentName} ({student.phone})</p>
+        <p className="text-[12.5px] text-[#6b807b]">
+          For <b>{student.studentName}</b> · parent {student.parentName} ({student.phone}) · Balance due: <b>{inr(fee.balance)}</b>
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {[
+            { label: fee.paid > 0 ? "Remaining Balance" : "Full Fee", val: fee.balance || fee.totalFee },
+            { label: "50% Part", val: Math.round(fee.totalFee / 2) },
+            { label: "25% Part", val: Math.round(fee.totalFee / 4) },
+            { label: "Monthly", val: Math.round(fee.totalFee / 12) },
+            { label: "Advance ₹10,000", val: 10000 },
+            { label: "Advance ₹5,000", val: 5000 },
+          ]
+            .filter((p, idx) => idx === 0 || (p.val > 0 && p.val < (fee.balance || fee.totalFee)))
+            .map((p) => (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => applyPreset(p.val, p.label)}
+                className={`rounded-lg border px-2 py-1 text-[11px] font-semibold transition ${
+                  Math.round(Number(amount)) === p.val
+                    ? "border-brand-deep bg-brand-deep text-white"
+                    : "border-[#CFE3DD] bg-[#F7FAF9] text-brand-deep hover:border-brand-teal"
+                }`}
+              >
+                {p.label} ({inr(p.val)})
+              </button>
+            ))}
+        </div>
         <Field label="Collect through">
           <select className={inputCls} value={provider} onChange={(e) => setProvider(e.target.value as Provider)}>
             <option value="easebuzz">Easebuzz: UPI, cards, net banking, wallets, EMI (auto-confirms)</option>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { inr } from "@qschool/shared";
+import { inr, studentFeeSummary } from "@qschool/shared";
 import { easebuzzConfigured, easebuzzEnv } from "@/lib/payments/easebuzz";
 import { findPayLink } from "@/lib/students/store";
 
@@ -37,7 +37,10 @@ export default async function PayPage({ params, searchParams }: { params: { link
   }
 
   const { student, link } = found;
+  const fee = studentFeeSummary(student);
   const isPaid = link.status === "Paid";
+  const isPartPayment = fee.totalFee > link.amount;
+  const balanceAfterThis = isPaid ? fee.balance : Math.max(0, Math.round((fee.balance - link.amount) * 100) / 100);
   const bannerKey = isPaid ? (result === "success" ? "success" : "paid") : link.status === "Expired" ? "expired" : link.status === "Cancelled" ? "cancelled_link" : result;
   const banner = bannerKey ? BANNER[bannerKey] : undefined;
   // Returned "success" but not settled yet (e.g. webhook still on its way): reassure instead of offering to pay twice.
@@ -50,9 +53,28 @@ export default async function PayPage({ params, searchParams }: { params: { link
           Test mode · Easebuzz staging · no real money is charged
         </p>
       )}
-      <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brand-teal">Q-School fee payment</p>
+      <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brand-teal">
+        {isPartPayment ? "Q-School part-payment checkout" : "Q-School fee payment"}
+      </p>
       <h1 className="mt-1 text-2xl font-extrabold text-brand-deep">{inr(link.amount)}</h1>
       <p className="mt-1 text-[14px] text-[#41564f]">{link.description}</p>
+
+      {isPartPayment && (
+        <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl border border-[#D8EAE4] bg-[#F4FAF8] p-3 text-center text-[12px]">
+          <div>
+            <p className="text-[10.5px] text-[#6b807b]">Total Course Fee</p>
+            <p className="font-bold text-brand-ink">{inr(fee.totalFee)}</p>
+          </div>
+          <div>
+            <p className="text-[10.5px] text-[#6b807b]">{isPaid ? "Total Paid" : "Paying Now"}</p>
+            <p className="font-bold text-[#0E937E]">{inr(isPaid ? fee.paid : link.amount)}</p>
+          </div>
+          <div>
+            <p className="text-[10.5px] text-[#6b807b]">{isPaid ? "Balance Left" : "Balance After"}</p>
+            <p className="font-bold text-brand-ink">{inr(balanceAfterThis)}</p>
+          </div>
+        </div>
+      )}
 
       <dl className="mt-5 grid grid-cols-2 gap-3 rounded-xl bg-[#F7FAF9] p-4 text-[13px]">
         <div>

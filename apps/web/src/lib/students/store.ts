@@ -4,7 +4,17 @@
  */
 import { promises as fs } from "fs";
 import path from "path";
-import { ADMISSION_CENTRES, PAYMENT_MODES, type AdmissionPayment, type PayLink, type PaymentMode, type StudentRecord } from "@qschool/shared";
+import {
+  ADMISSION_CENTRES,
+  PAYMENT_MODES,
+  inferStudentCourseFee,
+  leadCentreId,
+  studentPayments,
+  type AdmissionPayment,
+  type PayLink,
+  type PaymentMode,
+  type StudentRecord,
+} from "@qschool/shared";
 import { DATA_DIR, dataFile } from "@/lib/data-dir";
 import { isDbConfigured, getDbStudents, saveDbStudentsBulk } from "@/lib/db";
 
@@ -91,6 +101,8 @@ export interface NewStudent {
   referredBy?: string;
   centreId: string;
   ref: string;
+  leadId?: string;
+  totalFee?: number;
 }
 
 const digits = (s: string) => s.replace(/\D/g, "");
@@ -124,7 +136,15 @@ export function addStudent(input: NewStudent, photoDataUrl: string | null): Prom
       await fs.writeFile(path.join(PHOTO_DIR, photo), buf);
     }
 
-    const student: StudentRecord = { id, ...input, photo, status: "Pending", createdAt: new Date().toISOString() };
+    const inferred = inferStudentCourseFee(input.grade, input.age, input.totalFee);
+    const student: StudentRecord = {
+      id,
+      ...input,
+      totalFee: input.totalFee && input.totalFee > 0 ? input.totalFee : inferred.totalFee,
+      photo,
+      status: "Pending",
+      createdAt: new Date().toISOString(),
+    };
     await write([student, ...all]);
     return { student, duplicate: false };
   });
@@ -150,23 +170,162 @@ export function addStudentsBulk(rows: NewStudent[]): Promise<{ added: number; du
   });
 }
 
+export interface LeadEnrollmentSource {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  interest?: string;
+  source?: string;
+  owner?: string;
+  value?: number;
+  location?: string;
+  centreId?: string;
+  createdAt?: string;
+  extra?: Record<string, string>;
+}
+
+const phone10 = (p?: string) => (p ? p.replace(/\D/g, "").slice(-10) : "");
+
+function buildStudentFromLead(lead: LeadEnrollmentSource, id: string): StudentRecord {
+  const rawStudentName =
+    lead.extra?.["Student Name"]?.trim() ||
+    lead.name.replace(/\s*\(Parent:.*\)$/i, "").trim() ||
+    "Student";
+  const parentName =
+    lead.extra?.["Parent Name"]?.trim() ||
+    (/\((?:Parent:\s*)?([^)]+)\)/i.exec(lead.name)?.[1]?.trim()) ||
+    rawStudentName;
+  const age = lead.extra?.["Age"] || lead.extra?.childAgeOrGrade || "";
+  const courseInfo = inferStudentCourseFee(lead.interest, age, lead.value && lead.value > 0 ? lead.value : undefined);
+  const centreId = leadCentreId(lead) || "mk";
+
+  return {
+    id,
+    leadId: lead.id,
+    studentName: rawStudentName,
+    dob: lead.extra?.["DOB"] || "",
+    age: age || undefined,
+    gender: lead.extra?.["Gender"] || undefined,
+    grade: courseInfo.course,
+    school: lead.extra?.["School"] || "",
+    photo: "",
+    parentName,
+    phone: lead.phone || "",
+    email: lead.email || "",
+    address: lead.extra?.["Address"] || lead.location || "",
+    referralType: lead.extra?.["Referral Type"] || lead.source || undefined,
+    referredBy: lead.extra?.["Referred By"] || lead.owner || undefined,
+    centreId,
+    ref: lead.owner || lead.source || "CRM Pipeline",
+    status: "Pending",
+    totalFee: courseInfo.totalFee,
+    createdAt: lead.createdAt || new Date().toISOString(),
+  };
+}
+
+function findMatchingStudent(all: StudentRecord[], lead: LeadEnrollmentSource): number {
+  const appId = lead.extra?.["Application ID"] || lead.extra?.["Student ID"];
+  const cleanName = (lead.extra?.["Student Name"] || lead.name.replace(/\s*\(Parent:.*\)$/i, "")).trim().toLowerCase();
+  const p10 = phone10(lead.phone);
+  return all.findIndex(
+    (s) =>
+      (s.leadId && s.leadId === lead.id) ||
+      (appId && s.id === appId) ||
+      (cleanName && s.studentName.trim().toLowerCase() === cleanName && p10 && phone10(s.phone) === p10),
+  );
+}
+
+/**
+ * Automatically create (or link) a StudentRecord when a CRM lead reaches "Admitted".
+ * Idempotent: moving or syncing the same lead twice never duplicates the student.
+ */
+export function enrollLeadAsStudent(lead: LeadEnrollmentSource): Promise<{ student: StudentRecord; created: boolean }> {
+  return locked(async () => {
+    const all = await read();
+    const idx = findMatchingStudent(all, lead);
+    if (idx >= 0) {
+      const cur = all[idx];
+      const inferred = inferStudentCourseFee(cur.grade || lead.interest, cur.age, lead.value && lead.value > 0 ? lead.value : undefined);
+      const patched: StudentRecord = {
+        ...cur,
+        leadId: cur.leadId || lead.id,
+        totalFee: cur.totalFee && cur.totalFee > 0 ? cur.totalFee : inferred.totalFee,
+      };
+      if (patched.leadId !== cur.leadId || patched.totalFee !== cur.totalFee) {
+        all[idx] = patched;
+        await write(all);
+      }
+      return { student: patched, created: false };
+    }
+
+    const id = stuId(nextNum(all));
+    const student = buildStudentFromLead(lead, id);
+    await write([student, ...all]);
+    return { student, created: true };
+  });
+}
+
+/** Sync any CRM leads already in "Admitted" stage so existing admitted leads appear in the Students list. */
+export function syncAdmittedLeads(admittedLeads: LeadEnrollmentSource[]): Promise<number> {
+  if (!admittedLeads.length) return Promise.resolve(0);
+  return locked(async () => {
+    const all = await read();
+    let n = nextNum(all);
+    const created: StudentRecord[] = [];
+    let updatedExisting = false;
+
+    for (const lead of admittedLeads) {
+      const idx = findMatchingStudent([...created, ...all], lead);
+      if (idx >= 0) {
+        const realIdx = idx - created.length;
+        if (realIdx >= 0 && !all[realIdx].leadId) {
+          all[realIdx] = { ...all[realIdx], leadId: lead.id };
+          updatedExisting = true;
+        }
+        continue;
+      }
+      created.push(buildStudentFromLead(lead, stuId(n++)));
+    }
+
+    if (created.length || updatedExisting) {
+      await write([...created, ...all]);
+    }
+    return created.length;
+  });
+}
+
 export interface PaymentInput {
   amount: number;
   mode: string;
   receiptNo: string;
   note?: string;
+  totalFee?: number;
 }
 
-/** Pending -> Active, recording how the fee was paid and who confirmed it. */
+/**
+ * Record a full or part payment against a student.
+ * Activates Pending students on their first payment and appends subsequent part payments until balance reaches 0.
+ */
 export function activateStudent(id: string, p: PaymentInput, by: string): Promise<StudentRecord> {
   return locked(async () => {
     const all = await read();
     const i = all.findIndex((s) => s.id === id);
     if (i < 0) throw new Error("Student not found");
-    if (all[i].status === "Active") throw new Error("Student is already active");
     if (!(p.amount > 0)) throw new Error("Enter the amount paid");
     if (!PAYMENT_MODES.includes(p.mode as PaymentMode)) throw new Error("Choose a payment mode");
     if (!p.receiptNo.trim()) throw new Error("Enter the receipt number");
+
+    const cur = all[i];
+    const existingPayments = studentPayments(cur);
+    const inferred = inferStudentCourseFee(cur.grade, cur.age);
+    const nextTotalFee =
+      p.totalFee && p.totalFee > 0
+        ? Math.round(p.totalFee * 100) / 100
+        : cur.totalFee && cur.totalFee > 0
+        ? cur.totalFee
+        : inferred.totalFee;
+
     const payment: AdmissionPayment = {
       amount: Math.round(p.amount * 100) / 100,
       mode: p.mode as PaymentMode,
@@ -175,7 +334,20 @@ export function activateStudent(id: string, p: PaymentInput, by: string): Promis
       confirmedBy: by,
       confirmedAt: new Date().toISOString(),
     };
-    all[i] = { ...all[i], status: "Active", payment };
+    const payments = [...existingPayments, payment];
+    all[i] = { ...cur, status: "Active", totalFee: nextTotalFee, payment, payments };
+    await write(all);
+    return all[i];
+  });
+}
+
+export function setStudentTotalFee(id: string, totalFee: number): Promise<StudentRecord> {
+  return locked(async () => {
+    if (!(totalFee > 0)) throw new Error("Enter a valid total course fee");
+    const all = await read();
+    const i = all.findIndex((s) => s.id === id);
+    if (i < 0) throw new Error("Student not found");
+    all[i] = { ...all[i], totalFee: Math.round(totalFee * 100) / 100 };
     await write(all);
     return all[i];
   });
@@ -195,20 +367,27 @@ export function setCentre(id: string, centreId: string): Promise<StudentRecord> 
 
 /* ───────────── payment links ───────────── */
 
-export function addPayLink(studentId: string, link: PayLink): Promise<StudentRecord> {
+export function addPayLink(studentId: string, link: PayLink, totalFee?: number): Promise<StudentRecord> {
   return locked(async () => {
     const all = await read();
     const i = all.findIndex((s) => s.id === studentId);
     if (i < 0) throw new Error("Student not found");
-    all[i] = { ...all[i], payLinks: [link, ...(all[i].payLinks ?? [])].slice(0, 20) };
+    const cur = all[i];
+    const nextTotal =
+      totalFee && totalFee > 0
+        ? Math.round(totalFee * 100) / 100
+        : cur.totalFee && cur.totalFee > 0
+        ? cur.totalFee
+        : inferStudentCourseFee(cur.grade, cur.age).totalFee;
+    all[i] = { ...cur, totalFee: nextTotal, payLinks: [link, ...(cur.payLinks ?? [])].slice(0, 20) };
     await write(all);
     return all[i];
   });
 }
 
 /**
- * A link was paid: mark it Paid and, if the admission is still Pending, confirm it (Active) with the gateway's payment id as the receipt.
- * Safe to call twice (webhook + manual check).
+ * A link was paid (full or part payment): mark the link Paid, append the payment to `payments`,
+ * and ensure the admission is Active. Safe to call twice (webhook + return / manual check).
  */
 export function settlePayLink(linkId: string, paid: { paymentId?: string; method?: string; amount: number }, mode: string): Promise<StudentRecord | null> {
   return locked(async () => {
@@ -216,19 +395,37 @@ export function settlePayLink(linkId: string, paid: { paymentId?: string; method
     const i = all.findIndex((s) => s.payLinks?.some((l) => l.id === linkId));
     if (i < 0) return null;
     const s = all[i];
-    const links = (s.payLinks ?? []).map((l) => (l.id === linkId && l.status !== "Paid" ? { ...l, status: "Paid" as const, paidAt: new Date().toISOString(), method: paid.method, paymentId: paid.paymentId } : l));
-    let next: StudentRecord = { ...s, payLinks: links };
-    if (s.status === "Pending" && !s.payment) {
+    const targetLink = (s.payLinks ?? []).find((l) => l.id === linkId);
+    const links = (s.payLinks ?? []).map((l) =>
+      l.id === linkId && l.status !== "Paid"
+        ? { ...l, status: "Paid" as const, paidAt: new Date().toISOString(), method: paid.method, paymentId: paid.paymentId }
+        : l,
+    );
+    const existingPayments = studentPayments(s);
+    const receiptNo = paid.paymentId || linkId;
+    const alreadyRecorded = existingPayments.some((p) => p.receiptNo === receiptNo) || targetLink?.status === "Paid";
+
+    let next: StudentRecord = {
+      ...s,
+      payLinks: links,
+      totalFee: s.totalFee && s.totalFee > 0 ? s.totalFee : inferStudentCourseFee(s.grade, s.age).totalFee,
+    };
+
+    if (!alreadyRecorded) {
       const payment: AdmissionPayment = {
-        amount: paid.amount,
+        amount: Math.round((paid.amount || targetLink?.amount || 0) * 100) / 100,
         mode: PAYMENT_MODES.includes(mode as PaymentMode) ? (mode as PaymentMode) : "UPI",
-        receiptNo: paid.paymentId || linkId,
-        note: "Paid through payment link",
+        receiptNo,
+        note: targetLink?.description ? `Paid online: ${targetLink.description}` : "Paid through payment link",
         confirmedBy: "Payment link",
         confirmedAt: new Date().toISOString(),
       };
-      next = { ...next, status: "Active", payment };
+      const payments = [...existingPayments, payment];
+      next = { ...next, status: "Active", payment, payments };
+    } else if (next.status === "Pending") {
+      next = { ...next, status: "Active" };
     }
+
     all[i] = next;
     await write(all);
     return next;

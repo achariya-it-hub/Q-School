@@ -224,7 +224,7 @@ export default function LeadsPage() {
     const l = leads.find((x) => x.id === drag);
     if (l && l.stage !== stage) {
       patch(l.id, { stage });
-      show(`${l.name} moved to ${stage}`);
+      show(stage === "Admitted" ? `${l.name} admitted & automatically enrolled in Students` : `${l.name} moved to ${stage}`);
     }
     setDrag(null);
     setOver(null);
@@ -587,7 +587,7 @@ export default function LeadsPage() {
                           onChange={(e) => {
                             const newStage = e.target.value as Stage;
                             patch(l.id, { stage: newStage });
-                            show(`${l.name} moved to ${newStage}`);
+                            show(newStage === "Admitted" ? `${l.name} admitted & automatically enrolled in Students` : `${l.name} moved to ${newStage}`);
                             if (newStage === "BMIT" && !l.extra?.["BMIT Test Date"]) {
                               setOpen(l.id);
                             }
@@ -940,6 +940,15 @@ function LeadCard({
             <Icon name="calendar" size={11} className="text-purple-700" />
             <span>BMIT: {l.extra["BMIT Test Date Formatted"] || l.extra["BMIT Test Date"]}</span>
           </span>
+        )}
+        {l.stage === "Admitted" && (
+          <Link
+            href="/admin/enrolments"
+            onClick={(e) => e.stopPropagation()}
+            className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10.5px] font-bold text-emerald-800 border border-emerald-200 hover:bg-emerald-700 hover:text-white transition"
+          >
+            ✓ Enrolled in Students →
+          </Link>
         )}
         {l.isTest && <span className="rounded-md bg-[#FFF6E0] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#8A5A00]">Test</span>}
         {l.value > 0 && <span className="text-[11px] font-bold text-brand-ink">{inr(l.value)}</span>}
@@ -1345,6 +1354,14 @@ function LeadDetail({
     <div className="space-y-5 text-[13px]">
       <div className="flex flex-wrap gap-2">
         <StatusBadge tone="info">{lead.stage || "Enquiry"}</StatusBadge>
+        {lead.stage === "Admitted" && (
+          <Link
+            href="/admin/enrolments"
+            className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11.5px] font-bold text-emerald-800 hover:bg-emerald-700 hover:text-white transition"
+          >
+            ✓ View in Students &amp; Collect Fee →
+          </Link>
+        )}
         {lead.slaBreached && <StatusBadge tone="serious">SLA breached</StatusBadge>}
         {lead.isTest && <StatusBadge tone="warning">Test lead</StatusBadge>}
       </div>
@@ -1493,7 +1510,7 @@ function LeadDetail({
             onChange={(e) => {
               const nextStage = e.target.value as Stage;
               onPatch({ stage: nextStage });
-              onToast(`Moved to ${nextStage}`);
+              onToast(nextStage === "Admitted" ? `Admitted & automatically enrolled in Students` : `Moved to ${nextStage}`);
               if (nextStage === "BMIT" && !lead.extra?.["BMIT Test Date"]) {
                 setBmitModalOpen(true);
               }

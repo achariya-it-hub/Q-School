@@ -7,8 +7,8 @@ import { AdminShell } from "@/components/admin/shell";
 import { Avatar } from "@/components/dashboard/art";
 import { Btn, Card, DataGrid, Field, Figure, Modal, PageHeader, SearchInput, Segmented, StatusBadge, Td, Th, Toast, inputCls, useToast } from "@/components/admin/ui";
 import { Icon } from "@/components/icons";
-import { ACCOUNT_TONE } from "@/components/admin/finance";
-import { downloadCsv, useConsole } from "@/components/admin/store";
+import { ACCOUNT_TONE, useFinance } from "@/components/admin/finance";
+import { downloadCsv } from "@/components/admin/store";
 
 type Role = "Admin" | "CentreManager" | "Faculty" | "Counsellor" | "Finance" | "Student";
 
@@ -46,7 +46,7 @@ interface User {
 
 /** Users come from /api/admin/users (users.json); fee status is joined from the fee ledger by name. */
 export default function UsersPage() {
-  const accounts = useConsole((s) => s.accounts);
+  const { accounts } = useFinance();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");

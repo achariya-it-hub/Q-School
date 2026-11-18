@@ -11,7 +11,21 @@
 import { NextResponse } from "next/server";
 import { ADMISSION_CENTRES, type PayLink } from "@qschool/shared";
 import { caller } from "@/lib/students/access";
-import { activateStudent, addPayLink, addStudent, addStudentsBulk, getStudent, listStudents, setCentre, setPayLinkStatus, settlePayLink, type NewStudent } from "@/lib/students/store";
+import {
+  activateStudent,
+  addPayLink,
+  addStudent,
+  addStudentsBulk,
+  getStudent,
+  listStudents,
+  setCentre,
+  setPayLinkStatus,
+  setStudentTotalFee,
+  settlePayLink,
+  syncAdmittedLeads,
+  type NewStudent,
+} from "@/lib/students/store";
+import { listLeads } from "@/lib/crm/store";
 import { createPayLink, fetchPayLink, modeFor, razorpayConfigured } from "@/lib/payments/razorpay";
 import { easebuzzConfigured, easebuzzEnv, easebuzzModeFor, publicBase, retrieveTransaction } from "@/lib/payments/easebuzz";
 
@@ -80,6 +94,14 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const who = await caller();
   if (!who) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
+  // Ensure any CRM leads in "Admitted" stage are enrolled into the Students list automatically.
+  try {
+    const crmLeads = await listLeads();
+    const admitted = crmLeads.filter((l) => l.stage === "Admitted");
+    if (admitted.length > 0) await syncAdmittedLeads(admitted);
+  } catch (e) {
+    console.warn("[students] syncAdmittedLeads warning:", e);
+  }
   const students = await listStudents(who.kind === "centre" ? who.centreId : undefined);
   return NextResponse.json({ ok: true, scope: who.kind === "centre" ? who.centreId : "all", name: who.name, razorpay: razorpayConfigured(), easebuzz: easebuzzConfigured() ? easebuzzEnv() : false, students });
 }
@@ -95,7 +117,21 @@ export async function PATCH(req: Request) {
 
   try {
     if (b.action === "activate") {
-      const student = await activateStudent(id, { amount: Number(b.amount), mode: String(b.mode ?? ""), receiptNo: String(b.receiptNo ?? ""), note: b.note ? String(b.note) : undefined }, who.name);
+      const student = await activateStudent(
+        id,
+        {
+          amount: Number(b.amount),
+          mode: String(b.mode ?? ""),
+          receiptNo: String(b.receiptNo ?? ""),
+          note: b.note ? String(b.note) : undefined,
+          totalFee: b.totalFee ? Number(b.totalFee) : undefined,
+        },
+        who.name,
+      );
+      return NextResponse.json({ ok: true, student });
+    }
+    if (b.action === "setTotalFee") {
+      const student = await setStudentTotalFee(id, Number(b.totalFee));
       return NextResponse.json({ ok: true, student });
     }
     if (b.action === "setCentre") {
@@ -103,10 +139,10 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ ok: true, student: await setCentre(id, String(b.centreId ?? "")) });
     }
     if (b.action === "payLink") {
-      if (s.status === "Active" && s.payment) return NextResponse.json({ error: "Fee is already confirmed for this student" }, { status: 400 });
       const amount = Math.round(Number(b.amount) * 100) / 100;
       if (!(amount >= 1)) return NextResponse.json({ error: "Enter the amount to collect" }, { status: 400 });
       const description = String(b.description ?? "").trim().slice(0, 200) || `Admission fee - ${s.studentName}`;
+      const totalFee = b.totalFee ? Number(b.totalFee) : undefined;
       let link: PayLink;
       if (b.provider === "grayquest") {
         const url = String(b.url ?? "").trim();
@@ -121,7 +157,7 @@ export async function PATCH(req: Request) {
         const r = await createPayLink({ amount, description, reference: `${s.id}-${Date.now().toString(36)}`, name: s.parentName, phone: s.phone, email: s.email || undefined, notes: { studentId: s.id, centreId: s.centreId, student: s.studentName }, expireDays: 14 });
         link = { provider: "razorpay", id: r.id, url: r.url, amount, description, createdBy: who.name, createdAt: new Date().toISOString(), status: "Created" };
       }
-      return NextResponse.json({ ok: true, link, student: await addPayLink(id, link) });
+      return NextResponse.json({ ok: true, link, student: await addPayLink(id, link, totalFee) });
     }
     if (b.action === "checkLink") {
       const linkId = String(b.linkId ?? "");

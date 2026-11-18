@@ -147,19 +147,43 @@ export function useConsole<T>(select: (s: State) => T): T {
 
 /* ───────── Finance ───────── */
 
-export function recordPayment(accountId: string, instNo: number, method: PayMethod, ref: string) {
+export function recordPayment(accountId: string, instNo: number, method: PayMethod, ref: string, paidAmount?: number) {
   set((s) => ({
     ...s,
-    accounts: s.accounts.map((a) =>
-      a.id !== accountId
-        ? a
-        : {
-            ...a,
-            installments: a.installments.map((i) =>
-              i.no === instNo ? { ...i, paidOn: TODAY_ISO, method, ref: ref || `${method}/${Date.now().toString().slice(-8)}` } : i,
-            ),
-          },
-    ),
+    accounts: s.accounts.map((a) => {
+      if (a.id !== accountId) return a;
+      const target = a.installments.find((i) => i.no === instNo);
+      if (!target) return a;
+      const actualPaid =
+        paidAmount && paidAmount > 0 && paidAmount < target.amount
+          ? Math.round(paidAmount * 100) / 100
+          : target.amount;
+      const remainder = Math.max(0, Math.round((target.amount - actualPaid) * 100) / 100);
+      const receiptRef = ref || `${method}/${Date.now().toString().slice(-8)}`;
+
+      const nextDueDate = (() => {
+        const d = new Date(target.due + "T00:00:00Z");
+        if (Number.isNaN(d.getTime())) return TODAY_ISO;
+        d.setUTCMonth(d.getUTCMonth() + 1);
+        return d.toISOString().slice(0, 10);
+      })();
+
+      const updated: FeeAccount["installments"] = [];
+      for (const inst of a.installments) {
+        if (inst.no === instNo) {
+          updated.push({ ...inst, amount: actualPaid, paidOn: TODAY_ISO, method, ref: receiptRef });
+          if (remainder > 0) {
+            updated.push({ no: 0, due: nextDueDate, amount: remainder });
+          }
+        } else {
+          updated.push(inst);
+        }
+      }
+      return {
+        ...a,
+        installments: updated.map((inst, idx) => ({ ...inst, no: idx + 1 })),
+      };
+    }),
   }));
 }
 

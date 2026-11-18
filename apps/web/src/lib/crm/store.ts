@@ -10,6 +10,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { DATA_DIR, dataFile } from "@/lib/data-dir";
 import { recordAuditLog } from "@/lib/audit/store";
+import { enrollLeadAsStudent, syncAdmittedLeads } from "@/lib/students/store";
 import { AGENTS, PIPELINE, STAGES, centreName, leadCentreId, resolveCentreId, type PipelineLead, type Stage } from "@qschool/shared";
 import {
   isDbConfigured,
@@ -423,6 +424,17 @@ export async function ingestLead(input: IncomingLead): Promise<{ result: "create
     if (isDbConfigured()) await saveDbLead(lead);
     await writeJson(STATE_FILE, st);
     await log({ at: new Date().toISOString(), sourceKey: input.sourceKey, source, result: "created", leadId: lead.id, name: lead.name });
+    if (lead.stage === "Admitted") {
+      try {
+        const { student } = await enrollLeadAsStudent(lead);
+        lead.extra = { ...(lead.extra || {}), "Student ID": student.id };
+        lead.timeline.push({ when, what: `Automatically enrolled in Students (${student.id})` });
+        await writeJson(LEADS_FILE, leads);
+        if (isDbConfigured()) await saveDbLead(lead);
+      } catch (e) {
+        console.error("[crm] failed to auto-enroll admitted lead:", e);
+      }
+    }
     // WhatsApp welcome (loaded lazily: the WhatsApp module isn't needed for ingestion itself)
     void import("@/lib/whatsapp/automations").then((m) => m.leadCreated(lead)).catch(() => undefined);
     return { result: "created" as const, lead };
@@ -451,6 +463,19 @@ export async function updateLead(
       l.extra = { ...(l.extra || {}), ...patch.extra };
     }
     if (patch.activity) l.timeline.push({ when, what: clip(patch.activity, 300) });
+    if (l.stage === "Admitted") {
+      try {
+        const { student, created } = await enrollLeadAsStudent(l);
+        if (l.extra?.["Student ID"] !== student.id) {
+          l.extra = { ...(l.extra || {}), "Student ID": student.id };
+        }
+        if (created) {
+          l.timeline.push({ when, what: `Automatically enrolled in Students (${student.id})` });
+        }
+      } catch (e) {
+        console.error("[crm] failed to auto-enroll admitted lead:", e);
+      }
+    }
     l.slaBreached = false;
     l.lastActivity = "Just now";
     await writeJson(LEADS_FILE, leads);
@@ -564,6 +589,10 @@ export async function bulkIngestLeads(
     // Only the rows this upload touched (it used to re-write every lead in the CRM, fire-and-forget).
     if (isDbConfigured() && touched.size) await saveDbLeadsBulk([...touched.values()]);
     await writeJson(STATE_FILE, st);
+    const bulkAdmitted = results.filter((l) => l.stage === "Admitted");
+    if (bulkAdmitted.length > 0) {
+      await syncAdmittedLeads(bulkAdmitted).catch((e) => console.error("[crm] bulk syncAdmittedLeads failed:", e));
+    }
 
     await recordAuditLog({
       action: "CREATE",

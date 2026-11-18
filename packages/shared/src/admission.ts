@@ -3,6 +3,8 @@
  * "Pending", and the respective centre flips them to "Active" after confirming payment.
  */
 
+import { QSCHOOL_FEE_SCHEDULE } from "./finance";
+
 export type StudentStatus = "Pending" | "Active";
 
 export const PAYMENT_MODES = ["Cash", "UPI", "Card", "Bank transfer", "Cheque"] as const;
@@ -123,6 +125,72 @@ export interface StudentRecord {
   ref: string;
   status: StudentStatus;
   createdAt: string; // ISO
+  /** Linked CRM lead id (e.g. L-...) when enrolled from Leads & Pipeline. */
+  leadId?: string;
+  /** Agreed total course fee (₹), used to track part payments and remaining balance. */
+  totalFee?: number;
+  /** Latest payment (kept for backwards compatibility). */
   payment?: AdmissionPayment;
+  /** All payments received (full or part / installments). */
+  payments?: AdmissionPayment[];
   payLinks?: PayLink[];
+}
+
+export type StudentFeeState = "Unpaid" | "Partial" | "Paid";
+
+/** Ordered list of payments received on a student (supports legacy single `payment` records). */
+export function studentPayments(s: Pick<StudentRecord, "payment" | "payments">): AdmissionPayment[] {
+  if (Array.isArray(s.payments) && s.payments.length > 0) return s.payments;
+  return s.payment ? [s.payment] : [];
+}
+
+/** Total fee, amount paid so far, remaining balance, and payment status for a student. */
+export function studentFeeSummary(s: Pick<StudentRecord, "grade" | "age" | "totalFee" | "payment" | "payments">) {
+  const list = studentPayments(s);
+  const paid = Math.round(list.reduce((sum, p) => sum + (Number(p.amount) || 0), 0) * 100) / 100;
+  const inferred = inferStudentCourseFee(s.grade, s.age).totalFee;
+  const rawTotal = Number(s.totalFee) > 0 ? Number(s.totalFee) : paid > 0 ? Math.max(paid, inferred) : inferred;
+  const totalFee = Math.round(rawTotal * 100) / 100;
+  const balance = Math.max(0, Math.round((totalFee - paid) * 100) / 100);
+  const feeState: StudentFeeState = paid <= 0 ? "Unpaid" : balance > 0 ? "Partial" : "Paid";
+  return { payments: list, paid, totalFee, balance, feeState };
+}
+
+/** Match a course/interest/age to an official Q-School program and default fee. */
+export function inferStudentCourseFee(rawCourse?: string | null, age?: string | number | null, explicitValue?: number): { course: string; totalFee: number; monthlyFee: number } {
+  const txt = String(rawCourse || "").trim();
+  const lower = txt.toLowerCase();
+  // Check exact / substring match against QSCHOOL_FEE_SCHEDULE (longest name first so "Divya Tratak 14 yrs" wins over "Divya Tratak").
+  const sorted = [...QSCHOOL_FEE_SCHEDULE].sort((a, b) => b.course.length - a.course.length);
+  const byName = sorted.find((p) => lower.includes(p.course.toLowerCase()));
+  if (byName) {
+    return {
+      course: byName.course,
+      totalFee: explicitValue && explicitValue > 0 ? explicitValue : byName.annualFee,
+      monthlyFee: byName.monthlyFee,
+    };
+  }
+  const n = typeof age === "number" ? age : parseInt(String(age || "").replace(/\D/g, ""), 10);
+  if (n && !Number.isNaN(n)) {
+    const byAge =
+      n <= 8 ? QSCHOOL_FEE_SCHEDULE[0] :
+      n <= 10 ? QSCHOOL_FEE_SCHEDULE[1] :
+      n <= 12 ? QSCHOOL_FEE_SCHEDULE[2] :
+      n === 13 ? QSCHOOL_FEE_SCHEDULE[3] :
+      QSCHOOL_FEE_SCHEDULE[4];
+    if (byAge) {
+      const generic = !txt || /^(course|general enquiry|not sure yet|admission.*|d)$/i.test(txt);
+      return {
+        course: generic ? byAge.course : txt,
+        totalFee: explicitValue && explicitValue > 0 ? explicitValue : byAge.annualFee,
+        monthlyFee: byAge.monthlyFee,
+      };
+    }
+  }
+  const cleanCourse = !txt || /^(course|general enquiry|not sure yet)$/i.test(txt) ? "Divya Yoga" : txt;
+  return {
+    course: cleanCourse,
+    totalFee: explicitValue && explicitValue > 0 ? explicitValue : 63000,
+    monthlyFee: 5250,
+  };
 }

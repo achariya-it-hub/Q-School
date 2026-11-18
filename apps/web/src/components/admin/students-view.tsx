@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ADMISSION_CENTRES, PAYMENT_MODES, centreName, inr, type StudentRecord, type StudentStatus } from "@qschool/shared";
+import {
+  ADMISSION_CENTRES,
+  PAYMENT_MODES,
+  QSCHOOL_FEE_SCHEDULE,
+  centreName,
+  inr,
+  studentFeeSummary,
+  type StudentRecord,
+  type StudentStatus,
+} from "@qschool/shared";
 import { Btn, Card, DataGrid, Drawer, Field, Figure, Modal, SearchInput, Segmented, StatusBadge, Td, Th, Toast, inputCls, useToast } from "@/components/admin/ui";
 import { downloadCsv } from "@/components/admin/store";
 import { Icon } from "@/components/icons";
@@ -10,7 +19,10 @@ import { PayLinks } from "@/components/admin/pay-links";
 
 const TONE = { Pending: "warning", Active: "good" } as const;
 
-const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+const fmt = (iso?: string) =>
+  iso && !Number.isNaN(Date.parse(iso))
+    ? new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+    : "—";
 const photoUrl = (s: StudentRecord) => `/api/students/photo/${s.photo}`;
 
 /** Loads the students this login may see (admin: all, centre login: own centre) and refreshes every 30s. */
@@ -121,8 +133,11 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
               onClick={() =>
                 downloadCsv(
                   "qschool-students.csv",
-                  ["ID", "Student", "DOB", "Grade", "School", "Parent", "Phone", "Email", "Aadhaar (masked)", "Address", "Centre", "Shared by", "Status", "Applied", "Paid", "Mode", "Receipt", "Confirmed by"],
-                  rows.map((s) => [s.id, s.studentName, s.dob, s.grade ?? "", s.school ?? "", s.parentName ?? "", s.phone, s.email ?? "", s.aadhaar ? `XXXX XXXX ${s.aadhaar.slice(-4)}` : "", s.address, centreName(s.centreId), s.referralType ?? "", s.referredBy ?? s.ref ?? "", s.status, fmt(s.createdAt), s.payment?.amount ?? "", s.payment?.mode ?? "", s.payment?.receiptNo ?? "", s.payment?.confirmedBy ?? ""]),
+                  ["ID", "Student", "DOB", "Grade", "School", "Parent", "Phone", "Email", "Aadhaar (masked)", "Address", "Centre", "Shared by", "Status", "Applied", "Total Fee", "Paid", "Balance", "Fee Status", "Latest Mode", "Latest Receipt"],
+                  rows.map((s) => {
+                    const f = studentFeeSummary(s);
+                    return [s.id, s.studentName, s.dob, s.grade ?? "", s.school ?? "", s.parentName ?? "", s.phone, s.email ?? "", s.aadhaar ? `XXXX XXXX ${s.aadhaar.slice(-4)}` : "", s.address, centreName(s.centreId), s.referralType ?? "", s.referredBy ?? s.ref ?? "", s.status, fmt(s.createdAt), f.totalFee, f.paid, f.balance, f.feeState, s.payment?.mode ?? "", s.payment?.receiptNo ?? ""];
+                  }),
                 )
               }
             >
@@ -131,59 +146,104 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
           </div>
         </div>
 
-        <DataGrid minWidth={900}>
+        <DataGrid minWidth={980}>
           <thead>
             <tr className="border-b border-[#EEF3F1]">
               <Th>Student</Th>
-              <Th>Grade · School</Th>
+              <Th>Program · School</Th>
               <Th>Parent</Th>
               {mode === "admin" && <Th>Centre</Th>}
               <Th>Applied</Th>
+              <Th>Fees &amp; Balance</Th>
               <Th>Status</Th>
               <Th />
             </tr>
           </thead>
           <tbody>
-            {rows.map((s) => (
-              <tr key={s.id} className="border-b border-[#F4F7F6] hover:bg-[#FAFCFB]">
-                <Td>
-                  <button onClick={() => setView(s)} className="flex items-center gap-3 text-left">
-                    <Photo s={s} size={40} />
-                    <span>
-                      <span className="block font-semibold text-brand-ink">{s.studentName}</span>
-                      <span className="block text-[11.5px] text-[#6b807b]">{s.id}</span>
-                    </span>
-                  </button>
-                </Td>
-                <Td>
-                  <span className="block text-brand-ink">{s.grade}</span>
-                  <span className="block max-w-[200px] truncate text-[11.5px] text-[#6b807b]">{s.school}</span>
-                </Td>
-                <Td>
-                  <span className="block text-brand-ink">{s.parentName}</span>
-                  <a href={`tel:${s.phone}`} className="text-[11.5px] text-brand-teal hover:underline">{s.phone}</a>
-                </Td>
-                {mode === "admin" && <Td className="text-[#41564f]">{centreName(s.centreId)}</Td>}
-                <Td className="whitespace-nowrap text-[#41564f]">{fmt(s.createdAt)}</Td>
-                <Td><StatusBadge tone={TONE[s.status]}>{s.status}</StatusBadge></Td>
-                <Td right>
-                  <div className="flex items-center justify-end gap-1.5">
-                    {s.status === "Pending" && (
-                      <button onClick={() => setPay(s)} className="rounded-lg bg-brand-deep px-2.5 py-1.5 text-[12px] font-semibold text-white hover:bg-brand-teal">
-                        Pay / Confirm
-                      </button>
-                    )}
-                    <button onClick={() => setView(s)} className="rounded-lg border border-[#E2ECE9] px-2.5 py-1.5 text-[12px] font-medium text-[#41564f] hover:border-brand-teal">
-                      View
+            {rows.map((s) => {
+              const fee = studentFeeSummary(s);
+              return (
+                <tr key={s.id} className="border-b border-[#F4F7F6] hover:bg-[#FAFCFB]">
+                  <Td>
+                    <button onClick={() => setView(s)} className="flex items-center gap-3 text-left">
+                      <Photo s={s} size={40} />
+                      <span>
+                        <span className="block font-semibold text-brand-ink">{s.studentName}</span>
+                        <span className="flex items-center gap-1.5 text-[11.5px] text-[#6b807b]">
+                          <span>{s.id}</span>
+                          {s.leadId && (
+                            <span className="rounded bg-[#E3F4F0] px-1.5 py-0.5 text-[10px] font-bold text-brand-deep">
+                              Admitted Lead
+                            </span>
+                          )}
+                        </span>
+                      </span>
                     </button>
-                  </div>
-                </Td>
-              </tr>
-            ))}
+                  </Td>
+                  <Td>
+                    <span className="block text-brand-ink font-medium">{s.grade || "—"}</span>
+                    <span className="block max-w-[200px] truncate text-[11.5px] text-[#6b807b]">{s.school || "Q-School Program"}</span>
+                  </Td>
+                  <Td>
+                    <span className="block text-brand-ink">{s.parentName}</span>
+                    <a href={`tel:${s.phone}`} className="text-[11.5px] text-brand-teal hover:underline">{s.phone}</a>
+                  </Td>
+                  {mode === "admin" && <Td className="text-[#41564f]">{centreName(s.centreId)}</Td>}
+                  <Td className="whitespace-nowrap text-[#41564f]">{fmt(s.createdAt)}</Td>
+                  <Td>
+                    {fee.feeState === "Paid" ? (
+                      <div>
+                        <span className="inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-800">
+                          Fully Paid
+                        </span>
+                        <span className="mt-0.5 block text-[11.5px] font-semibold text-brand-ink">{inr(fee.paid)}</span>
+                      </div>
+                    ) : fee.feeState === "Partial" ? (
+                      <div>
+                        <span className="inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-900">
+                          Part Paid ({fee.payments.length})
+                        </span>
+                        <span className="mt-0.5 block text-[11.5px] text-[#41564f]">
+                          <b>{inr(fee.paid)}</b> / {inr(fee.totalFee)}
+                        </span>
+                        <span className="block text-[11px] font-bold text-rose-700">Bal: {inr(fee.balance)}</span>
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="inline-block rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-[#5C716C]">
+                          Unpaid
+                        </span>
+                        <span className="mt-0.5 block text-[11.5px] text-[#6b807b]">Due: {inr(fee.totalFee)}</span>
+                      </div>
+                    )}
+                  </Td>
+                  <Td><StatusBadge tone={TONE[s.status]}>{s.status}</StatusBadge></Td>
+                  <Td right>
+                    <div className="flex items-center justify-end gap-1.5">
+                      {fee.feeState !== "Paid" && (
+                        <button
+                          onClick={() => setPay(s)}
+                          className={`rounded-lg px-2.5 py-1.5 text-[12px] font-semibold text-white transition ${
+                            fee.feeState === "Partial"
+                              ? "bg-[#0E937E] hover:bg-brand-deep"
+                              : "bg-brand-deep hover:bg-brand-teal"
+                          }`}
+                        >
+                          {fee.feeState === "Partial" ? "Pay Balance" : "Pay / Confirm"}
+                        </button>
+                      )}
+                      <button onClick={() => setView(s)} className="rounded-lg border border-[#E2ECE9] px-2.5 py-1.5 text-[12px] font-medium text-[#41564f] hover:border-brand-teal">
+                        View
+                      </button>
+                    </div>
+                  </Td>
+                </tr>
+              );
+            })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="py-10 text-center text-[#7B8E89]">
-                  {students.length === 0 ? "No admissions yet. They appear here as soon as a parent submits the admission form." : "No students match your filters."}
+                <td colSpan={mode === "admin" ? 8 : 7} className="py-10 text-center text-[#7B8E89]">
+                  {students.length === 0 ? "No admissions yet. Moving a lead to Admitted or submitting the admission form enrolls them here automatically." : "No students match your filters."}
                 </td>
               </tr>
             )}
@@ -231,16 +291,7 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
               </div>
             </dl>
 
-            {view.payment ? (
-              <div className="rounded-xl border border-[#CFE8D0] bg-[#F3FAF3] p-4 text-[13px]">
-                <p className="mb-2 flex items-center gap-1.5 font-semibold text-[#0A7F0A]"><Icon name="checkCircle" size={16} /> Payment confirmed</p>
-                <p className="text-brand-ink"><b>{inr(view.payment.amount)}</b> via {view.payment.mode} · Receipt {view.payment.receiptNo}</p>
-                <p className="mt-1 text-[12px] text-[#41564f]">Confirmed by {view.payment.confirmedBy} on {fmt(view.payment.confirmedAt)}</p>
-                {view.payment.note && <p className="mt-1 text-[12px] text-[#41564f]">Note: {view.payment.note}</p>}
-              </div>
-            ) : (
-              <Btn icon="check" onClick={() => setPay(view)}>Confirm payment &amp; activate</Btn>
-            )}
+            <StudentFeePanel student={view} onCollect={() => setPay(view)} onChanged={reload} />
 
             <PayLinks student={view} onChanged={reload} />
 
@@ -519,6 +570,136 @@ function ImportCsv({ open, mode, onClose, onDone }: { open: boolean; mode: "admi
   );
 }
 
+function StudentFeePanel({
+  student,
+  onCollect,
+  onChanged,
+}: {
+  student: StudentRecord;
+  onCollect: () => void;
+  onChanged: () => void;
+}) {
+  const fee = studentFeeSummary(student);
+  const [editingTotal, setEditingTotal] = useState(false);
+  const [totalInput, setTotalInput] = useState(String(fee.totalFee));
+  const [saving, setSaving] = useState(false);
+
+  const saveTotal = async () => {
+    const val = Number(totalInput);
+    if (!(val > 0)) return;
+    setSaving(true);
+    await fetch("/api/students", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: student.id, action: "setTotalFee", totalFee: val }),
+    });
+    setSaving(false);
+    setEditingTotal(false);
+    onChanged();
+  };
+
+  const pct = fee.totalFee > 0 ? Math.min(100, Math.round((fee.paid / fee.totalFee) * 100)) : 0;
+
+  return (
+    <div className="rounded-xl border border-[#D8EAE4] bg-[#F7FCFA] p-4 text-[13px] space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-bold text-brand-ink flex items-center gap-1.5">
+          <Icon name="rupee" size={15} /> Fee &amp; Part-Payment Summary
+        </p>
+        {!editingTotal ? (
+          <button
+            type="button"
+            onClick={() => {
+              setTotalInput(String(fee.totalFee));
+              setEditingTotal(true);
+            }}
+            className="text-[11.5px] font-semibold text-brand-teal hover:underline"
+          >
+            Edit total fee
+          </button>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <input
+              type="number"
+              min="1"
+              className="h-7 w-24 rounded-lg border border-[#CFE3DD] bg-white px-2 text-[12px] font-semibold"
+              value={totalInput}
+              onChange={(e) => setTotalInput(e.target.value)}
+            />
+            <button
+              type="button"
+              disabled={saving}
+              onClick={saveTotal}
+              className="rounded-lg bg-brand-deep px-2 py-1 text-[11px] font-bold text-white"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingTotal(false)}
+              className="text-[11px] text-[#6b807b]"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 rounded-xl bg-white p-2.5 border border-[#E2EFEA] text-center">
+        <div>
+          <p className="text-[10.5px] text-[#6b807b]">Total Fee</p>
+          <p className="font-bold text-brand-ink">{inr(fee.totalFee)}</p>
+        </div>
+        <div>
+          <p className="text-[10.5px] text-[#6b807b]">Paid ({pct}%)</p>
+          <p className="font-bold text-[#0A7F0A]">{inr(fee.paid)}</p>
+        </div>
+        <div>
+          <p className="text-[10.5px] text-[#6b807b]">Balance</p>
+          <p className={`font-bold ${fee.balance > 0 ? "text-rose-700" : "text-brand-ink"}`}>{inr(fee.balance)}</p>
+        </div>
+      </div>
+
+      <div className="h-2 w-full overflow-hidden rounded-full bg-[#E2EFEA]">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-[#0E937E] to-[#2BD6B4] transition-all"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      {fee.payments.length > 0 && (
+        <div className="space-y-1.5 pt-1">
+          <p className="text-[11px] font-bold uppercase tracking-wider text-[#5C716C]">
+            Payments Received ({fee.payments.length})
+          </p>
+          <ul className="divide-y divide-[#E6F1ED] rounded-xl border border-[#E2EFEA] bg-white px-3">
+            {fee.payments.map((p, idx) => (
+              <li key={`${p.receiptNo}-${idx}`} className="py-2 text-[12px]">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-brand-ink">
+                    Part {idx + 1}: {inr(p.amount)} <span className="font-normal text-[#5C716C]">via {p.mode}</span>
+                  </span>
+                  <span className="font-mono text-[11px] text-[#41564f]">#{p.receiptNo}</span>
+                </div>
+                <p className="text-[11px] text-[#6b807b]">
+                  {fmt(p.confirmedAt)} · by {p.confirmedBy}
+                  {p.note ? ` · ${p.note}` : ""}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {fee.balance > 0 && (
+        <Btn icon="check" onClick={onCollect}>
+          {fee.paid > 0 ? `Collect Next Part Payment (Bal ${inr(fee.balance)})` : "Collect Full or Part Payment"}
+        </Btn>
+      )}
+    </div>
+  );
+}
+
 function ConfirmPayment({
   student,
   onClose,
@@ -531,6 +712,7 @@ function ConfirmPayment({
   onDone: (s: StudentRecord) => void;
 }) {
   const [tab, setTab] = useState<"online" | "offline">("online");
+  const [totalFee, setTotalFee] = useState("");
   const [amount, setAmount] = useState("");
   const [desc, setDesc] = useState("");
   const [mode, setMode] = useState<string>(PAYMENT_MODES[0]);
@@ -540,11 +722,26 @@ function ConfirmPayment({
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const feeSummary = student ? studentFeeSummary(student) : null;
+  const alreadyPaid = feeSummary?.paid ?? 0;
+  const effectiveTotal = Number(totalFee) > 0 ? Number(totalFee) : feeSummary?.totalFee ?? 63000;
+  const remainingBeforeThis = Math.max(0, Math.round((effectiveTotal - alreadyPaid) * 100) / 100);
+  const payingNow = Number(amount) || 0;
+  const remainingAfterThis = Math.max(0, Math.round((remainingBeforeThis - payingNow) * 100) / 100);
+  const partNumber = (feeSummary?.payments.length ?? 0) + 1;
+
   useEffect(() => {
     if (student) {
+      const f = studentFeeSummary(student);
+      const nextPart = f.payments.length + 1;
       setTab("online");
-      setAmount("");
-      setDesc(`Admission fee - ${student.studentName}`);
+      setTotalFee(String(f.totalFee));
+      setAmount(f.balance > 0 ? String(f.balance) : "");
+      setDesc(
+        f.paid > 0
+          ? `Part payment ${nextPart} - ${student.studentName}`
+          : `Admission fee - ${student.studentName}`,
+      );
       setReceiptNo("");
       setNote("");
       setCreatedUrl("");
@@ -552,6 +749,18 @@ function ConfirmPayment({
       setMode(PAYMENT_MODES[0]);
     }
   }, [student]);
+
+  const applyPreset = (val: number, label: string) => {
+    const capped = remainingBeforeThis > 0 ? Math.min(val, remainingBeforeThis) : val;
+    const clean = Math.max(1, Math.round(capped));
+    setAmount(String(clean));
+    setCreatedUrl("");
+    if (student) {
+      const isFull = clean >= remainingBeforeThis && alreadyPaid === 0;
+      setDesc(isFull ? `Admission fee - ${student.studentName}` : `${label} (Part ${partNumber}) - ${student.studentName}`);
+      setNote(isFull ? "" : `${label} · Part ${partNumber}`);
+    }
+  };
 
   const createEasebuzzLink = async () => {
     if (!student) return null;
@@ -570,7 +779,8 @@ function ConfirmPayment({
         action: "payLink",
         provider: "easebuzz",
         amount: amt,
-        description: desc || `Admission fee - ${student.studentName}`,
+        totalFee: effectiveTotal,
+        description: desc || `Part payment ${partNumber} - ${student.studentName}`,
       }),
     });
     const j = await r.json().catch(() => ({}));
@@ -614,10 +824,22 @@ function ConfirmPayment({
     if (!student) return;
     setBusy(true);
     setErr("");
-    const r = await fetch("/api/students", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: student.id, action: "activate", amount: Number(amount), mode, receiptNo, note }) });
+    const r = await fetch("/api/students", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: student.id,
+        action: "activate",
+        amount: Number(amount),
+        totalFee: effectiveTotal,
+        mode,
+        receiptNo,
+        note: note || (payingNow < remainingBeforeThis ? `Part payment ${partNumber}` : undefined),
+      }),
+    });
     const j = await r.json().catch(() => ({}));
     setBusy(false);
-    if (!r.ok) return setErr(j.error ?? "Could not activate");
+    if (!r.ok) return setErr(j.error ?? "Could not record payment");
     onDone(j.student);
   };
 
@@ -625,19 +847,83 @@ function ConfirmPayment({
     if (!student || !createdUrl) return "#";
     const d = student.phone.replace(/\D/g, "");
     const to = d.length === 10 ? `91${d}` : d;
-    const text = `Dear ${student.parentName}, please pay ${inr(Number(amount) || 0)} for ${student.studentName}'s admission at Q-School using this secure Easebuzz link: ${createdUrl}`;
+    const partInfo =
+      payingNow < remainingBeforeThis
+        ? ` (Part payment ${partNumber} of total fee ${inr(effectiveTotal)}; balance after this: ${inr(remainingAfterThis)})`
+        : "";
+    const text = `Dear ${student.parentName}, please pay ${inr(payingNow)}${partInfo} for ${student.studentName}'s admission at Q-School using this secure Easebuzz link: ${createdUrl}`;
     return `https://wa.me/${to}?text=${encodeURIComponent(text)}`;
   };
 
   return (
-    <Modal open={!!student} title="Collect fee & activate" onClose={onClose}>
+    <Modal open={!!student} title="Collect fee (Full or Part Payment)" onClose={onClose}>
       {student && (
         <div className="space-y-3.5">
-          <div className="flex items-center gap-3 rounded-xl bg-[#F3F8F6] p-3">
-            <Photo s={student} size={44} />
-            <div className="text-[13px]">
-              <p className="font-semibold text-brand-ink">{student.studentName}</p>
-              <p className="text-[#6b807b]">{student.grade} · {student.parentName} · {centreName(student.centreId)}</p>
+          <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F3F8F6] p-3">
+            <div className="flex items-center gap-3">
+              <Photo s={student} size={44} />
+              <div className="text-[13px]">
+                <p className="font-semibold text-brand-ink">{student.studentName}</p>
+                <p className="text-[#6b807b]">{student.grade || "Program"} · {student.parentName} · {centreName(student.centreId)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Total Course Fee & Balance Tracker */}
+          <div className="rounded-xl border border-[#D8EAE4] bg-[#F9FCFB] p-3 space-y-2.5">
+            <div className="grid grid-cols-3 gap-2 items-end">
+              <Field label="Total course fee (₹)">
+                <input
+                  type="number"
+                  min="1"
+                  className="h-9 w-full rounded-lg border border-[#CFE3DD] bg-white px-2.5 text-[13px] font-bold text-brand-ink"
+                  value={totalFee}
+                  onChange={(e) => setTotalFee(e.target.value)}
+                />
+              </Field>
+              <div className="rounded-lg bg-white border border-[#E6F0EC] px-2.5 py-1.5 text-center">
+                <p className="text-[10.5px] text-[#6b807b]">Paid so far</p>
+                <p className="text-[13px] font-bold text-[#0A7F0A]">{inr(alreadyPaid)}</p>
+              </div>
+              <div className="rounded-lg bg-white border border-[#E6F0EC] px-2.5 py-1.5 text-center">
+                <p className="text-[10.5px] text-[#6b807b]">Balance due</p>
+                <p className="text-[13px] font-bold text-rose-700">{inr(remainingBeforeThis)}</p>
+              </div>
+            </div>
+
+            {/* One-Click Part Payment Options */}
+            <div>
+              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-[#5C716C]">
+                Part-Payment Options (click to fill amount)
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: alreadyPaid > 0 ? "Remaining Balance" : "Full Fee", val: remainingBeforeThis || effectiveTotal },
+                  { label: "50% (2 Parts)", val: Math.round(effectiveTotal / 2) },
+                  { label: "25% (4 Parts)", val: Math.round(effectiveTotal / 4) },
+                  { label: "Monthly (1/12)", val: Math.round(effectiveTotal / 12) },
+                  { label: "Advance ₹10,000", val: 10000 },
+                  { label: "Advance ₹5,000", val: 5000 },
+                ]
+                  .filter((p, idx) => idx === 0 || (p.val > 0 && p.val < (remainingBeforeThis || effectiveTotal)))
+                  .map((p) => {
+                    const active = Math.round(payingNow) === p.val;
+                    return (
+                      <button
+                        key={p.label}
+                        type="button"
+                        onClick={() => applyPreset(p.val, p.label)}
+                        className={`rounded-lg border px-2.5 py-1 text-[11.5px] font-semibold transition ${
+                          active
+                            ? "border-brand-deep bg-brand-deep text-white"
+                            : "border-[#CFE3DD] bg-white text-brand-deep hover:border-brand-teal"
+                        }`}
+                      >
+                        {p.label} ({inr(p.val)})
+                      </button>
+                    );
+                  })}
+              </div>
             </div>
           </div>
 
@@ -660,17 +946,14 @@ function ConfirmPayment({
 
           {tab === "online" ? (
             <div className="space-y-3">
-              <div className="rounded-xl border border-[#C6E5DD] bg-[#EEF8F5] px-3 py-2 text-[12px] text-[#054038]">
-                <b>Easebuzz Gateway:</b> Pay via UPI, Debit/Credit Card, Net Banking, Wallets or EMI. The student becomes <b>Active</b> automatically on payment.
-              </div>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Amount (₹)">
+                <Field label="Amount paying now (₹)">
                   <input
                     required
                     type="number"
                     min="1"
                     step="0.01"
-                    placeholder="e.g. 63000 or 10"
+                    placeholder="Enter full or part amount"
                     className={inputCls}
                     value={amount}
                     onChange={(e) => { setAmount(e.target.value); setCreatedUrl(""); }}
@@ -681,10 +964,16 @@ function ConfirmPayment({
                     className={inputCls}
                     value={desc}
                     onChange={(e) => setDesc(e.target.value)}
-                    placeholder="Admission fee"
+                    placeholder="Part payment / Admission fee"
                   />
                 </Field>
               </div>
+
+              {payingNow > 0 && remainingAfterThis > 0 && (
+                <p className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-1.5 text-[12px] text-amber-900">
+                  <b>Part payment #{partNumber}:</b> Collecting <b>{inr(payingNow)}</b> now · Remaining balance after this payment: <b>{inr(remainingAfterThis)}</b>
+                </p>
+              )}
 
               {createdUrl && (
                 <div className="rounded-xl border border-[#CFE3DD] bg-[#F7FAF9] p-3 text-[12.5px] space-y-2">
@@ -714,27 +1003,35 @@ function ConfirmPayment({
                   Copy Payment Link
                 </button>
                 <Btn type="button" icon="arrowRight" disabled={busy} onClick={payNowOnEasebuzz}>
-                  {busy ? "Connecting…" : "Pay Now on Easebuzz"}
+                  {busy ? "Connecting…" : `Pay ${payingNow > 0 ? inr(payingNow) : "Now"} on Easebuzz`}
                 </Btn>
               </div>
             </div>
           ) : (
             <form className="space-y-3" onSubmit={submitOffline}>
-              <p className="text-[12.5px] text-[#6b807b]">Only confirm after the fee has actually been received at the counter. The student becomes <b>Active</b> once you save.</p>
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Amount paid (₹)"><input required type="number" min="1" step="0.01" className={inputCls} value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
+                <Field label="Amount paid now (₹)">
+                  <input required type="number" min="1" step="0.01" className={inputCls} value={amount} onChange={(e) => setAmount(e.target.value)} />
+                </Field>
                 <Field label="Payment mode">
                   <select className={inputCls} value={mode} onChange={(e) => setMode(e.target.value)}>
                     {PAYMENT_MODES.map((m) => <option key={m}>{m}</option>)}
                   </select>
                 </Field>
               </div>
+              {payingNow > 0 && remainingAfterThis > 0 && (
+                <p className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-1.5 text-[12px] text-amber-900">
+                  <b>Part payment #{partNumber}:</b> Recording <b>{inr(payingNow)}</b> now · Balance due after saving: <b>{inr(remainingAfterThis)}</b>
+                </p>
+              )}
               <Field label="Receipt no."><input required className={inputCls} value={receiptNo} onChange={(e) => setReceiptNo(e.target.value)} /></Field>
-              <Field label="Note (optional)"><input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} /></Field>
+              <Field label="Note (optional)"><input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Part 1 / Booking advance" /></Field>
               {err && <p className="text-[12.5px] font-semibold text-[#B42E2E]">{err}</p>}
               <div className="flex justify-end gap-2 pt-1">
                 <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
-                <Btn type="submit" icon="check" disabled={busy}>{busy ? "Saving…" : "Activate student"}</Btn>
+                <Btn type="submit" icon="check" disabled={busy}>
+                  {busy ? "Saving…" : alreadyPaid > 0 ? "Record Part Payment" : "Record & Activate Student"}
+                </Btn>
               </div>
             </form>
           )}
