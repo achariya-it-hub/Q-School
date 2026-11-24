@@ -172,7 +172,7 @@ export function deriveInvoices(accounts: FeeAccount[], today = TODAY_ISO): Invoi
   const rows: Omit<InvoiceDoc, "id">[] = [];
   for (const a of accounts)
     for (const i of a.installments) {
-      const issue = i.paidOn && i.paidOn < i.due ? i.paidOn : i.due;
+      const issue = i.paidOn || i.due;
       if (!i.paidOn && daysBetween(today, i.due) > 15) continue;
       rows.push({
         accountId: a.id,

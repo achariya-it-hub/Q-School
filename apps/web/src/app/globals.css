@@ -308,11 +308,12 @@ body {
   transform: scale(0.985);
 }
 
-/* Console: print only the invoice / receipt */
+/* Console & Pay Page: print invoice / receipt cleanly across single or multiple pages */
 @media print {
   body * { visibility: hidden; }
   .print-area, .print-area * { visibility: visible; }
-  .print-area { position: absolute; left: 0; top: 0; width: 100%; border: 0 !important; }
+  .print-area { position: absolute; left: 0; top: 0; width: 100%; border: 0 !important; box-shadow: none !important; }
+  .print-page-break { break-after: page; page-break-after: always; margin-bottom: 0 !important; }
 }
 
 .perspective-1000 {

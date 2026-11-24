@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { fmtDate, inr, type InvoiceDoc } from "@qschool/shared";
 import { AdminShell } from "@/components/admin/shell";
 import { Btn, Card, DataGrid, Figure, Modal, PageHeader, SearchInput, Segmented, StatusBadge, Td, Th, Toast, useToast } from "@/components/admin/ui";
-import { CollectModal, INVOICE_TONE, InvoiceView, PrintBar, useFinance } from "@/components/admin/finance";
+import { CollectModal, INVOICE_TONE, InvoiceView, PaymentPrintPromptModal, PrintBar, useFinance, type GeneratedFeeDocs } from "@/components/admin/finance";
 import { downloadCsv } from "@/components/admin/store";
 import { waNotify } from "@/components/admin/whatsapp";
 
@@ -16,6 +16,7 @@ export default function InvoicesPage() {
   const [status, setStatus] = useState<F>("All");
   const [open, setOpen] = useState<InvoiceDoc | null>(null);
   const [collectId, setCollectId] = useState<string | null>(null);
+  const [printDocs, setPrintDocs] = useState<GeneratedFeeDocs | null>(null);
   const [toast, show] = useToast();
   const [sending, setSending] = useState(false);
 
@@ -127,7 +128,7 @@ export default function InvoicesPage() {
       <Modal open={!!open} title={open ? `Invoice ${open.id}` : ""} onClose={() => setOpen(null)} wide>
         {open && (
           <>
-            <InvoiceView inv={open} />
+            <InvoiceView inv={open} account={f.accounts.find((a) => a.id === open.accountId)} />
             <div className="flex items-center justify-between">
               <div className="mt-4 flex gap-4 print:hidden">
                 <button
@@ -152,7 +153,17 @@ export default function InvoicesPage() {
         )}
       </Modal>
 
-      <CollectModal account={collectAcc} onClose={() => setCollectId(null)} onDone={(m) => (setCollectId(null), show(m))} />
+      <CollectModal
+        account={collectAcc}
+        onClose={() => setCollectId(null)}
+        onDone={(m, docs) => {
+          setCollectId(null);
+          show(m);
+          if (docs) setPrintDocs(docs);
+          f.reloadStudents?.();
+        }}
+      />
+      <PaymentPrintPromptModal docs={printDocs} onClose={() => setPrintDocs(null)} />
       <Toast msg={toast} />
     </AdminShell>
   );

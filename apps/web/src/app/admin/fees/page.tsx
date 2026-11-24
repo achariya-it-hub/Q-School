@@ -22,7 +22,7 @@ import {
   useToast,
 } from "@/components/admin/ui";
 import { HBars, ViewToggle } from "@/components/admin/charts";
-import { ACCOUNT_TONE, CollectModal, useFinance } from "@/components/admin/finance";
+import { ACCOUNT_TONE, CollectModal, PaymentPrintPromptModal, useFinance, type GeneratedFeeDocs } from "@/components/admin/finance";
 import { addFeeAccount, downloadCsv } from "@/components/admin/store";
 import { Icon } from "@/components/icons";
 import { waNotify } from "@/components/admin/whatsapp";
@@ -34,6 +34,7 @@ export default function FeesPage() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Filter>("All");
   const [collect, setCollect] = useState<FeeAccount | null>(null);
+  const [printDocs, setPrintDocs] = useState<GeneratedFeeDocs | null>(null);
   const [ledger, setLedger] = useState<string | null>(null);
   const [plan, setPlan] = useState(false);
   const [agingTable, setAgingTable] = useState(false);
@@ -282,11 +283,15 @@ export default function FeesPage() {
       <CollectModal
         account={collect}
         onClose={() => setCollect(null)}
-        onDone={(m) => {
+        onDone={(m, docs) => {
           setCollect(null);
           show(m);
+          if (docs) setPrintDocs(docs);
+          f.reloadStudents?.();
         }}
       />
+
+      <PaymentPrintPromptModal docs={printDocs} onClose={() => setPrintDocs(null)} />
 
       <Drawer open={!!ledgerAcc} title={ledgerAcc ? `${ledgerAcc.student} · ledger` : ""} onClose={() => setLedger(null)}>
         {ledgerAcc && <Ledger a={ledgerAcc} onCollect={() => setCollect(ledgerAcc)} />}

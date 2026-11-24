@@ -335,7 +335,6 @@ export function activateStudent(id: string, p: PaymentInput, by: string): Promis
     if (i < 0) throw new Error("Student not found");
     if (!(p.amount > 0)) throw new Error("Enter the amount paid");
     if (!PAYMENT_MODES.includes(p.mode as PaymentMode)) throw new Error("Choose a payment mode");
-    if (!p.receiptNo.trim()) throw new Error("Enter the receipt number");
 
     const cur = all[i];
     const existingPayments = studentPayments(cur);
@@ -347,10 +346,13 @@ export function activateStudent(id: string, p: PaymentInput, by: string): Promis
         ? cur.totalFee
         : inferred.totalFee;
 
+    const autoReceipt = `REC-${cur.id.replace("STU-", "")}-P${existingPayments.length + 1}-${Date.now().toString().slice(-4)}`;
+    const cleanReceipt = p.receiptNo?.trim() ? p.receiptNo.trim().slice(0, 40) : autoReceipt;
+
     const payment: AdmissionPayment = {
       amount: Math.round(p.amount * 100) / 100,
       mode: p.mode as PaymentMode,
-      receiptNo: p.receiptNo.trim().slice(0, 40),
+      receiptNo: cleanReceipt,
       note: p.note?.trim().slice(0, 200) || undefined,
       confirmedBy: by,
       confirmedAt: new Date().toISOString(),

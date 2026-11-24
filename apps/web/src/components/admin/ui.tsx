@@ -161,16 +161,16 @@ export function Modal({
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[#021c18]/50 backdrop-blur-[2px]" onClick={onClose} />
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 print:static print:block print:p-0">
+      <div className="absolute inset-0 bg-[#021c18]/50 backdrop-blur-[2px] print:hidden" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
         style={ratio169 ? { width: "min(1040px, 95vw, calc(88vh * 16 / 9))", aspectRatio: "16 / 9" } : undefined}
-        className={`relative w-full overflow-y-auto rounded-[20px] bg-white p-6 shadow-2xl ${ratio169 ? "max-h-[88vh]" : `max-h-[90vh] ${wide ? "max-w-2xl" : "max-w-md"}`}`}
+        className={`relative w-full overflow-y-auto rounded-[20px] bg-white p-6 shadow-2xl print:max-h-none print:max-w-none print:overflow-visible print:rounded-none print:p-0 print:shadow-none ${ratio169 ? "max-h-[88vh]" : `max-h-[90vh] ${wide ? "max-w-2xl" : "max-w-md"}`}`}
       >
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between print:hidden">
           <h3 className="text-lg font-semibold text-brand-ink">{title}</h3>
           <button onClick={onClose} className="rounded-lg p-1.5 text-[#6b807b] hover:bg-[#F1F5F4]" aria-label="Close">
             <Icon name="x" size={18} />

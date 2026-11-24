@@ -16,6 +16,7 @@ import { Btn, Card, DataGrid, Drawer, Field, Figure, Modal, SearchInput, Segment
 import { downloadCsv } from "@/components/admin/store";
 import { Icon } from "@/components/icons";
 import { PayLinks } from "@/components/admin/pay-links";
+import { PaymentPrintPromptModal, buildDocsForStudentPayment, type GeneratedFeeDocs } from "@/components/admin/fee-documents";
 
 const TONE = { Pending: "warning", Active: "good" } as const;
 
@@ -66,6 +67,7 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
   const [centre, setCentre] = useState("all");
   const [view, setView] = useState<StudentRecord | null>(null);
   const [pay, setPay] = useState<StudentRecord | null>(null);
+  const [printDocs, setPrintDocs] = useState<GeneratedFeeDocs | null>(null);
   const [adding, setAdding] = useState(false);
   const [importing, setImporting] = useState(false);
   const [toast, show] = useToast();
@@ -232,6 +234,15 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
                           {fee.feeState === "Partial" ? "Pay Balance" : "Pay / Confirm"}
                         </button>
                       )}
+                      {fee.payments.length > 0 && (
+                        <button
+                          onClick={() => setPrintDocs(buildDocsForStudentPayment(s))}
+                          title="Print Receipt & Tax Invoice"
+                          className="rounded-lg border border-[#CFE3DD] bg-[#F4FAF8] px-2.5 py-1.5 text-[12px] font-semibold text-brand-deep hover:border-brand-teal"
+                        >
+                          Receipt &amp; Invoice
+                        </button>
+                      )}
                       <button onClick={() => setView(s)} className="rounded-lg border border-[#E2ECE9] px-2.5 py-1.5 text-[12px] font-medium text-[#41564f] hover:border-brand-teal">
                         View
                       </button>
@@ -291,7 +302,12 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
               </div>
             </dl>
 
-            <StudentFeePanel student={view} onCollect={() => setPay(view)} onChanged={reload} />
+            <StudentFeePanel
+              student={view}
+              onCollect={() => setPay(view)}
+              onChanged={reload}
+              onPrintPayment={(idx) => setPrintDocs(buildDocsForStudentPayment(view, idx))}
+            />
 
             <PayLinks student={view} onChanged={reload} />
 
@@ -315,10 +331,12 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
         }}
         onDone={(s) => {
           setPay(null);
-          show(`${s.studentName} is now Active`);
+          show(`Payment recorded for ${s.studentName} — Receipt & Tax Invoice generated`);
           reload();
+          setPrintDocs(buildDocsForStudentPayment(s));
         }}
       />
+      <PaymentPrintPromptModal docs={printDocs} onClose={() => setPrintDocs(null)} />
       <AddStudent
         open={adding}
         mode={mode}
@@ -574,10 +592,12 @@ function StudentFeePanel({
   student,
   onCollect,
   onChanged,
+  onPrintPayment,
 }: {
   student: StudentRecord;
   onCollect: () => void;
   onChanged: () => void;
+  onPrintPayment?: (idx: number) => void;
 }) {
   const fee = studentFeeSummary(student);
   const [editingTotal, setEditingTotal] = useState(false);
@@ -674,14 +694,25 @@ function StudentFeePanel({
           </p>
           <ul className="divide-y divide-[#E6F1ED] rounded-xl border border-[#E2EFEA] bg-white px-3">
             {fee.payments.map((p, idx) => (
-              <li key={`${p.receiptNo}-${idx}`} className="py-2 text-[12px]">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-brand-ink">
-                    Part {idx + 1}: {inr(p.amount)} <span className="font-normal text-[#5C716C]">via {p.mode}</span>
-                  </span>
-                  <span className="font-mono text-[11px] text-[#41564f]">#{p.receiptNo}</span>
+              <li key={`${p.receiptNo}-${idx}`} className="py-2.5 text-[12px]">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <span className="font-bold text-brand-ink">
+                      Part {idx + 1}: {inr(p.amount)} <span className="font-normal text-[#5C716C]">via {p.mode}</span>
+                    </span>
+                    <span className="ml-2 font-mono text-[11px] text-[#41564f]">#{p.receiptNo}</span>
+                  </div>
+                  {onPrintPayment && (
+                    <button
+                      type="button"
+                      onClick={() => onPrintPayment(idx)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-[#CFE3DD] bg-[#F4FAF8] px-2 py-1 text-[11px] font-bold text-brand-deep hover:border-brand-teal"
+                    >
+                      <Icon name="download" size={12} /> Receipt &amp; Invoice
+                    </button>
+                  )}
                 </div>
-                <p className="text-[11px] text-[#6b807b]">
+                <p className="mt-0.5 text-[11px] text-[#6b807b]">
                   {fmt(p.confirmedAt)} · by {p.confirmedBy}
                   {p.note ? ` · ${p.note}` : ""}
                 </p>
@@ -1024,7 +1055,14 @@ function ConfirmPayment({
                   <b>Part payment #{partNumber}:</b> Recording <b>{inr(payingNow)}</b> now · Balance due after saving: <b>{inr(remainingAfterThis)}</b>
                 </p>
               )}
-              <Field label="Receipt no."><input required className={inputCls} value={receiptNo} onChange={(e) => setReceiptNo(e.target.value)} /></Field>
+              <Field label="Receipt / UTR ref no. (optional)">
+                <input
+                  className={inputCls}
+                  value={receiptNo}
+                  onChange={(e) => setReceiptNo(e.target.value)}
+                  placeholder="Auto-generated (REC-...) if left blank"
+                />
+              </Field>
               <Field label="Note (optional)"><input className={inputCls} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Part 1 / Booking advance" /></Field>
               {err && <p className="text-[12.5px] font-semibold text-[#B42E2E]">{err}</p>}
               <div className="flex justify-end gap-2 pt-1">
