@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { inr, studentFeeSummary, type PayLink, type StudentRecord } from "@qschool/shared";
 import { Btn, Field, Modal, StatusBadge, inputCls } from "@/components/admin/ui";
 
-const TONE = { Created: "warning", Paid: "good", Expired: "neutral", Cancelled: "neutral" } as const;
+const TONE = { Created: "warning", "Partly Paid": "warning", Paid: "good", Expired: "neutral", Cancelled: "neutral" } as const;
 const PROVIDER = { razorpay: "Razorpay", grayquest: "GrayQuest", easebuzz: "Easebuzz" } as const;
 type Provider = keyof typeof PROVIDER;
 
@@ -58,12 +58,14 @@ export function PayLinks({
             l.status === "Paid"
               ? fee.payments.findIndex((p) => p.receiptNo === l.paymentId || p.receiptNo === l.id)
               : -1;
+          const linkBadgeLabel =
+            l.status === "Paid" && (l.amount < fee.totalFee || fee.balance > 0) ? "Partly Paid" : l.status;
           return (
             <li key={l.id} className="rounded-lg bg-[#F7FAF9] p-2.5 text-[12.5px]">
               <div className="flex flex-wrap items-center gap-2">
                 <b className="text-brand-ink">{inr(l.amount)}</b>
                 <span className="text-[#6b807b]">{PROVIDER[l.provider]} · {new Date(l.createdAt).toLocaleDateString("en-IN")} · {l.createdBy}</span>
-                <span className="ml-auto"><StatusBadge tone={TONE[l.status]}>{l.status}</StatusBadge></span>
+                <span className="ml-auto"><StatusBadge tone={TONE[linkBadgeLabel]}>{linkBadgeLabel}</StatusBadge></span>
               </div>
               <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[12px] font-semibold text-brand-teal">
                 <button onClick={() => copy(l.url)} className="hover:underline">Copy link</button>

@@ -18,7 +18,13 @@ import { Icon } from "@/components/icons";
 import { PayLinks } from "@/components/admin/pay-links";
 import { PaymentPrintPromptModal, buildDocsForStudentPayment, type GeneratedFeeDocs } from "@/components/admin/fee-documents";
 
-const TONE = { Pending: "warning", Active: "good" } as const;
+const TONE = { Pending: "warning", "Partly Paid": "warning", Active: "good" } as const;
+type StudentDisplayStatus = keyof typeof TONE;
+
+function studentDisplayStatus(s: StudentRecord): StudentDisplayStatus {
+  if (s.status === "Pending") return "Pending";
+  return studentFeeSummary(s).feeState === "Partial" ? "Partly Paid" : "Active";
+}
 
 const fmt = (iso?: string) =>
   iso && !Number.isNaN(Date.parse(iso))
@@ -63,7 +69,7 @@ function Photo({ s, size }: { s: StudentRecord; size: number }) {
 export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
   const { students, state, reload } = useStudents();
   const [q, setQ] = useState("");
-  const [status, setStatus] = useState<"All" | StudentStatus>("All");
+  const [status, setStatus] = useState<"All" | StudentDisplayStatus>("All");
   const [centre, setCentre] = useState("all");
   const [view, setView] = useState<StudentRecord | null>(null);
   const [pay, setPay] = useState<StudentRecord | null>(null);
@@ -75,13 +81,14 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
   const rows = useMemo(
     () =>
       students
-        .filter((s) => status === "All" || s.status === status)
+        .filter((s) => status === "All" || studentDisplayStatus(s) === status)
         .filter((s) => centre === "all" || s.centreId === centre)
         .filter((s) => `${s.studentName} ${s.parentName} ${s.phone} ${s.email} ${s.school} ${s.id} ${s.ref}`.toLowerCase().includes(q.toLowerCase())),
     [students, status, centre, q],
   );
-  const pending = students.filter((s) => s.status === "Pending").length;
-  const active = students.length - pending;
+  const pending = students.filter((s) => studentDisplayStatus(s) === "Pending").length;
+  const partlyPaid = students.filter((s) => studentDisplayStatus(s) === "Partly Paid").length;
+  const active = students.filter((s) => studentDisplayStatus(s) === "Active").length;
 
   // keep the open drawer in sync after an update
   useEffect(() => {
@@ -101,23 +108,25 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
 
   return (
     <>
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-4">
         <Figure label="Pending" value={String(pending)} sub="Waiting for payment confirmation" icon="clock" />
-        <Figure label="Active" value={String(active)} sub="Paid and confirmed by the centre" icon="checkCircle" />
+        <Figure label="Partly Paid" value={String(partlyPaid)} sub="Part payment received · balance due" icon="rupee" />
+        <Figure label="Active (Paid)" value={String(active)} sub="Full fee paid & confirmed" icon="checkCircle" />
         <Figure label="Total admissions" value={String(students.length)} sub={mode === "centre" ? "At your centre" : "Across all centres"} icon="users" />
       </section>
 
       <Card className="mt-5">
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <SearchInput value={q} onChange={setQ} placeholder="Search student, parent, phone, ID…" />
-          <Segmented<"All" | StudentStatus>
+          <Segmented<"All" | StudentDisplayStatus>
             label="Status"
             value={status}
             onChange={setStatus}
             options={[
               { value: "All", label: "All" },
               { value: "Pending", label: `Pending (${pending})` },
-              { value: "Active", label: "Active" },
+              { value: "Partly Paid", label: `Partly Paid (${partlyPaid})` },
+              { value: "Active", label: `Active (${active})` },
             ]}
           />
           {mode === "admin" && (
@@ -138,7 +147,8 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
                   ["ID", "Student", "DOB", "Grade", "School", "Parent", "Phone", "Email", "Aadhaar (masked)", "Address", "Centre", "Shared by", "Status", "Applied", "Total Fee", "Paid", "Balance", "Fee Status", "Latest Mode", "Latest Receipt"],
                   rows.map((s) => {
                     const f = studentFeeSummary(s);
-                    return [s.id, s.studentName, s.dob, s.grade ?? "", s.school ?? "", s.parentName ?? "", s.phone, s.email ?? "", s.aadhaar ? `XXXX XXXX ${s.aadhaar.slice(-4)}` : "", s.address, centreName(s.centreId), s.referralType ?? "", s.referredBy ?? s.ref ?? "", s.status, fmt(s.createdAt), f.totalFee, f.paid, f.balance, f.feeState, s.payment?.mode ?? "", s.payment?.receiptNo ?? ""];
+                    const disp = studentDisplayStatus(s);
+                    return [s.id, s.studentName, s.dob, s.grade ?? "", s.school ?? "", s.parentName ?? "", s.phone, s.email ?? "", s.aadhaar ? `XXXX XXXX ${s.aadhaar.slice(-4)}` : "", s.address, centreName(s.centreId), s.referralType ?? "", s.referredBy ?? s.ref ?? "", disp, fmt(s.createdAt), f.totalFee, f.paid, f.balance, f.feeState === "Partial" ? "Partly Paid" : f.feeState, s.payment?.mode ?? "", s.payment?.receiptNo ?? ""];
                   }),
                 )
               }
@@ -203,7 +213,7 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
                     ) : fee.feeState === "Partial" ? (
                       <div>
                         <span className="inline-block rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-900">
-                          Part Paid ({fee.payments.length})
+                          Partly Paid ({fee.payments.length})
                         </span>
                         <span className="mt-0.5 block text-[11.5px] text-[#41564f]">
                           <b>{inr(fee.paid)}</b> / {inr(fee.totalFee)}
@@ -219,7 +229,7 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
                       </div>
                     )}
                   </Td>
-                  <Td><StatusBadge tone={TONE[s.status]}>{s.status}</StatusBadge></Td>
+                  <Td><StatusBadge tone={TONE[studentDisplayStatus(s)]}>{studentDisplayStatus(s)}</StatusBadge></Td>
                   <Td right>
                     <div className="flex items-center justify-end gap-1.5">
                       {fee.feeState !== "Paid" && (
@@ -270,7 +280,7 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
               <div>
                 <p className="text-[12px] font-semibold text-[#6b807b]">{view.id}</p>
                 <p className="text-[17px] font-semibold text-brand-ink">{view.studentName}</p>
-                <StatusBadge tone={TONE[view.status]}>{view.status}</StatusBadge>
+                <StatusBadge tone={TONE[studentDisplayStatus(view)]}>{studentDisplayStatus(view)}</StatusBadge>
               </div>
             </div>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-[13px]">

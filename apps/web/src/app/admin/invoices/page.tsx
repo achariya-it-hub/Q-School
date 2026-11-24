@@ -8,7 +8,7 @@ import { CollectModal, INVOICE_TONE, InvoiceView, PaymentPrintPromptModal, Print
 import { downloadCsv } from "@/components/admin/store";
 import { waNotify } from "@/components/admin/whatsapp";
 
-type F = "All" | "Paid" | "Pending" | "Overdue" | "Refunded";
+type F = "All" | "Paid" | "Partly Paid" | "Pending" | "Overdue" | "Refunded";
 
 export default function InvoicesPage() {
   const f = useFinance();
@@ -28,12 +28,13 @@ export default function InvoicesPage() {
     [f.invoices, status, q],
   );
   const sum = (s: string) => f.invoices.filter((i) => i.status === s).reduce((a, i) => a + i.amount, 0);
-  const gst = f.invoices.filter((i) => i.status === "Paid").reduce((a, i) => a + i.gst, 0);
+  const collectedTotal = sum("Paid") + sum("Partly Paid");
+  const gst = f.invoices.filter((i) => i.status === "Paid" || i.status === "Partly Paid").reduce((a, i) => a + i.gst, 0);
   const collectAcc = f.accounts.find((a) => a.id === collectId) ?? null;
 
   return (
     <AdminShell>
-      <PageHeader title="Invoices" sub="GST tax invoices, one per installment billed">
+      <PageHeader title="Invoices" sub="Invoices, one per installment billed">
         <Btn
           variant="ghost"
           icon="download"
@@ -45,14 +46,14 @@ export default function InvoicesPage() {
             )
           }
         >
-          Export CSV (GSTR-1)
+          Export CSV
         </Btn>
       </PageHeader>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Figure label="Invoices issued" value={String(f.invoices.length)} sub="Last 4 months" icon="lessons" />
-        <Figure label="Paid" value={inr(sum("Paid"))} sub={`GST collected ${inr(gst)}`} icon="checkCircle" />
-        <Figure label="Pending" value={inr(sum("Pending"))} sub="Not yet due" icon="clock" />
+        <Figure label="Invoices issued" value={String(f.invoices.length)} sub={`${f.invoices.filter((i) => i.status === "Partly Paid").length} partly paid`} icon="lessons" />
+        <Figure label="Collected (Paid + Partly Paid)" value={inr(collectedTotal)} sub={sum("Partly Paid") > 0 ? `Partly paid: ${inr(sum("Partly Paid"))}` : `Paid: ${inr(sum("Paid"))}`} icon="checkCircle" />
+        <Figure label="Pending" value={inr(sum("Pending"))} sub="Balance / upcoming due" icon="clock" />
         <Figure label="Overdue" value={inr(sum("Overdue"))} sub="Past due date" icon="alert" />
       </section>
 
@@ -63,7 +64,7 @@ export default function InvoicesPage() {
             label="Status"
             value={status}
             onChange={setStatus}
-            options={(["All", "Paid", "Pending", "Overdue", "Refunded"] as F[]).map((v) => ({ value: v, label: v }))}
+            options={(["All", "Paid", "Partly Paid", "Pending", "Overdue", "Refunded"] as F[]).map((v) => ({ value: v, label: v }))}
           />
         </div>
         <DataGrid minWidth={900}>
@@ -102,14 +103,15 @@ export default function InvoicesPage() {
                     <button onClick={() => setOpen(i)} className="rounded-lg border border-[#E2ECE9] px-2.5 py-1.5 text-[12px] font-medium text-[#41564f] hover:border-brand-teal">
                       View
                     </button>
-                    {(i.status === "Pending" || i.status === "Overdue") && (
-                      <button
-                        onClick={() => setCollectId(i.accountId)}
-                        className="rounded-lg bg-brand-deep px-2.5 py-1.5 text-[12px] font-semibold text-white hover:bg-brand-teal"
-                      >
-                        Collect
-                      </button>
-                    )}
+                    {(i.status === "Pending" || i.status === "Overdue" || i.status === "Partly Paid") &&
+                      f.accounts.find((a) => a.id === i.accountId)?.installments.some((inst) => !inst.paidOn) && (
+                        <button
+                          onClick={() => setCollectId(i.accountId)}
+                          className="rounded-lg bg-brand-deep px-2.5 py-1.5 text-[12px] font-semibold text-white hover:bg-brand-teal"
+                        >
+                          {i.status === "Partly Paid" ? "Collect Balance" : "Collect"}
+                        </button>
+                      )}
                   </div>
                 </Td>
               </tr>

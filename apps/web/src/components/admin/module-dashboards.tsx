@@ -138,7 +138,7 @@ export function FinanceDashboard() {
       m.set(k, 0);
     }
     for (const p of fin.payments) {
-      if (p.status === "Success" && m.has(monthKey(p.date))) {
+      if ((p.status === "Success" || p.status === "Partly Paid") && m.has(monthKey(p.date))) {
         m.set(monthKey(p.date), (m.get(monthKey(p.date)) ?? 0) + p.amount);
       }
     }

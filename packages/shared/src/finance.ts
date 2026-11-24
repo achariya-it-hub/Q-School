@@ -121,13 +121,15 @@ export function accountTotals(a: FeeAccount, today = TODAY_ISO) {
   const next = a.installments.find((i) => !i.paidOn);
   const outstanding = refunded ? 0 : total - paid;
   const maxDaysLate = overdueInst.reduce((m, i) => Math.max(m, daysBetween(i.due, today)), 0);
-  const status: "Paid" | "Overdue" | "Due" | "Refunded" = refunded
+  const status: "Paid" | "Partly Paid" | "Overdue" | "Due" | "Refunded" = refunded
     ? "Refunded"
     : outstanding === 0
       ? "Paid"
-      : overdue > 0
-        ? "Overdue"
-        : "Due";
+      : paid > 0
+        ? "Partly Paid"
+        : overdue > 0
+          ? "Overdue"
+          : "Due";
   return { total, paid, outstanding, overdue, next, status, maxDaysLate };
 }
 
@@ -148,7 +150,7 @@ export function aging(accounts: FeeAccount[], today = TODAY_ISO) {
 
 /* ───────────── derived documents ───────────── */
 
-export type InvoiceStatus = "Paid" | "Pending" | "Overdue" | "Refunded";
+export type InvoiceStatus = "Paid" | "Partly Paid" | "Pending" | "Overdue" | "Refunded";
 
 export interface InvoiceDoc {
   id: string;
@@ -170,7 +172,8 @@ export interface InvoiceDoc {
 /** An invoice is issued for every installment that is paid or falls due within 15 days. */
 export function deriveInvoices(accounts: FeeAccount[], today = TODAY_ISO): InvoiceDoc[] {
   const rows: Omit<InvoiceDoc, "id">[] = [];
-  for (const a of accounts)
+  for (const a of accounts) {
+    const acct = accountTotals(a, today);
     for (const i of a.installments) {
       const issue = i.paidOn || i.due;
       if (!i.paidOn && daysBetween(today, i.due) > 15) continue;
@@ -187,9 +190,18 @@ export function deriveInvoices(accounts: FeeAccount[], today = TODAY_ISO): Invoi
         date: issue,
         due: i.due,
         method: i.method,
-        status: i.refunded ? "Refunded" : i.paidOn ? "Paid" : i.due < today ? "Overdue" : "Pending",
+        status: i.refunded
+          ? "Refunded"
+          : i.paidOn
+            ? acct.outstanding > 0
+              ? "Partly Paid"
+              : "Paid"
+            : i.due < today
+              ? "Overdue"
+              : "Pending",
       });
     }
+  }
   rows.sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : x.accountId < y.accountId ? -1 : 1));
   return rows
     .map((r) => {
@@ -211,7 +223,7 @@ export interface PaymentTxn {
   method: PayMethod;
   ref: string;
   date: string;
-  status: "Success" | "Failed" | "Refunded";
+  status: "Success" | "Partly Paid" | "Failed" | "Refunded";
   receiptNo?: string;
 }
 
@@ -219,7 +231,8 @@ export const FAILED_ATTEMPTS: Omit<PaymentTxn, "id">[] = [];
 
 export function derivePayments(accounts: FeeAccount[]): PaymentTxn[] {
   const ok: Omit<PaymentTxn, "id">[] = [];
-  for (const a of accounts)
+  for (const a of accounts) {
+    const acct = accountTotals(a);
     for (const i of a.installments)
       if (i.paidOn)
         ok.push({
@@ -231,8 +244,9 @@ export function derivePayments(accounts: FeeAccount[]): PaymentTxn[] {
           method: i.method ?? "UPI",
           ref: i.ref ?? "—",
           date: i.paidOn,
-          status: i.refunded ? "Refunded" : "Success",
+          status: i.refunded ? "Refunded" : acct.outstanding > 0 ? "Partly Paid" : "Success",
         });
+  }
   // receipts are numbered deterministically so print prompt & ledger match 1:1
   ok.sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : x.accountId < y.accountId ? -1 : 1));
   const withReceipts = ok.map((p) => {

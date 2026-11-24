@@ -111,7 +111,7 @@ export function buildDocsForStudentPayment(student: StudentRecord, paymentIndex?
     method,
     ref: target.receiptNo || "—",
     date: dateIso,
-    status: "Success",
+    status: balanceAfterThis > 0 ? "Partly Paid" : "Success",
     receiptNo,
   };
 
@@ -129,7 +129,7 @@ export function buildDocsForStudentPayment(student: StudentRecord, paymentIndex?
     date: dateIso,
     due: dateIso,
     method,
-    status: "Paid",
+    status: balanceAfterThis > 0 ? "Partly Paid" : "Paid",
   };
 
   return {
@@ -187,7 +187,7 @@ export function buildDocsForAccountPayment(
     method,
     ref: ref || "—",
     date: todayIso,
-    status: "Success",
+    status: balanceRemaining > 0 ? "Partly Paid" : "Success",
     receiptNo,
   };
 
@@ -205,7 +205,7 @@ export function buildDocsForAccountPayment(
     date: todayIso,
     due: todayIso,
     method,
-    status: "Paid",
+    status: balanceRemaining > 0 ? "Partly Paid" : "Paid",
   };
 
   return {
@@ -221,7 +221,7 @@ export function buildDocsForAccountPayment(
 }
 
 export function InvoiceView({ inv, account, embedded = false }: { inv: InvoiceDoc; account?: FeeAccount; embedded?: boolean }) {
-  const isPaid = inv.status === "Paid";
+  const isPaid = inv.status === "Paid" || inv.status === "Partly Paid";
   const t = account ? accountTotals(account) : null;
   const totalCourseFee = t ? t.total : inv.amount;
   const paidThisInvoice = isPaid ? inv.amount : 0;
@@ -353,7 +353,7 @@ export function InvoiceView({ inv, account, embedded = false }: { inv: InvoiceDo
       <div className="mt-2 border border-black font-serif text-[12.5px]">
         <div className="border-b border-black px-2.5 py-1.5 font-bold text-black">Remarks:-</div>
         <div className="px-2.5 py-1.5 font-bold text-black">
-          Pay Mode : {payMode}
+          Pay Mode : {payMode} · Status : {isPaid ? (balanceDues > 0 ? "Partly Paid" : "Paid") : inv.status}
         </div>
       </div>
 
@@ -493,7 +493,7 @@ export function ReceiptView({ p, account, embedded = false }: { p: PaymentTxn; a
       <div className="mt-2 border border-black font-serif text-[12.5px]">
         <div className="border-b border-black px-2.5 py-1.5 font-bold text-black">Remarks:-</div>
         <div className="px-2.5 py-1.5 font-bold text-black">
-          Pay Mode : {payMode}
+          Pay Mode : {payMode} · Status : {dues > 0 ? "Partly Paid" : "Paid"}
         </div>
       </div>
 

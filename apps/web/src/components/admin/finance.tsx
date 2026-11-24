@@ -34,9 +34,9 @@ export {
   type GeneratedFeeDocs,
 } from "./fee-documents";
 
-export const INVOICE_TONE: Record<string, Tone> = { Paid: "good", Pending: "warning", Overdue: "critical", Refunded: "neutral" };
-export const TXN_TONE: Record<string, Tone> = { Success: "good", Failed: "critical", Refunded: "neutral" };
-export const ACCOUNT_TONE: Record<string, Tone> = { Paid: "good", Due: "warning", Overdue: "critical", Refunded: "neutral" };
+export const INVOICE_TONE: Record<string, Tone> = { Paid: "good", "Partly Paid": "warning", Pending: "warning", Overdue: "critical", Refunded: "neutral" };
+export const TXN_TONE: Record<string, Tone> = { Success: "good", "Partly Paid": "warning", Failed: "critical", Refunded: "neutral" };
+export const ACCOUNT_TONE: Record<string, Tone> = { Paid: "good", "Partly Paid": "warning", Due: "warning", Overdue: "critical", Refunded: "neutral" };
 
 function mapModeToPayMethod(mode?: string): PayMethod {
   if (mode === "Bank transfer") return "Net Banking";

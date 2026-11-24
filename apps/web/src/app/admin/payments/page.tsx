@@ -8,7 +8,7 @@ import { HBars, ViewToggle } from "@/components/admin/charts";
 import { PaymentPrintPromptModal, TXN_TONE, useFinance, type GeneratedFeeDocs } from "@/components/admin/finance";
 import { downloadCsv } from "@/components/admin/store";
 
-type F = "All" | "Success" | "Failed" | "Refunded";
+type F = "All" | "Success" | "Partly Paid" | "Failed" | "Refunded";
 
 export default function PaymentsPage() {
   const f = useFinance();
@@ -25,7 +25,7 @@ export default function PaymentsPage() {
     [f.payments, status, q],
   );
 
-  const ok = f.payments.filter((p) => p.status === "Success");
+  const ok = f.payments.filter((p) => p.status === "Success" || p.status === "Partly Paid");
   const now = new Date();
   const curYm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -113,7 +113,7 @@ export default function PaymentsPage() {
               label="Status"
               value={status}
               onChange={setStatus}
-              options={(["All", "Success", "Failed", "Refunded"] as F[]).map((v) => ({ value: v, label: v }))}
+              options={(["All", "Success", "Partly Paid", "Failed", "Refunded"] as F[]).map((v) => ({ value: v, label: v }))}
             />
           </div>
           <DataGrid minWidth={860}>

@@ -27,7 +27,7 @@ import { addFeeAccount, downloadCsv } from "@/components/admin/store";
 import { Icon } from "@/components/icons";
 import { waNotify } from "@/components/admin/whatsapp";
 
-type Filter = "All" | "Overdue" | "Due" | "Paid";
+type Filter = "All" | "Partly Paid" | "Overdue" | "Due" | "Paid";
 
 export default function FeesPage() {
   const f = useFinance();
@@ -154,6 +154,7 @@ export default function FeesPage() {
               onChange={setFilter}
               options={[
                 { value: "All", label: "All" },
+                { value: "Partly Paid", label: "Partly Paid" },
                 { value: "Overdue", label: "Overdue" },
                 { value: "Due", label: "Due" },
                 { value: "Paid", label: "Paid" },
