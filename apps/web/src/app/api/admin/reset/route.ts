@@ -6,10 +6,10 @@ import { isAdmin } from "@/lib/crm/auth";
 import { resetDbDemoData } from "@/lib/db";
 import { recordAuditLog } from "@/lib/audit/store";
 
+import { persistDelete, persistWrite } from "@/lib/persist";
+
 async function writeJsonSafe(file: string, data: unknown) {
-  const tmp = `${file}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(data, null, 2));
-  await fs.rename(tmp, file);
+  await persistWrite(file, JSON.stringify(data, null, 2));
 }
 
 export async function POST() {
@@ -42,8 +42,8 @@ export async function POST() {
     }
 
     await writeJsonSafe(dataFile("crm-state.json"), { rr: 0, counts: {}, last: {} });
-    await fs.unlink(dataFile("payroll.json")).catch(() => {});
-    await fs.unlink(dataFile("punches.json")).catch(() => {});
+    await persistDelete(dataFile("payroll.json"));
+    await persistDelete(dataFile("punches.json"));
 
     // 2. Reset courses.json learners count to 0 while keeping official catalog
     const cleanCourses = COURSES.map((c) => ({ ...c, learners: 0 }));

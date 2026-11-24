@@ -3,6 +3,7 @@
  * lesson files live in course-media/ and are served (with Range support) by
  * /api/course-media/[file]. Swap for Postgres + object storage / a video host later.
  */
+import { persistRead, persistWrite } from "@/lib/persist";
 import { createWriteStream, promises as fs } from "fs";
 import path from "path";
 import { DATA_DIR, dataFile } from "@/lib/data-dir";
@@ -123,7 +124,7 @@ const serial = <T>(fn: () => Promise<T>) => {
 
 export async function readCourses(): Promise<Course[]> {
   try {
-    const raw = JSON.parse(await fs.readFile(COURSES_FILE, "utf8"));
+    const raw = JSON.parse(await persistRead(COURSES_FILE));
     if (!Array.isArray(raw)) return [];
     // older records have no curriculum/status — fill the gaps without inventing content
     return raw.map((c: Partial<Course>) => ({
@@ -139,9 +140,7 @@ export async function readCourses(): Promise<Course[]> {
 }
 
 async function writeCourses(courses: Course[]) {
-  const tmp = `${COURSES_FILE}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(courses, null, 2));
-  await fs.rename(tmp, COURSES_FILE);
+  await persistWrite(COURSES_FILE, JSON.stringify(courses, null, 2));
 }
 
 export async function getCourse(idOrSlug: string) {

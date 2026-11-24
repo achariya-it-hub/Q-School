@@ -599,6 +599,52 @@ export async function setDbMetaJson(key: string, data: unknown): Promise<boolean
   }
 }
 
+/** Text value of a meta key. `ok:false` means the database itself failed (callers must not treat that as "empty"). */
+export async function getDbMetaText(key: string): Promise<{ ok: true; value: string | null } | { ok: false }> {
+  const sql = getSql();
+  if (!sql) return { ok: false };
+  await ensureTables();
+  try {
+    const rows = await sql`SELECT value FROM qs_meta WHERE key = ${key} LIMIT 1;`;
+    return { ok: true, value: rows.length ? (rows[0]?.value ?? "") : null };
+  } catch (err) {
+    console.error("[db] getDbMetaText error:", err);
+    return { ok: false };
+  }
+}
+
+export async function setDbMetaText(key: string, value: string): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) return false;
+  await ensureTables();
+  try {
+    await sql`
+      INSERT INTO qs_meta (key, value, updated_at)
+      VALUES (${key}, ${value}, NOW())
+      ON CONFLICT (key) DO UPDATE SET
+        value = EXCLUDED.value,
+        updated_at = NOW();
+    `;
+    return true;
+  } catch (err) {
+    console.error("[db] setDbMetaText error:", err);
+    return false;
+  }
+}
+
+export async function deleteDbMetaKeys(keys: string[]): Promise<boolean> {
+  const sql = getSql();
+  if (!sql || !keys.length) return false;
+  await ensureTables();
+  try {
+    for (const k of keys) await sql`DELETE FROM qs_meta WHERE key = ${k};`;
+    return true;
+  } catch (err) {
+    console.error("[db] deleteDbMetaKeys error:", err);
+    return false;
+  }
+}
+
 export async function resetDbDemoData(): Promise<boolean> {
   const sql = getSql();
   if (!sql) return false;
@@ -607,7 +653,7 @@ export async function resetDbDemoData(): Promise<boolean> {
     await sql`DELETE FROM qs_crm_leads;`;
     await sql`DELETE FROM qs_student_progress;`;
     await sql`DELETE FROM qs_students;`;
-    await sql`DELETE FROM qs_meta WHERE key = 'finance_accounts_v1';`;
+    await sql`DELETE FROM qs_meta WHERE key IN ('finance_accounts_v1', 'expenses_v1', 'leaves_v1', 'stock_v1');`;
     return true;
   } catch (err) {
     console.error("[db] resetDbDemoData error:", err);

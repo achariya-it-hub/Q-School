@@ -1,4 +1,5 @@
 /** Server-only: staff tasks persisted to tasks.json (seeded from the demo tasks). Writes are serialised. */
+import { persistRead, persistWrite } from "@/lib/persist";
 import { promises as fs } from "fs";
 import { STAFF_TASKS, applyTaskAction, type StaffTask, type TaskAction } from "@qschool/shared";
 import { dataFile } from "@/lib/data-dir";
@@ -8,7 +9,7 @@ let queue: Promise<unknown> = Promise.resolve();
 
 export async function readTasks(): Promise<StaffTask[]> {
   try {
-    return JSON.parse(await fs.readFile(FILE, "utf8"));
+    return JSON.parse(await persistRead(FILE));
   } catch {
     return [];
   }
@@ -18,7 +19,7 @@ export async function readTasks(): Promise<StaffTask[]> {
 export function performTaskAction(action: TaskAction, by: string): Promise<StaffTask[]> {
   const run = async () => {
     const next = applyTaskAction(await readTasks(), action, by, new Date().toISOString().slice(0, 10));
-    await fs.writeFile(FILE, JSON.stringify(next, null, 2));
+    await persistWrite(FILE, JSON.stringify(next, null, 2));
     return next;
   };
   const p = queue.then(run, run);

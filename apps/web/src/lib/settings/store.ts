@@ -4,6 +4,7 @@
  * returns them masked, and `saveSettings()` keeps the old secret when none is sent.
  * Environment variables BBB_URL / BBB_SECRET override the stored values.
  */
+import { persistRead, persistWrite } from "@/lib/persist";
 import { promises as fs } from "fs";
 import path from "path";
 import { DATA_DIR } from "@/lib/data-dir";
@@ -298,7 +299,7 @@ export async function getSettings(): Promise<Settings> {
   // a fresh copy, so the environment overrides below never leak into the defaults
   let saved: Settings = normalise({}, DEFAULT_SETTINGS);
   try {
-    saved = normalise(JSON.parse(await fs.readFile(FILE, "utf8")), DEFAULT_SETTINGS);
+    saved = normalise(JSON.parse(await persistRead(FILE)), DEFAULT_SETTINGS);
   } catch {}
   // environment overrides (recommended for production secrets)
   if (process.env.BBB_URL) saved.bbb.url = normaliseBbbUrl(process.env.BBB_URL);
@@ -319,12 +320,10 @@ export async function getSettings(): Promise<Settings> {
 export async function saveSettings(input: unknown) {
   let prev: Settings = DEFAULT_SETTINGS;
   try {
-    prev = normalise(JSON.parse(await fs.readFile(FILE, "utf8")), DEFAULT_SETTINGS);
+    prev = normalise(JSON.parse(await persistRead(FILE)), DEFAULT_SETTINGS);
   } catch {}
   const next = normalise(input, prev);
-  const tmp = `${FILE}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(next, null, 2));
-  await fs.rename(tmp, FILE);
+  await persistWrite(FILE, JSON.stringify(next, null, 2));
   return getSettings();
 }
 

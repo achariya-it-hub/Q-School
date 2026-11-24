@@ -3,7 +3,7 @@
 /**
  * Console store — shared across admin pages with local persistence (survives page refresh).
  */
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import {
   EXPENSES,
   FEE_ACCOUNTS,
@@ -98,67 +98,114 @@ if (typeof window !== "undefined") {
 
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
+type SyncKey = "accounts" | "expenses" | "leaves" | "stock";
+const SYNC_KEYS: SyncKey[] = ["accounts", "expenses", "leaves", "stock"];
+const idOf: Record<SyncKey, (x: any) => string> = {
+  accounts: (x) => x.id,
+  expenses: (x) => x.id,
+  leaves: (x) => x.id,
+  stock: (x) => x.sku,
+};
+/** Lists whose last upload failed (offline): the next sync uploads this browser's copy instead of replacing it. */
+const dirty = new Set<SyncKey>();
+let applyingRemote = false;
+
+function pushKey(k: SyncKey) {
+  if (typeof window === "undefined") return;
+  fetch("/api/admin/sync", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key: k, items: state[k] }),
+  })
+    .then((r) => (r.ok ? dirty.delete(k) : dirty.add(k)))
+    .catch(() => dirty.add(k));
+}
+
 const set = (fn: (s: State) => State) => {
+  const prev = state;
   state = fn(state);
   persistState(state);
   emit();
+  // Every change is saved to the database straight away so other devices see it.
+  if (!applyingRemote) for (const k of SYNC_KEYS) if (prev[k] !== state[k]) pushKey(k);
 };
 
-function pushFinanceAccounts(accounts: FeeAccount[]) {
-  if (typeof window === "undefined") return;
-  fetch("/api/admin/finance", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ accounts }),
-  }).catch(() => {});
-}
+const paidScore = (a: FeeAccount) => a.installments.filter((i) => i.paidOn && !i.refunded).reduce((sum, i) => sum + i.amount, 0);
 
-let financeSyncInFlight = false;
-/** Sync FA-... fee accounts with the server DB so plans & payments appear across all browsers, tabs, and domains. */
-export async function syncFinanceAccounts(): Promise<void> {
-  if (typeof window === "undefined" || financeSyncInFlight) return;
-  financeSyncInFlight = true;
+let syncInFlight = false;
+/**
+ * Keep fee plans, expenses, leave requests and inventory identical on every device (database is the source of truth).
+ * First run on a browser: merge what it already holds into the database so nothing entered earlier is lost.
+ */
+export async function syncConsoleData(): Promise<void> {
+  if (typeof window === "undefined" || syncInFlight) return;
+  syncInFlight = true;
   try {
-    const r = await fetch("/api/admin/finance", { cache: "no-store" });
+    const r = await fetch("/api/admin/sync", { cache: "no-store" });
     if (!r.ok) return;
     const j = await r.json().catch(() => ({}));
-    const remote: FeeAccount[] = Array.isArray(j.accounts) ? j.accounts : [];
-    const local = state.accounts;
-
-    // Merge by id: if an account exists in both, prefer whichever has more paid installments/amount.
-    const paidScore = (a: FeeAccount) =>
-      a.installments.filter((i) => i.paidOn && !i.refunded).reduce((sum, i) => sum + i.amount, 0);
-
-    const byId = new Map<string, FeeAccount>();
-    for (const a of remote) byId.set(a.id, a);
-    let localHadUnsynced = false;
-    for (const a of local) {
-      const existing = byId.get(a.id);
-      if (!existing) {
-        byId.set(a.id, a);
-        localHadUnsynced = true;
-      } else if (paidScore(a) > paidScore(existing)) {
-        byId.set(a.id, a);
-        localHadUnsynced = true;
+    for (const k of SYNC_KEYS) {
+      const remote: any[] | null = Array.isArray(j[k]) ? j[k] : null;
+      const local: any[] = state[k] as any[];
+      if (remote === null) {
+        if (local.length) pushKey(k); // nothing saved on the server yet: upload this browser's copy
+        continue;
       }
-    }
-    const merged = Array.from(byId.values());
-    const changed = JSON.stringify(merged) !== JSON.stringify(local);
-    if (changed) {
-      set((s) => ({ ...s, accounts: merged }));
-    }
-    if (localHadUnsynced) {
-      pushFinanceAccounts(merged);
+      if (dirty.has(k)) {
+        pushKey(k);
+        continue;
+      }
+      let next: any[] = remote;
+      let upload = false;
+      try {
+        const flag = `qs_sync_v2_${k}`;
+        if (!localStorage.getItem(flag)) {
+          // one-time merge of anything this browser entered before syncing existed
+          const byId = new Map<string, any>(remote.map((x) => [idOf[k](x), x]));
+          for (const x of local) {
+            const id = idOf[k](x);
+            const ex = byId.get(id);
+            if (!ex) {
+              byId.set(id, x);
+              upload = true;
+            } else if (k === "accounts" && paidScore(x) > paidScore(ex)) {
+              byId.set(id, x);
+              upload = true;
+            }
+          }
+          next = Array.from(byId.values());
+          localStorage.setItem(flag, "1");
+        }
+      } catch {}
+      if (JSON.stringify(next) !== JSON.stringify(local)) {
+        applyingRemote = true;
+        try {
+          set((s) => ({ ...s, [k]: next }) as State);
+        } finally {
+          applyingRemote = false;
+        }
+      }
+      if (upload) pushKey(k);
     }
   } catch {
   } finally {
-    financeSyncInFlight = false;
+    syncInFlight = false;
   }
+}
+/** Kept for existing callers. */
+export const syncFinanceAccounts = syncConsoleData;
+
+let syncLoop = false;
+function ensureSyncLoop() {
+  if (typeof window === "undefined" || syncLoop) return;
+  syncLoop = true;
+  void syncConsoleData();
+  window.setInterval(() => void syncConsoleData(), 30000);
+  window.addEventListener("focus", () => void syncConsoleData());
 }
 
 export function clearFeeAccounts() {
   set((s) => ({ ...s, accounts: [] }));
-  pushFinanceAccounts([]);
 }
 
 export function restoreDefaultFeeAccounts() {
@@ -188,6 +235,9 @@ export function resetAllConsoleData() {
 }
 
 export function useConsole<T>(select: (s: State) => T): T {
+  useEffect(() => {
+    ensureSyncLoop();
+  }, []);
   return useSyncExternalStore(
     (l) => {
       listeners.add(l);
@@ -238,7 +288,6 @@ export function recordPayment(accountId: string, instNo: number, method: PayMeth
       };
     }),
   }));
-  pushFinanceAccounts(state.accounts);
   auditFeePayment(accountId, instNo, method, ref, paidAmount);
 }
 
@@ -290,7 +339,6 @@ export function addFeeAccount(input: { student: string; phone: string; course: s
       ...s.accounts,
     ],
   }));
-  pushFinanceAccounts(state.accounts);
 }
 
 export function addExpense(e: Omit<Expense, "id">) {

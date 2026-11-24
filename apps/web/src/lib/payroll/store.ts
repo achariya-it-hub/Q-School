@@ -3,6 +3,7 @@
  * punches.json = raw punches from the Matrix biometric device, the staff app and CSV imports.
  * Every write goes through one lock so two punches at the same moment never overwrite each other.
  */
+import { persistRead, persistWrite } from "@/lib/persist";
 import { randomBytes } from "crypto";
 import { promises as fs } from "fs";
 import {
@@ -69,26 +70,26 @@ function locked<T>(fn: () => Promise<T>): Promise<T> {
 export async function load(): Promise<PayrollData> {
   let d: Partial<PayrollData> = {};
   try {
-    d = JSON.parse(await fs.readFile(FILE, "utf8"));
+    d = JSON.parse(await persistRead(FILE));
   } catch {}
   const data: PayrollData = { staff: d.staff ?? structuredClone(STAFF), settings: { ...DEFAULT_SETTINGS, ...d.settings }, setup: d.setup ?? {}, holidays: d.holidays ?? [], attendance: d.attendance ?? {}, runs: d.runs ?? {} };
   if (!data.settings.punchKey) {
     data.settings.punchKey = randomBytes(18).toString("hex"); // created once; the device is configured with it
-    await fs.writeFile(FILE, JSON.stringify(data, null, 2));
+    await persistWrite(FILE, JSON.stringify(data, null, 2));
   }
   return data;
 }
-const save = (d: PayrollData) => fs.writeFile(FILE, JSON.stringify(d, null, 2));
+const save = (d: PayrollData) => persistWrite(FILE, JSON.stringify(d, null, 2));
 
 async function loadPunches(): Promise<PunchFile> {
   try {
-    const d = JSON.parse(await fs.readFile(PUNCH_FILE, "utf8"));
+    const d = JSON.parse(await persistRead(PUNCH_FILE));
     return { punches: d.punches ?? [], unmatched: d.unmatched ?? [] };
   } catch {
     return { punches: [], unmatched: [] };
   }
 }
-const savePunches = (p: PunchFile) => fs.writeFile(PUNCH_FILE, JSON.stringify(p));
+const savePunches = (p: PunchFile) => persistWrite(PUNCH_FILE, JSON.stringify(p));
 
 const staffById = (data: PayrollData, id: string) => data.staff.find((s) => s.id === id);
 const dateOk = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d));

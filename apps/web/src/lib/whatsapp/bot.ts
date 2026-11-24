@@ -10,6 +10,7 @@
  * Free-form replies only work within 24 h of the person's last message — which is always true here,
  * because the bot only ever answers a message they just sent.
  */
+import { persistRead, persistWrite } from "@/lib/persist";
 import { promises as fs } from "fs";
 import { ADMISSION_CENTRES, centreName, type StudentRecord } from "@qschool/shared";
 import { DATA_DIR } from "@/lib/data-dir";
@@ -59,7 +60,7 @@ export const defaultBotConfig = (): BotConfig => ({
 export async function getBotConfig(): Promise<BotConfig> {
   const d = defaultBotConfig();
   try {
-    const saved = JSON.parse(await fs.readFile(CONFIG_FILE, "utf8")) as Partial<BotConfig>;
+    const saved = JSON.parse(await persistRead(CONFIG_FILE)) as Partial<BotConfig>;
     return { ...d, ...saved, branches: { ...d.branches, ...(saved.branches ?? {}) } };
   } catch {
     return d;
@@ -83,7 +84,7 @@ export async function saveBotConfig(p: Partial<BotConfig>): Promise<BotConfig> {
     const b = p.branches?.[c.id];
     if (b) next.branches[c.id] = { address: s(b.address, 300), phone: s(b.phone, 30), hours: s(b.hours, 120), map: s(b.map, 300) };
   }
-  await fs.writeFile(CONFIG_FILE, JSON.stringify(next, null, 1));
+  await persistWrite(CONFIG_FILE, JSON.stringify(next, null, 1));
   return next;
 }
 
@@ -105,7 +106,7 @@ function serial<T>(fn: () => Promise<T>): Promise<T> {
 }
 async function readSessions(): Promise<Record<string, Session>> {
   try {
-    return JSON.parse(await fs.readFile(SESSION_FILE, "utf8"));
+    return JSON.parse(await persistRead(SESSION_FILE));
   } catch {
     return {};
   }
@@ -115,7 +116,7 @@ const putSession = (phone: string, s: Session) =>
   serial(async () => {
     const all = await readSessions();
     all[phone] = { ...s, at: new Date().toISOString() };
-    await fs.writeFile(SESSION_FILE, JSON.stringify(all, null, 1));
+    await persistWrite(SESSION_FILE, JSON.stringify(all, null, 1));
   });
 
 /** Numbers currently waiting for a human (for the admin screen). */

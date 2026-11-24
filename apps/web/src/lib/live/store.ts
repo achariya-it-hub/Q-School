@@ -3,6 +3,7 @@
  * stored in live-sessions.json. Each registration gets a private join token so the
  * student's link works without an account; the BBB join URL is only created at join time.
  */
+import { persistRead, persistWrite } from "@/lib/persist";
 import { promises as fs } from "fs";
 import path from "path";
 import { DATA_DIR } from "@/lib/data-dir";
@@ -21,7 +22,7 @@ const serial = <T>(fn: () => Promise<T>) => {
 
 async function readAll(): Promise<LiveSession[]> {
   try {
-    const raw = JSON.parse(await fs.readFile(FILE, "utf8"));
+    const raw = JSON.parse(await persistRead(FILE));
     // sessions created before platforms existed ran on BigBlueButton
     return Array.isArray(raw) ? raw.map((x: Partial<LiveSession>) => ({ platform: "bbb" as Platform, joinUrl: "", hostUrl: "", passcode: "", ...x }) as LiveSession) : [];
   } catch {
@@ -29,9 +30,7 @@ async function readAll(): Promise<LiveSession[]> {
   }
 }
 async function writeAll(list: LiveSession[]) {
-  const tmp = `${FILE}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(list, null, 2));
-  await fs.rename(tmp, FILE);
+  await persistWrite(FILE, JSON.stringify(list, null, 2));
 }
 
 const s = (v: unknown, max = 300, fb = "") => (typeof v === "string" ? v.trim().slice(0, max) : fb);

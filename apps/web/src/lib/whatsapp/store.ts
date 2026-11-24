@@ -3,6 +3,7 @@
  *   whatsapp-messages.json  newest first, capped
  *   whatsapp-state.json     opt-outs, last inbound time per number (24-hour window), synced templates
  */
+import { persistRead, persistWrite } from "@/lib/persist";
 import { promises as fs } from "fs";
 import path from "path";
 import { randomBytes } from "crypto";
@@ -29,15 +30,13 @@ const serial = <T>(fn: () => Promise<T>) => {
 
 async function readJson<T>(file: string, fb: T): Promise<T> {
   try {
-    return JSON.parse(await fs.readFile(file, "utf8")) as T;
+    return JSON.parse(await persistRead(file)) as T;
   } catch {
     return fb;
   }
 }
 async function writeJson(file: string, data: unknown) {
-  const tmp = `${file}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(data, null, 1));
-  await fs.rename(tmp, file);
+  await persistWrite(file, JSON.stringify(data, null, 1));
 }
 const readMsgs = () => readJson<WaMessage[]>(MSG_FILE, []);
 const readState = async (): Promise<State> => ({ optOut: [], lastInbound: {}, templates: [], templatesAt: null, ...(await readJson<Partial<State>>(STATE_FILE, {})) });

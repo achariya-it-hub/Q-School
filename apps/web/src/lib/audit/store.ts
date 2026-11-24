@@ -4,6 +4,7 @@
  * across all modules and pages in Q-School LMS / ERP.
  * File-backed persistence in DATA_DIR: audit-logs.json
  */
+import { persistRead, persistWrite } from "@/lib/persist";
 import { promises as fs } from "fs";
 import { dataFile } from "@/lib/data-dir";
 
@@ -45,7 +46,7 @@ function serial<T>(fn: () => Promise<T>): Promise<T> {
 
 async function readLogs(): Promise<AuditLog[]> {
   try {
-    const raw = await fs.readFile(AUDIT_FILE, "utf8");
+    const raw = await persistRead(AUDIT_FILE);
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -54,9 +55,7 @@ async function readLogs(): Promise<AuditLog[]> {
 }
 
 async function writeLogs(logs: AuditLog[]): Promise<void> {
-  const tmp = `${AUDIT_FILE}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(logs, null, 2));
-  await fs.rename(tmp, AUDIT_FILE);
+  await persistWrite(AUDIT_FILE, JSON.stringify(logs));
 }
 
 /**
@@ -91,10 +90,10 @@ export async function recordAuditLog(entry: {
       details: entry.details,
     };
 
-    // Prepend latest logs, keep up to 10,000 logs
+    // Prepend latest logs, keep the newest 3,000 (the whole trail is one database record)
     logs.unshift(newLog);
-    if (logs.length > 10000) {
-      logs.length = 10000;
+    if (logs.length > 3000) {
+      logs.length = 3000;
     }
 
     await writeLogs(logs);

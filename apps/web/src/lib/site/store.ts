@@ -4,6 +4,7 @@
  *   site-media/        images uploaded from the Console, served by /api/site/media/[file]
  * Swap for a Postgres `site_content` row + object storage when the database lands.
  */
+import { persistRead, persistWrite } from "@/lib/persist";
 import { promises as fs } from "fs";
 import path from "path";
 import { DATA_DIR } from "@/lib/data-dir";
@@ -33,7 +34,7 @@ function serial<T>(fn: () => Promise<T>): Promise<T> {
 
 async function read(): Promise<SiteFile> {
   try {
-    const raw = JSON.parse(await fs.readFile(FILE, "utf8"));
+    const raw = JSON.parse(await persistRead(FILE));
     if (raw.contentVersion !== CONTENT_VERSION) {
       return { contentVersion: CONTENT_VERSION, published: DEFAULT_HOME, publishedAt: null, draft: null, draftSavedAt: null, history: [] };
     }
@@ -53,9 +54,7 @@ async function read(): Promise<SiteFile> {
 }
 
 async function write(f: SiteFile) {
-  const tmp = `${FILE}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify({ ...f, contentVersion: CONTENT_VERSION }, null, 2));
-  await fs.rename(tmp, FILE);
+  await persistWrite(FILE, JSON.stringify({ ...f, contentVersion: CONTENT_VERSION }, null, 2));
 }
 
 /** What visitors see. */

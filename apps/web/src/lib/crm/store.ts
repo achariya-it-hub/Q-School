@@ -9,6 +9,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { DATA_DIR, dataFile } from "@/lib/data-dir";
+import { persistRead, persistWrite } from "@/lib/persist";
 import { recordAuditLog } from "@/lib/audit/store";
 import { enrollLeadAsStudent, syncAdmittedLeads } from "@/lib/students/store";
 import { AGENTS, PIPELINE, STAGES, centreName, leadCentreId, resolveCentreId, type PipelineLead, type Stage } from "@qschool/shared";
@@ -98,15 +99,22 @@ function serial<T>(fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
+/** Lead-source log & counters (and deleted-lead tombstones) live in the database so every server instance agrees. */
+const shared = (file: string) => file === LOG_FILE || file === STATE_FILE;
+
 async function readJson<T>(file: string, fallback: T): Promise<T> {
   try {
-    return JSON.parse(await fs.readFile(file, "utf8")) as T;
+    return JSON.parse(shared(file) ? await persistRead(file) : await fs.readFile(file, "utf8")) as T;
   } catch {
     return fallback;
   }
 }
 
 async function writeJson(file: string, data: unknown) {
+  if (shared(file)) {
+    await persistWrite(file, JSON.stringify(data, null, 2));
+    return;
+  }
   const tmp = `${file}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
   try {
     await fs.writeFile(tmp, JSON.stringify(data, null, 2), "utf8");

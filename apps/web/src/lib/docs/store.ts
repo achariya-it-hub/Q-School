@@ -2,6 +2,7 @@
  * Shared documents: a snapshot of an invoice or receipt behind an unguessable link (/d/<token>),
  * so it can be sent on WhatsApp and opened without signing in. Server-only, stored in shared-docs.json.
  */
+import { persistRead, persistWrite } from "@/lib/persist";
 import { promises as fs } from "fs";
 import path from "path";
 import { randomBytes } from "crypto";
@@ -25,7 +26,7 @@ const serial = <T>(fn: () => Promise<T>) => {
 
 async function readAll(): Promise<SharedDoc[]> {
   try {
-    return JSON.parse(await fs.readFile(FILE, "utf8"));
+    return JSON.parse(await persistRead(FILE));
   } catch {
     return [];
   }
@@ -40,9 +41,7 @@ export function shareDoc(doc: NewDoc) {
     const next = { ...doc, token, createdAt: i >= 0 ? list[i].createdAt : new Date().toISOString() } as SharedDoc;
     if (i >= 0) list[i] = next;
     else list.unshift(next);
-    const tmp = `${FILE}.tmp`;
-    await fs.writeFile(tmp, JSON.stringify(list.slice(0, 20000)));
-    await fs.rename(tmp, FILE);
+    await persistWrite(FILE, JSON.stringify(list.slice(0, 20000)));
     return next;
   });
 }

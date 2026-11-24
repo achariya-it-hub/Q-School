@@ -4,6 +4,7 @@
  * Tracks Meta (FB/IG), Google Ads, and social campaigns with full workflow:
  * planning, copywriting, design, approvals, and live ad tracking.
  */
+import { persistRead, persistWrite } from "@/lib/persist";
 import { promises as fs } from "fs";
 import { dataFile } from "@/lib/data-dir";
 import { recordAuditLog } from "@/lib/audit/store";
@@ -25,16 +26,14 @@ function serial<T>(fn: () => Promise<T>): Promise<T> {
 
 async function readJson<T>(file: string, fallback: T): Promise<T> {
   try {
-    return JSON.parse(await fs.readFile(file, "utf8")) as T;
+    return JSON.parse(await persistRead(file)) as T;
   } catch {
     return fallback;
   }
 }
 
 async function writeJson(file: string, data: unknown) {
-  const tmp = `${file}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(data, null, 2));
-  await fs.rename(tmp, file);
+  await persistWrite(file, JSON.stringify(data, null, 2));
 }
 
 const SEED_CAMPAIGNS: CampaignItem[] = [
