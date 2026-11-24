@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { inr, studentFeeSummary } from "@qschool/shared";
+import { buildDocsForStudentPayment, inr, studentFeeSummary } from "@qschool/shared";
 import { easebuzzConfigured, easebuzzEnv } from "@/lib/payments/easebuzz";
 import { findPayLink } from "@/lib/students/store";
-import { OnlinePaymentDocsSection, buildDocsForStudentPayment } from "@/components/admin/fee-documents";
+import { OnlinePaymentDocsSection } from "@/components/admin/fee-documents";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Pay fees | Q-School", robots: { index: false, follow: false } };

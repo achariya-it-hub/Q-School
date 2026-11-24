@@ -205,3 +205,4 @@ export * from "./admission";
 export * from "./payroll";
 export * from "./progress";
 export * from "./reports";
+export * from "./fee-docs";
