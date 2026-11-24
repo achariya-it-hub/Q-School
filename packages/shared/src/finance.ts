@@ -4,7 +4,7 @@
  * Amounts are GST-inclusive INR; education/coaching services are taxed at 18% (CGST 9% + SGST 9%).
  */
 
-export const TODAY_ISO = "2026-10-01";
+export const TODAY_ISO = new Date().toISOString().slice(0, 10);
 export const GST_RATE = 0.18;
 
 export type PayMethod = "UPI" | "Card" | "Net Banking" | "Cash" | "EMI" | "Cheque";
@@ -191,7 +191,14 @@ export function deriveInvoices(accounts: FeeAccount[], today = TODAY_ISO): Invoi
       });
     }
   rows.sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : x.accountId < y.accountId ? -1 : 1));
-  return rows.map((r, k) => ({ ...r, id: `INV-2026-${String(812 + k).padStart(4, "0")}` })).reverse();
+  return rows
+    .map((r) => {
+      const id = r.accountId.startsWith("STU-")
+        ? `INV-2026-${r.accountId.replace(/\D/g, "").padStart(4, "0")}-${String(r.instNo).padStart(2, "0")}`
+        : `INV-2026-${r.accountId.replace(/[^A-Za-z0-9]/g, "")}-${String(r.instNo).padStart(2, "0")}`;
+      return { ...r, id };
+    })
+    .reverse();
 }
 
 export interface PaymentTxn {
@@ -219,19 +226,24 @@ export function derivePayments(accounts: FeeAccount[]): PaymentTxn[] {
           accountId: a.id,
           instNo: i.no,
           student: a.student,
-          item: a.course,
+          item: a.installments.length > 1 ? `${a.course} — Part Payment #${i.no}` : a.course,
           amount: i.amount,
           method: i.method ?? "UPI",
           ref: i.ref ?? "—",
           date: i.paidOn,
           status: i.refunded ? "Refunded" : "Success",
         });
-  // receipts are numbered in payment order
+  // receipts are numbered deterministically so print prompt & ledger match 1:1
   ok.sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : x.accountId < y.accountId ? -1 : 1));
-  const withReceipts = ok.map((p, k) => ({
-    ...p,
-    receiptNo: p.ref?.startsWith("REC-") ? p.ref : `REC-${String(7 + k).padStart(8, "0")}`,
-  }));
+  const withReceipts = ok.map((p) => {
+    const fallbackRec = p.accountId.startsWith("STU-")
+      ? `REC-${p.accountId.replace(/\D/g, "").padStart(4, "0")}-${String(p.instNo).padStart(2, "0")}`
+      : `REC-${p.accountId.replace(/[^A-Za-z0-9]/g, "")}-${String(p.instNo).padStart(2, "0")}`;
+    return {
+      ...p,
+      receiptNo: p.ref?.startsWith("REC-") ? p.ref : fallbackRec,
+    };
+  });
   const all = [...withReceipts, ...FAILED_ATTEMPTS];
   all.sort((x, y) => (x.date < y.date ? 1 : x.date > y.date ? -1 : 0));
   return all.map((p, k) => ({ ...p, id: `TXN-${String(90500 - k)}` }));

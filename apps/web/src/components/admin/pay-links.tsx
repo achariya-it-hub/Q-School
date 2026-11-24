@@ -15,22 +15,33 @@ const waLink = (s: StudentRecord, l: PayLink) => {
   return `https://wa.me/${to}?text=${encodeURIComponent(msg)}`;
 };
 
-/** Payment links for one admission: create (Razorpay via API, or paste a GrayQuest link), share on WhatsApp, check status. */
-export function PayLinks({ student, onChanged }: { student: StudentRecord; onChanged: () => void }) {
+/** Payment links for one admission: create (Easebuzz / Razorpay via API, or paste a GrayQuest link), share on WhatsApp, check status, and print Receipt + Invoice. */
+export function PayLinks({
+  student,
+  onChanged,
+  onPaid,
+}: {
+  student: StudentRecord;
+  onChanged: () => void;
+  onPaid?: (student: StudentRecord, paymentIndex?: number) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [msg, setMsg] = useState("");
   const links = student.payLinks ?? [];
+  const fee = studentFeeSummary(student);
 
   const check = async (l: PayLink) => {
     setMsg("");
     const r = await fetch("/api/students", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: student.id, action: "checkLink", linkId: l.id }) });
     const j = await r.json().catch(() => ({}));
-    setMsg(!r.ok ? j.error ?? "Could not check" : j.status === "paid" ? "Paid. The student is now Active." : `Payment status: ${String(j.status).replace("_", " ")}`);
+    setMsg(!r.ok ? j.error ?? "Could not check" : j.status === "paid" ? "Paid! Receipt & Tax Invoice generated." : `Payment status: ${String(j.status).replace("_", " ")}`);
     onChanged();
+    if (r.ok && j.status === "paid" && j.student && onPaid) {
+      onPaid(j.student);
+    }
   };
   const copy = (t: string) => navigator.clipboard?.writeText(t).then(() => setMsg("Link copied"));
 
-  const fee = studentFeeSummary(student);
   return (
     <div className="rounded-xl border border-[#E2ECE9] p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -42,24 +53,39 @@ export function PayLinks({ student, onChanged }: { student: StudentRecord; onCha
         )}
       </div>
       <ul className="space-y-2">
-        {links.map((l) => (
-          <li key={l.id} className="rounded-lg bg-[#F7FAF9] p-2.5 text-[12.5px]">
-            <div className="flex flex-wrap items-center gap-2">
-              <b className="text-brand-ink">{inr(l.amount)}</b>
-              <span className="text-[#6b807b]">{PROVIDER[l.provider]} · {new Date(l.createdAt).toLocaleDateString("en-IN")} · {l.createdBy}</span>
-              <span className="ml-auto"><StatusBadge tone={TONE[l.status]}>{l.status}</StatusBadge></span>
-            </div>
-            <div className="mt-1.5 flex flex-wrap gap-3 text-[12px] font-semibold text-brand-teal">
-              <button onClick={() => copy(l.url)} className="hover:underline">Copy link</button>
-              <a href={waLink(student, l)} target="_blank" rel="noreferrer" className="hover:underline">WhatsApp</a>
-              {l.status === "Created" && (l.provider === "razorpay" || l.provider === "easebuzz") && <button onClick={() => check(l)} className="hover:underline">Check payment status</button>}
-              {l.provider === "easebuzz" && l.status === "Created" && (
-                <a href={l.url} target="_blank" rel="noreferrer" className="hover:underline">Open pay page</a>
-              )}
-              {l.status === "Paid" && l.method && <span className="font-normal text-[#6b807b]">paid by {l.method}</span>}
-            </div>
-          </li>
-        ))}
+        {links.map((l) => {
+          const paidIdx =
+            l.status === "Paid"
+              ? fee.payments.findIndex((p) => p.receiptNo === l.paymentId || p.receiptNo === l.id)
+              : -1;
+          return (
+            <li key={l.id} className="rounded-lg bg-[#F7FAF9] p-2.5 text-[12.5px]">
+              <div className="flex flex-wrap items-center gap-2">
+                <b className="text-brand-ink">{inr(l.amount)}</b>
+                <span className="text-[#6b807b]">{PROVIDER[l.provider]} · {new Date(l.createdAt).toLocaleDateString("en-IN")} · {l.createdBy}</span>
+                <span className="ml-auto"><StatusBadge tone={TONE[l.status]}>{l.status}</StatusBadge></span>
+              </div>
+              <div className="mt-1.5 flex flex-wrap items-center gap-3 text-[12px] font-semibold text-brand-teal">
+                <button onClick={() => copy(l.url)} className="hover:underline">Copy link</button>
+                <a href={waLink(student, l)} target="_blank" rel="noreferrer" className="hover:underline">WhatsApp</a>
+                {l.status === "Created" && (l.provider === "razorpay" || l.provider === "easebuzz") && <button onClick={() => check(l)} className="hover:underline">Check payment status</button>}
+                {l.provider === "easebuzz" && l.status === "Created" && (
+                  <a href={l.url} target="_blank" rel="noreferrer" className="hover:underline">Open pay page</a>
+                )}
+                {l.status === "Paid" && l.method && <span className="font-normal text-[#6b807b]">paid by {l.method}</span>}
+                {l.status === "Paid" && onPaid && (
+                  <button
+                    type="button"
+                    onClick={() => onPaid(student, paidIdx >= 0 ? paidIdx : undefined)}
+                    className="rounded-md border border-[#CFE3DD] bg-white px-2 py-0.5 text-[11.5px] font-bold text-brand-deep hover:border-brand-teal"
+                  >
+                    🖨️ Receipt &amp; Invoice
+                  </button>
+                )}
+              </div>
+            </li>
+          );
+        })}
         {links.length === 0 && <li className="text-[12.5px] text-[#6b807b]">No links sent yet. The parent can pay by UPI, card, net banking or card EMI, and the student is activated automatically when the payment lands.</li>}
       </ul>
       {msg && <p className="mt-2 text-[12.5px] font-semibold text-brand-deep">{msg}</p>}

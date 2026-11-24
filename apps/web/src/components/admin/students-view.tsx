@@ -309,7 +309,11 @@ export function StudentsManager({ mode }: { mode: "admin" | "centre" }) {
               onPrintPayment={(idx) => setPrintDocs(buildDocsForStudentPayment(view, idx))}
             />
 
-            <PayLinks student={view} onChanged={reload} />
+            <PayLinks
+              student={view}
+              onChanged={reload}
+              onPaid={(s, idx) => setPrintDocs(buildDocsForStudentPayment(s, idx))}
+            />
 
             {mode === "admin" && (
               <Field label="Move to another centre">

@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { fmtDate, inr, type PayMethod } from "@qschool/shared";
+import { fmtDate, gstSplit, inr, type PayMethod, type PaymentTxn } from "@qschool/shared";
 import { AdminShell } from "@/components/admin/shell";
 import { Btn, Card, DataGrid, Figure, PageHeader, SearchInput, Segmented, StatusBadge, Td, Th } from "@/components/admin/ui";
 import { HBars, ViewToggle } from "@/components/admin/charts";
-import { TXN_TONE, useFinance } from "@/components/admin/finance";
+import { PaymentPrintPromptModal, TXN_TONE, useFinance, type GeneratedFeeDocs } from "@/components/admin/finance";
 import { downloadCsv } from "@/components/admin/store";
 
 type F = "All" | "Success" | "Failed" | "Refunded";
@@ -15,6 +15,7 @@ export default function PaymentsPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<F>("All");
   const [mixTable, setMixTable] = useState(false);
+  const [printDocs, setPrintDocs] = useState<GeneratedFeeDocs | null>(null);
 
   const list = useMemo(
     () =>
@@ -25,10 +26,53 @@ export default function PaymentsPage() {
   );
 
   const ok = f.payments.filter((p) => p.status === "Success");
-  const sept = ok.filter((p) => p.date.startsWith("2026-09")).reduce((a, p) => a + p.amount, 0);
-  const oct = ok.filter((p) => p.date.startsWith("2026-10")).reduce((a, p) => a + p.amount, 0);
+  const now = new Date();
+  const curYm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevYm = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+  const curLabel = now.toLocaleString("en-IN", { month: "long" });
+  const prevLabel = prevDate.toLocaleString("en-IN", { month: "long" });
+  const curSum = ok.filter((p) => p.date.startsWith(curYm)).reduce((a, p) => a + p.amount, 0);
+  const prevSum = ok.filter((p) => p.date.startsWith(prevYm)).reduce((a, p) => a + p.amount, 0);
   const failed = f.payments.filter((p) => p.status === "Failed");
   const refunds = f.payments.filter((p) => p.status === "Refunded").reduce((a, p) => a + p.amount, 0);
+
+  const openDocsForPayment = (p: PaymentTxn) => {
+    const acc = f.accounts.find((a) => a.id === p.accountId);
+    if (!acc) return;
+    const totalFee = acc.installments.reduce((s, i) => s + i.amount, 0);
+    const paidTillDate = acc.installments
+      .filter((i) => i.paidOn && !i.refunded && i.no <= p.instNo)
+      .reduce((s, i) => s + i.amount, 0);
+    const balanceRemaining = Math.max(0, Math.round((totalFee - paidTillDate) * 100) / 100);
+    const inv =
+      f.invoices.find((x) => x.accountId === p.accountId && x.instNo === p.instNo) ?? {
+        id: `INV-2026-${p.accountId.replace(/[^A-Za-z0-9]/g, "")}-${String(p.instNo).padStart(2, "0")}`,
+        accountId: p.accountId,
+        instNo: p.instNo,
+        student: p.student,
+        email: acc.email,
+        phone: acc.phone,
+        item: p.item,
+        batch: acc.batch || "Section A",
+        amount: p.amount,
+        gst: gstSplit(p.amount).tax,
+        date: p.date,
+        due: p.date,
+        method: p.method,
+        status: "Paid" as const,
+      };
+    setPrintDocs({
+      receipt: p,
+      invoice: inv,
+      account: acc,
+      partNumber: p.instNo,
+      isPartPayment: p.amount < totalFee,
+      totalFee,
+      paidTillDate,
+      balanceRemaining,
+    });
+  };
 
   const methods: PayMethod[] = ["UPI", "Card", "Net Banking", "EMI", "Cash", "Cheque"];
   const mix = methods
@@ -38,7 +82,7 @@ export default function PaymentsPage() {
 
   return (
     <AdminShell>
-      <PageHeader title="Payments" sub="Every transaction from Razorpay, UPI, counters and EMI partners">
+      <PageHeader title="Payments" sub="Every transaction from Easebuzz, Razorpay, UPI, counters and EMI partners">
         <Btn
           variant="ghost"
           icon="download"
@@ -55,8 +99,8 @@ export default function PaymentsPage() {
       </PageHeader>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Figure label="Collected · October" value={inr(oct)} sub="Month to date" icon="rupee" />
-        <Figure label="Collected · September" value={inr(sept)} sub={`${ok.filter((p) => p.date.startsWith("2026-09")).length} payments`} icon="checkCircle" />
+        <Figure label={`Collected · ${curLabel}`} value={inr(curSum)} sub="Month to date" icon="rupee" />
+        <Figure label={`Collected · ${prevLabel}`} value={inr(prevSum)} sub={`${ok.filter((p) => p.date.startsWith(prevYm)).length} payments`} icon="checkCircle" />
         <Figure label="Failed attempts" value={String(failed.length)} sub="Retry link sent automatically" icon="xCircle" />
         <Figure label="Refunds" value={inr(refunds)} sub="Processed this quarter" icon="undo" />
       </section>
@@ -101,7 +145,19 @@ export default function PaymentsPage() {
                   <Td>
                     <StatusBadge tone={TXN_TONE[p.status]}>{p.status}</StatusBadge>
                   </Td>
-                  <Td className="font-mono text-[12px] text-[#41564f]">{p.receiptNo ?? "—"}</Td>
+                  <Td>
+                    {p.receiptNo ? (
+                      <button
+                        type="button"
+                        onClick={() => openDocsForPayment(p)}
+                        className="font-mono text-[12px] font-semibold text-brand-teal hover:underline"
+                      >
+                        {p.receiptNo}
+                      </button>
+                    ) : (
+                      <span className="text-[#41564f]">—</span>
+                    )}
+                  </Td>
                 </tr>
               ))}
               {list.length === 0 && (
@@ -120,6 +176,7 @@ export default function PaymentsPage() {
           <p className="mt-4 text-[12px] text-[#6b807b]">Successful payments, all time, excluding refunds.</p>
         </Card>
       </div>
+      <PaymentPrintPromptModal docs={printDocs} onClose={() => setPrintDocs(null)} />
     </AdminShell>
   );
 }
