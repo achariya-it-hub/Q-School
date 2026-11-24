@@ -45,8 +45,9 @@ function Slip_() {
       </div>
       <div className="sheet" style={{ maxWidth: 780, margin: "0 auto", background: "#fff", padding: 32, boxShadow: "0 4px 24px rgba(0,0,0,.08)" }}>
         <div style={{ textAlign: "center", borderBottom: "2px solid #1b2233", paddingBottom: 12 }}>
-          <h1 style={{ margin: 0, fontSize: 22 }}>Q-School</h1>
-          <div style={{ fontSize: 13, color: "#566" }}>Payslip for {monthLabel(month)}{slip.status === "Draft" ? " (DRAFT)" : ""}</div>
+          <h1 style={{ margin: 0, fontSize: 24, fontFamily: "Georgia, serif", color: "#184B42", letterSpacing: 1 }}>Q SCHOOL</h1>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#184B42" }}>(A UNIT OF DIVINE GRACE FOUNDATION)</div>
+          <div style={{ fontSize: 13, color: "#566", marginTop: 4 }}>Payslip for {monthLabel(month)}{slip.status === "Draft" ? " (DRAFT)" : ""}</div>
         </div>
 
         <table style={{ width: "100%", fontSize: 13, margin: "16px 0", borderCollapse: "collapse" }}>

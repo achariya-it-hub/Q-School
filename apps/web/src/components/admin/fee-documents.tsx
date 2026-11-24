@@ -21,10 +21,7 @@ import { Btn, Modal } from "./ui";
 const ORG = {
   name: "Q SCHOOL",
   unit: "(A UNIT OF DIVINE GRACE FOUNDATION)",
-  addr: "2nd Floor, 14 Anna Nagar East, Chennai 600102, Tamil Nadu",
-  gstin: "33AABCQ1234F1Z5",
   sac: "999293",
-  email: "accounts@theqschool.com",
 };
 
 export interface GeneratedFeeDocs {
@@ -224,140 +221,144 @@ export function buildDocsForAccountPayment(
 }
 
 export function InvoiceView({ inv, account, embedded = false }: { inv: InvoiceDoc; account?: FeeAccount; embedded?: boolean }) {
-  const g = gstSplit(inv.amount);
   const isPaid = inv.status === "Paid";
   const t = account ? accountTotals(account) : null;
   const totalCourseFee = t ? t.total : inv.amount;
   const paidThisInvoice = isPaid ? inv.amount : 0;
   const totalPaidToDate = t ? t.paid : paidThisInvoice;
+  const previouslyPaid = Math.max(0, Math.round((totalPaidToDate - paidThisInvoice) * 100) / 100);
+  const payableNow = t ? Math.max(inv.amount, Math.round((totalCourseFee - previouslyPaid) * 100) / 100) : inv.amount;
   const balanceDues = t ? Math.max(0, t.outstanding) : isPaid ? 0 : inv.amount;
-  const isPart = totalCourseFee > inv.amount;
   const dateFormatted = fmtDateIN(inv.date || TODAY_ISO);
   const fatherName = account?.fatherName || "PARENT";
   const admissionNo = account?.admissionNo || inv.accountId.replace("FA-", "00000");
+  const rollNo = account?.rollNo ?? 0;
+  const section = account?.section || (inv.batch?.replace(/.*(?:Batch|Section)\s*/i, "") || "A");
   const payMode = inv.method
     ? inv.method === "UPI" || inv.method === "Card" || inv.method === "Net Banking"
-      ? `Online Payment (${inv.method})`
+      ? "Online Payment"
       : inv.method
-    : "Online Payment / Pending";
+    : isPaid
+    ? "Online Payment"
+    : "Pending";
 
   return (
     <div className={`${embedded ? "" : "print-area"} rounded-xl border border-black/80 bg-white p-6 text-[12.5px] text-black shadow-sm`}>
-      {/* Official Header */}
+      {/* Official Header — only Q SCHOOL + (A UNIT OF DIVINE GRACE FOUNDATION), no address */}
       <div className="relative pb-3 text-center">
         <div className="absolute right-0 top-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Q-School" className="h-12 w-auto object-contain" />
+          <img src="/logo.png" alt="Q-School" className="h-14 w-auto object-contain" />
         </div>
-        <h1 className="font-serif text-[26px] font-black uppercase tracking-wider text-[#054038]">{ORG.name}</h1>
-        <p className="mt-0.5 text-[12px] font-bold uppercase tracking-wider text-[#1F3D36]">{ORG.unit}</p>
-        <p className="mt-0.5 text-[11px] text-gray-700">
-          {ORG.addr} · GSTIN: <b>{ORG.gstin}</b>
-        </p>
-        <div className="mt-1.5">
-          <span className="inline-block border-b-2 border-black pb-0.5 text-[13px] font-extrabold uppercase tracking-wider text-black">
-            TAX INVOICE {isPart ? "(PART PAYMENT / INSTALLMENT)" : ""}
+        <h1 className="font-serif text-[30px] font-black uppercase tracking-wider text-[#184B42] leading-tight">{ORG.name}</h1>
+        <p className="mt-0.5 text-[13px] font-extrabold uppercase tracking-wide text-[#184B42]">{ORG.unit}</p>
+        <div className="mt-1">
+          <span className="inline-block border-b border-black pb-0.5 font-serif text-[13.5px] font-bold uppercase tracking-wide text-black">
+            INVOICE
           </span>
         </div>
       </div>
 
-      {/* Two-column Metadata */}
-      <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 border-t border-black/30 py-3 text-[12.5px]">
+      {/* Two-column Metadata matching official Q-School layout */}
+      <div className="grid grid-cols-2 gap-x-10 gap-y-1.5 py-3 text-[12.5px]">
         <div className="flex">
-          <span className="w-32 font-semibold text-gray-800">Student Name</span>
-          <span className="font-bold uppercase text-black">: {inv.student}</span>
+          <span className="w-36 font-serif text-black">Name</span>
+          <span className="font-serif font-bold uppercase text-black">{inv.student}</span>
         </div>
         <div className="flex">
-          <span className="w-32 font-semibold text-gray-800">Invoice No.</span>
-          <span className="font-mono font-bold text-black">: {inv.id}</span>
+          <span className="w-32 font-serif text-black">Invoice No.</span>
+          <span className="font-serif font-bold text-black">{inv.id}</span>
         </div>
         <div className="flex">
-          <span className="w-32 font-semibold text-gray-800">Parent Name</span>
-          <span className="font-semibold uppercase text-black">: {fatherName}</span>
+          <span className="w-36 font-serif text-black">Father&apos;s Name</span>
+          <span className="font-serif font-bold uppercase text-black">{fatherName}</span>
         </div>
         <div className="flex">
-          <span className="w-32 font-semibold text-gray-800">Invoice Date</span>
-          <span className="font-semibold text-black">: {dateFormatted}</span>
+          <span className="w-32 font-serif text-black">Date</span>
+          <span className="font-serif font-bold text-black">{dateFormatted}</span>
         </div>
         <div className="flex">
-          <span className="w-32 font-semibold text-gray-800">Admission No.</span>
-          <span className="font-mono font-semibold text-black">: {admissionNo}</span>
+          <span className="w-36 font-serif text-black">Admission No.</span>
+          <span className="font-serif font-bold text-black">{admissionNo}</span>
         </div>
         <div className="flex">
-          <span className="w-32 font-semibold text-gray-800">Centre / Section</span>
-          <span className="font-semibold text-black">: {account?.centre || (inv.batch?.replace(/.*Batch\s*/i, "") || "Section A")}</span>
+          <span className="w-32 font-serif text-black">Roll No</span>
+          <span className="font-serif font-bold text-black">{rollNo}</span>
         </div>
-        <div className="col-span-2 flex">
-          <span className="w-32 font-semibold text-gray-800">Program</span>
-          <span className="font-bold text-[#054038]">: {inv.item}</span>
+        <div className="flex">
+          <span className="w-36 font-serif text-black">Class</span>
+          <span className="font-serif font-bold text-black">{account?.course || inv.item}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-serif text-black">Section</span>
+          <span className="font-serif font-bold text-black">{section}</span>
         </div>
       </div>
 
-      {/* GST Tax Breakdown Table */}
-      <table className="mt-2 w-full border-collapse border border-black text-[12.5px]">
+      {/* Table matching official Q-School layout */}
+      <table className="mt-1 w-full border-collapse border border-black font-serif text-[12.5px]">
         <thead>
-          <tr className="border-b border-black bg-[#F0F5F3] font-bold text-center">
-            <th className="w-10 border-r border-black px-2 py-1.5">Sl</th>
-            <th className="border-r border-black px-3 py-1.5 text-left">Description &amp; SAC</th>
-            <th className="w-28 border-r border-black px-2.5 py-1.5 text-right">Taxable</th>
-            <th className="w-28 border-r border-black px-2.5 py-1.5 text-right">GST (18%)</th>
-            <th className="w-32 px-3 py-1.5 text-right">Invoice Total</th>
+          <tr className="border-b border-black bg-[#EFEFEF] font-bold text-center">
+            <th className="w-14 border-r border-black px-3 py-1.5">Sl</th>
+            <th className="border-r border-black px-3 py-1.5 text-center">Particulars</th>
+            <th className="w-40 border-r border-black px-3 py-1.5 text-center">Payable</th>
+            <th className="w-40 px-3 py-1.5 text-center">Paid</th>
           </tr>
         </thead>
         <tbody>
           <tr className="border-b border-black">
-            <td className="border-r border-black px-2 py-2 text-center">1</td>
-            <td className="border-r border-black px-3 py-2 font-semibold text-black">
+            <td className="border-r border-black px-3 py-2 text-center font-bold">1</td>
+            <td className="border-r border-black px-3 py-2 font-bold text-black">
               {inv.item}
-              <div className="text-[11px] font-normal text-gray-600">
-                SAC: {ORG.sac} · CGST 9% (₹ {g.cgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })}) + SGST 9% (₹ {g.sgst.toLocaleString("en-IN", { minimumFractionDigits: 2 })})
-              </div>
+              {previouslyPaid > 0 && (
+                <div className="text-[11px] font-normal text-gray-700">
+                  Course Fee: ₹ {totalCourseFee.toLocaleString("en-IN", { minimumFractionDigits: 2 })} · Previously Paid: ₹ {previouslyPaid.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                </div>
+              )}
             </td>
-            <td className="border-r border-black px-2.5 py-2 text-right tabular-nums">
-              ₹ {g.taxable.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            <td className="border-r border-black px-3 py-2 text-center font-bold tabular-nums">
+              ₹ {payableNow.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </td>
-            <td className="border-r border-black px-2.5 py-2 text-right tabular-nums">
-              ₹ {g.tax.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-            </td>
-            <td className="px-3 py-2 text-right tabular-nums font-bold">
-              ₹ {inv.amount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-            </td>
-          </tr>
-          <tr className="border-b border-black bg-[#F8FAF9] font-bold">
-            <td colSpan={4} className="border-r border-black px-3 py-1.5 text-left">
-              THIS INVOICE PAID AMOUNT
-            </td>
-            <td className="px-3 py-1.5 text-right tabular-nums text-[#054038]">
+            <td className="px-3 py-2 text-center font-bold tabular-nums">
               ₹ {paidThisInvoice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </td>
           </tr>
-          {t && (
-            <tr className="border-b border-black text-[12px]">
-              <td colSpan={4} className="border-r border-black px-3 py-1.5 text-left font-semibold text-gray-800">
-                Overall Course Fee: ₹ {totalCourseFee.toLocaleString("en-IN", { minimumFractionDigits: 2 })} · Total Paid Till Date: ₹ {totalPaidToDate.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-              </td>
-              <td className={`px-3 py-1.5 text-right tabular-nums font-bold ${balanceDues > 0 ? "text-red-700" : "text-[#054038]"}`}>
-                Bal: ₹ {balanceDues.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
-              </td>
-            </tr>
-          )}
+          <tr className="border-b border-black font-bold">
+            <td colSpan={2} className="border-r border-black px-3 py-1.5 text-left">
+              TOTAL
+            </td>
+            <td className="border-r border-black px-3 py-1.5 text-center tabular-nums">
+              ₹ {payableNow.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
+            <td className="px-3 py-1.5 text-center tabular-nums">
+              ₹ {paidThisInvoice.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
+          </tr>
+          <tr className="border-b border-black font-bold">
+            <td colSpan={3} className="border-r border-black px-3 py-1.5 text-left">
+              Dues
+            </td>
+            <td className="px-3 py-1.5 text-right tabular-nums">
+              ₹ {balanceDues.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
+          </tr>
         </tbody>
       </table>
 
-      <div className="mt-1 border-b border-black py-2 text-[12px] font-bold text-black">
-        Invoice Amount In Words :- Rupees {numberToWords(inv.amount).toUpperCase()} Only
+      <div className="mt-2 font-serif text-[12.5px] font-bold text-black">
+        Received Amount In Words :-Rupees {numberToWords(paidThisInvoice).toUpperCase()} Only
       </div>
 
-      <div className="mt-2 border border-black p-2.5 text-[12px] leading-relaxed">
-        <div className="font-semibold text-black">Remarks:-</div>
-        <div className="mt-0.5 font-semibold text-[#054038]">
-          Pay Mode : {payMode} · Invoice Status: {inv.status}
-          {isPart ? ` · Remaining Course Balance: ₹ ${balanceDues.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : ""}
+      {/* Two-row bordered Remarks box matching official Q-School layout */}
+      <div className="mt-2 border border-black font-serif text-[12.5px]">
+        <div className="border-b border-black px-2.5 py-1.5 font-bold text-black">Remarks:-</div>
+        <div className="px-2.5 py-1.5 font-bold text-black">
+          Pay Mode : {payMode}
         </div>
       </div>
 
-      <div className="mt-4 text-center text-[10.5px] font-medium tracking-wide text-gray-700">
-        **This is a computer generated GST tax invoice, hence, no signature is required**
+      <div className="mt-6 text-center font-serif text-[10.5px] font-bold tracking-wide text-black">
+        **This is a computer generated invoice, hence, no signature is required**
       </div>
     </div>
   );
@@ -369,124 +370,134 @@ export function ReceiptView({ p, account, embedded = false }: { p: PaymentTxn; a
   const paidNow = p.amount;
   const totalPaidTillDate = t ? t.paid : paidNow;
   const previouslyPaid = Math.max(0, Math.round((totalPaidTillDate - paidNow) * 100) / 100);
+  const payableNow = t ? Math.max(paidNow, Math.round((totalCourseFee - previouslyPaid) * 100) / 100) : paidNow;
   const dues = t ? Math.max(0, t.outstanding) : 0;
-  const isPart = totalCourseFee > paidNow;
   const dateFormatted = fmtDateIN(p.date || TODAY_ISO);
   const fatherName = account?.fatherName || "PARENT";
   const admissionNo = account?.admissionNo || (account?.id ? account.id.replace("FA-", "00000") : "000001");
-  const section = account?.centre || account?.section || (account?.batch?.replace(/.*Batch\s*/i, "") || "Section A");
-  const courseName = p.item || account?.course || "Q-School Program";
+  const rollNo = account?.rollNo ?? 0;
+  const section = account?.section || (account?.batch?.replace(/.*(?:Batch|Section)\s*/i, "") || "A");
+  const className = account?.course || p.item || "Divya Yoga";
+  const particulars = p.item || className;
   const receiptNo = p.receiptNo || "REC-00000001";
-  const payMode = p.method === "UPI" || p.method === "Net Banking" || p.method === "Card" ? `Online / ${p.method}` : p.method;
+  const payMode = p.method === "UPI" || p.method === "Net Banking" || p.method === "Card" ? "Online Payment" : p.method;
 
   return (
     <div className={`${embedded ? "" : "print-area"} rounded-xl border border-black/80 bg-white p-6 text-[12.5px] text-black shadow-sm`}>
-      {/* Official Header */}
+      {/* Official Header — only Q SCHOOL + (A UNIT OF DIVINE GRACE FOUNDATION), no address */}
       <div className="relative pb-3 text-center">
         <div className="absolute right-0 top-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Q-School" className="h-12 w-auto object-contain" />
+          <img src="/logo.png" alt="Q-School" className="h-14 w-auto object-contain" />
         </div>
-        <h1 className="font-serif text-[26px] font-black uppercase tracking-wider text-[#054038]">{ORG.name}</h1>
-        <p className="mt-0.5 text-[12px] font-bold uppercase tracking-wider text-[#1F3D36]">{ORG.unit}</p>
-        <div className="mt-1.5">
-          <span className="inline-block border-b-2 border-black pb-0.5 text-[13px] font-extrabold uppercase tracking-wider text-black">
-            OFFICIAL FEE RECEIPT {isPart ? "(PART PAYMENT)" : "(FULL PAYMENT)"}
+        <h1 className="font-serif text-[30px] font-black uppercase tracking-wider text-[#184B42] leading-tight">{ORG.name}</h1>
+        <p className="mt-0.5 text-[13px] font-extrabold uppercase tracking-wide text-[#184B42]">{ORG.unit}</p>
+        <div className="mt-1">
+          <span className="inline-block border-b border-black pb-0.5 font-serif text-[13.5px] font-bold uppercase tracking-wide text-black">
+            INVOICE CUM RECEIPT
           </span>
         </div>
       </div>
 
-      {/* Two-column Metadata */}
-      <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 border-t border-black/30 py-3 text-[12.5px]">
+      {/* Two-column Metadata matching official Q-School layout */}
+      <div className="grid grid-cols-2 gap-x-10 gap-y-1.5 py-3 text-[12.5px]">
         <div className="flex">
-          <span className="w-32 font-semibold text-gray-800">Student Name</span>
-          <span className="font-bold uppercase text-black">: {p.student}</span>
+          <span className="w-36 font-serif text-black">Name</span>
+          <span className="font-serif font-bold uppercase text-black">{p.student}</span>
         </div>
         <div className="flex">
-          <span className="w-32 font-semibold text-gray-800">Receipt No.</span>
-          <span className="font-mono font-bold text-black">: {receiptNo}</span>
+          <span className="w-32 font-serif text-black">Receipt No.</span>
+          <span className="font-serif font-bold text-black">{receiptNo}</span>
         </div>
         <div className="flex">
-          <span className="w-32 font-semibold text-gray-800">Parent Name</span>
-          <span className="font-semibold uppercase text-black">: {fatherName}</span>
+          <span className="w-36 font-serif text-black">Father&apos;s Name</span>
+          <span className="font-serif font-bold uppercase text-black">{fatherName}</span>
         </div>
         <div className="flex">
-          <span className="w-32 font-semibold text-gray-800">Receipt Date</span>
-          <span className="font-semibold text-black">: {dateFormatted}</span>
+          <span className="w-32 font-serif text-black">Date</span>
+          <span className="font-serif font-bold text-black">{dateFormatted}</span>
         </div>
         <div className="flex">
-          <span className="w-32 font-semibold text-gray-800">Admission No.</span>
-          <span className="font-mono font-semibold text-black">: {admissionNo}</span>
+          <span className="w-36 font-serif text-black">Admission No.</span>
+          <span className="font-serif font-bold text-black">{admissionNo}</span>
         </div>
         <div className="flex">
-          <span className="w-32 font-semibold text-gray-800">Centre</span>
-          <span className="font-semibold text-black">: {section}</span>
+          <span className="w-32 font-serif text-black">Roll No</span>
+          <span className="font-serif font-bold text-black">{rollNo}</span>
         </div>
-        <div className="col-span-2 flex">
-          <span className="w-32 font-semibold text-gray-800">Particulars</span>
-          <span className="font-bold text-[#054038]">: {courseName}</span>
+        <div className="flex">
+          <span className="w-36 font-serif text-black">Class</span>
+          <span className="font-serif font-bold text-black">{className}</span>
+        </div>
+        <div className="flex">
+          <span className="w-32 font-serif text-black">Section</span>
+          <span className="font-serif font-bold text-black">{section}</span>
         </div>
       </div>
 
-      {/* Table */}
-      <table className="mt-2 w-full border-collapse border border-black text-[12.5px]">
+      {/* Table matching official Q-School layout */}
+      <table className="mt-1 w-full border-collapse border border-black font-serif text-[12.5px]">
         <thead>
-          <tr className="border-b border-black bg-[#F0F5F3] font-bold text-center">
-            <th className="w-12 border-r border-black px-3 py-1.5">Sl</th>
-            <th className="border-r border-black px-3 py-1.5 text-left">Fee Particulars</th>
-            <th className="w-36 border-r border-black px-3 py-1.5 text-right">Total Course Fee</th>
-            <th className="w-36 px-3 py-1.5 text-right">Received Now</th>
+          <tr className="border-b border-black bg-[#EFEFEF] font-bold text-center">
+            <th className="w-14 border-r border-black px-3 py-1.5">Sl</th>
+            <th className="border-r border-black px-3 py-1.5 text-center">Particulars</th>
+            <th className="w-40 border-r border-black px-3 py-1.5 text-center">Payable</th>
+            <th className="w-40 px-3 py-1.5 text-center">Paid</th>
           </tr>
         </thead>
         <tbody>
           <tr className="border-b border-black">
-            <td className="border-r border-black px-3 py-2 text-center">1</td>
-            <td className="border-r border-black px-3 py-2 font-semibold text-black">
-              {courseName}
+            <td className="border-r border-black px-3 py-2 text-center font-bold">1</td>
+            <td className="border-r border-black px-3 py-2 font-bold text-black">
+              {particulars}
               {previouslyPaid > 0 && (
-                <div className="text-[11px] font-normal text-gray-600">
-                  Previously Paid: ₹ {previouslyPaid.toLocaleString("en-IN", { minimumFractionDigits: 2 })} · Total Paid Till Date: ₹ {totalPaidTillDate.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                <div className="text-[11px] font-normal text-gray-700">
+                  Course Fee: ₹ {totalCourseFee.toLocaleString("en-IN", { minimumFractionDigits: 2 })} · Previously Paid: ₹ {previouslyPaid.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                 </div>
               )}
             </td>
-            <td className="border-r border-black px-3 py-2 text-right tabular-nums">
-              ₹ {totalCourseFee.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            <td className="border-r border-black px-3 py-2 text-center font-bold tabular-nums">
+              ₹ {payableNow.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </td>
-            <td className="px-3 py-2 text-right tabular-nums font-bold text-[#054038]">
+            <td className="px-3 py-2 text-center font-bold tabular-nums">
               ₹ {paidNow.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </td>
           </tr>
-          <tr className="border-b border-black bg-[#F8FAF9] font-bold">
-            <td colSpan={3} className="border-r border-black px-3 py-1.5 text-left">
-              AMOUNT RECEIVED IN THIS RECEIPT
+          <tr className="border-b border-black font-bold">
+            <td colSpan={2} className="border-r border-black px-3 py-1.5 text-left">
+              TOTAL
             </td>
-            <td className="px-3 py-1.5 text-right tabular-nums">
+            <td className="border-r border-black px-3 py-1.5 text-center tabular-nums">
+              ₹ {payableNow.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+            </td>
+            <td className="px-3 py-1.5 text-center tabular-nums">
               ₹ {paidNow.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </td>
           </tr>
           <tr className="border-b border-black font-bold">
             <td colSpan={3} className="border-r border-black px-3 py-1.5 text-left">
-              Balance Dues Remaining
+              Dues
             </td>
-            <td className={`px-3 py-1.5 text-right tabular-nums ${dues > 0 ? "text-red-700" : "text-[#054038]"}`}>
+            <td className="px-3 py-1.5 text-right tabular-nums">
               ₹ {dues.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
             </td>
           </tr>
         </tbody>
       </table>
 
-      <div className="mt-1 border-b border-black py-2 text-[12px] font-bold text-black">
-        Received Amount In Words :- Rupees {numberToWords(paidNow).toUpperCase()} Only
+      <div className="mt-2 font-serif text-[12.5px] font-bold text-black">
+        Received Amount In Words :-Rupees {numberToWords(paidNow).toUpperCase()} Only
       </div>
 
-      <div className="mt-2 border border-black p-2.5 text-[12px] leading-relaxed">
-        <div className="font-semibold text-black">Remarks:-</div>
-        <div className="mt-0.5 font-semibold text-[#054038]">
-          Pay Mode : {payMode} {p.ref && p.ref !== "—" ? `(Ref: ${p.ref})` : ""} · {dues > 0 ? `Part Payment Received (Balance Due: ₹ ${dues.toLocaleString("en-IN", { minimumFractionDigits: 2 })})` : "Full Course Fee Settled"}
+      {/* Two-row bordered Remarks box matching official Q-School layout */}
+      <div className="mt-2 border border-black font-serif text-[12.5px]">
+        <div className="border-b border-black px-2.5 py-1.5 font-bold text-black">Remarks:-</div>
+        <div className="px-2.5 py-1.5 font-bold text-black">
+          Pay Mode : {payMode}
         </div>
       </div>
 
-      <div className="mt-4 text-center text-[10.5px] font-medium tracking-wide text-gray-700">
+      <div className="mt-6 text-center font-serif text-[10.5px] font-bold tracking-wide text-black">
         **This is a computer generated receipt, hence, no signature is required**
       </div>
     </div>
@@ -536,14 +547,14 @@ export function PaymentPrintPromptModal({
     const partNote = docs.isPartPayment
       ? ` (Part Payment #${docs.partNumber} · Balance Remaining: ${inr(docs.balanceRemaining)})`
       : " (Full Fee Paid)";
-    const msg = `Dear ${docs.account.fatherName || "Parent"}, thank you! We have received ${inr(docs.receipt.amount)}${partNote} towards ${docs.account.course} for ${docs.receipt.student}.\nReceipt No: ${docs.receipt.receiptNo}\nTax Invoice No: ${docs.invoice.id}`;
+    const msg = `Dear ${docs.account.fatherName || "Parent"}, thank you! We have received ${inr(docs.receipt.amount)}${partNote} towards ${docs.account.course} for ${docs.receipt.student}.\nReceipt No: ${docs.receipt.receiptNo}\nInvoice No: ${docs.invoice.id}`;
     return `https://wa.me/${to}?text=${encodeURIComponent(msg)}`;
   };
 
   return (
     <Modal
       open={!!docs}
-      title={docs ? `Receipt & Tax Invoice Ready — Print Now?` : ""}
+      title={docs ? `Receipt & Invoice Ready — Print Now?` : ""}
       onClose={onClose}
       wide
     >
@@ -557,7 +568,7 @@ export function PaymentPrintPromptModal({
                   ✓ {docs.isPartPayment ? `Part Payment #${docs.partNumber}` : "Fee Payment"} of {inr(docs.receipt.amount)} Recorded!
                 </p>
                 <p className="mt-0.5 text-[12px] text-emerald-800">
-                  Receipt <b>{docs.receipt.receiptNo}</b> &amp; Tax Invoice <b>{docs.invoice.id}</b> generated
+                  Receipt <b>{docs.receipt.receiptNo}</b> &amp; Invoice <b>{docs.invoice.id}</b> generated
                   {docs.balanceRemaining > 0 ? ` · Remaining Balance: ${inr(docs.balanceRemaining)}` : " · Full Fee Settled"}. Would you like to print them now?
                 </p>
               </div>
@@ -599,7 +610,7 @@ export function PaymentPrintPromptModal({
                 onClick={() => setView("invoice")}
                 className={`rounded-lg px-3 py-1.5 transition ${view === "invoice" ? "bg-brand-deep text-white shadow-sm" : "text-[#41564f]"}`}
               >
-                Tax Invoice Only
+                Invoice Only
               </button>
             </div>
             <button
@@ -668,7 +679,7 @@ export function OnlinePaymentDocsSection({
   useEffect(() => {
     if (autoPromptPrint) {
       const t = setTimeout(() => {
-        if (window.confirm("Payment successful! Receipt & GST Tax Invoice have been generated. Would you like to print / save PDF now?")) {
+        if (window.confirm("Payment successful! Receipt & Invoice have been generated. Would you like to print / save PDF now?")) {
           window.print();
         }
       }, 500);
@@ -680,7 +691,7 @@ export function OnlinePaymentDocsSection({
     <div className="mt-6 space-y-4 border-t border-[#E2ECE9] pt-5">
       <div className="flex flex-wrap items-center justify-between gap-2 print:hidden">
         <div>
-          <p className="text-[13px] font-extrabold text-brand-deep">Receipt &amp; GST Tax Invoice Generated</p>
+          <p className="text-[13px] font-extrabold text-brand-deep">Receipt &amp; Invoice Generated</p>
           <p className="text-[11.5px] text-[#6b807b]">
             Receipt {docs.receipt.receiptNo} · Invoice {docs.invoice.id}
           </p>
@@ -728,7 +739,7 @@ export function OnlinePaymentDocsSection({
               onClick={() => setView("invoice")}
               className={`rounded-lg py-1.5 transition ${view === "invoice" ? "bg-brand-deep text-white" : "text-[#41564f]"}`}
             >
-              Tax Invoice
+              Invoice
             </button>
           </div>
 
