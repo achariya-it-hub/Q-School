@@ -19,6 +19,7 @@ import {
   type GeneratedFeeDocs,
 } from "@qschool/shared";
 import { Btn, Modal } from "./ui";
+import { waNotify } from "./whatsapp";
 
 const ORG = {
   name: "Q SCHOOL",
@@ -343,6 +344,28 @@ export function PaymentPrintPromptModal({
     if (docs) setView("both");
   }, [docs]);
 
+  const [sending, setSending] = useState<"" | "receipt" | "invoice">("");
+  const [sentMsg, setSentMsg] = useState("");
+
+  useEffect(() => {
+    setSentMsg("");
+    setSending("");
+  }, [docs]);
+
+  /** Manual send: the teacher chooses which document goes to the parent on WhatsApp. */
+  const sendOnWhatsApp = async (kind: "receipt" | "invoice") => {
+    if (!docs) return;
+    setSending(kind);
+    setSentMsg("");
+    const to = docs.account.phone;
+    const r =
+      kind === "receipt"
+        ? await waNotify({ event: "receipt", to, name: docs.receipt.student, p: docs.receipt, account: docs.account })
+        : await waNotify({ event: "invoice", to, name: docs.invoice.student, inv: docs.invoice });
+    setSending("");
+    setSentMsg(r.ok ? `${kind === "receipt" ? "Receipt" : "Invoice"} sent to ${to}` : r.msg);
+  };
+
   const triggerPrint = (target: "both" | "receipt" | "invoice") => {
     setView(target);
     setTimeout(() => window.print(), 120);
@@ -377,13 +400,30 @@ export function PaymentPrintPromptModal({
                 </p>
                 <p className="mt-0.5 text-[12px] text-emerald-800">
                   Receipt <b>{docs.receipt.receiptNo}</b> &amp; Invoice <b>{docs.invoice.id}</b> generated
-                  {docs.balanceRemaining > 0 ? ` · Remaining Balance: ${inr(docs.balanceRemaining)}` : " · Full Fee Settled"}. Would you like to print them now?
+                  {docs.balanceRemaining > 0 ? ` · Remaining Balance: ${inr(docs.balanceRemaining)}` : " · Full Fee Settled"}. Print them, or send either one to the parent yourself.
                 </p>
+                {sentMsg && <p className="mt-1 text-[12px] font-bold text-emerald-900">{sentMsg}</p>}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Btn icon="download" onClick={() => triggerPrint("both")}>
                   Print Receipt &amp; Invoice
                 </Btn>
+                <button
+                  type="button"
+                  disabled={!!sending || !docs.account.phone}
+                  onClick={() => sendOnWhatsApp("receipt")}
+                  className="inline-flex h-10 items-center justify-center rounded-xl border border-emerald-300 bg-white px-3.5 text-[12.5px] font-bold text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
+                >
+                  {sending === "receipt" ? "Sending…" : "Send Receipt"}
+                </button>
+                <button
+                  type="button"
+                  disabled={!!sending || !docs.account.phone}
+                  onClick={() => sendOnWhatsApp("invoice")}
+                  className="inline-flex h-10 items-center justify-center rounded-xl border border-emerald-300 bg-white px-3.5 text-[12.5px] font-bold text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
+                >
+                  {sending === "invoice" ? "Sending…" : "Send Invoice"}
+                </button>
                 <a
                   href={waShareHref()}
                   target="_blank"
