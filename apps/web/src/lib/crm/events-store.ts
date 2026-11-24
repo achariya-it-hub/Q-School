@@ -7,7 +7,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import { DATA_DIR } from "@/lib/data-dir";
-import { ingestLead } from "./store";
+import { ingestLead, updateLeadByPhone } from "./store";
 
 const EVENTS_FILE = path.join(DATA_DIR, "crm-events.json");
 const ATTENDEES_FILE = path.join(DATA_DIR, "crm-attendees.json");
@@ -324,6 +324,14 @@ export function addAttendee(input: NewAttendeeInput): Promise<{ attendee: EventA
       }
       existing.updatedAt = new Date().toISOString();
       await writeJson(ATTENDEES_FILE, attendees);
+      if (input.attended && ev.type === "bmit") {
+        await updateLeadByPhone(existing.phone, {
+          stage: "BMIT",
+          onlyFromStages: ["Enquiry", "Contacted"],
+          activity: `Attended BMIT · ${ev.name}`,
+          extra: { "BMIT Event": ev.name, "BMIT Status": "Attended" },
+        }).catch(() => {});
+      }
       return { attendee: existing, isDuplicate: true, event: ev! };
     }
 
@@ -381,6 +389,15 @@ export function addAttendee(input: NewAttendeeInput): Promise<{ attendee: EventA
             attended: isAttended ? "Yes" : "No",
           },
         });
+        // A BMIT booking / check-in moves the lead into the BMIT stage so the pipeline & reports reflect it.
+        if (ev.type === "bmit") {
+          await updateLeadByPhone(input.phone, {
+            stage: "BMIT",
+            onlyFromStages: ["Enquiry", "Contacted"],
+            activity: isAttended ? `Attended BMIT · ${ev.name}` : `BMIT booked · ${ev.name}`,
+            extra: { "BMIT Event": ev.name, "BMIT Status": isAttended ? "Attended" : "Booked" },
+          });
+        }
       } catch (err) {
         console.warn("[events-store] CRM lead ingest failed:", (err as Error).message);
       }
@@ -403,6 +420,14 @@ export function toggleAttendance(attendeeId: string, forceAttended?: boolean): P
     attendee.updatedAt = new Date().toISOString();
 
     await writeJson(ATTENDEES_FILE, attendees);
+    if (nextState && attendee.eventCode === "bmit") {
+      await updateLeadByPhone(attendee.phone, {
+        stage: "BMIT",
+        onlyFromStages: ["Enquiry", "Contacted"],
+        activity: "Attended BMIT assessment",
+        extra: { "BMIT Status": "Attended" },
+      }).catch(() => {});
+    }
     return attendee;
   });
 }

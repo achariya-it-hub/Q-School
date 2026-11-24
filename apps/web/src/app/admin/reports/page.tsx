@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { COURSE_STATS, STAGES, inr } from "@qschool/shared";
+import { COURSE_STATS, STAGES, admissionFunnel, centreSummary, gstSplit, inr, paymentRegister, sourceSummary, studentLedger } from "@qschool/shared";
 import { AdminShell } from "@/components/admin/shell";
 import { Btn, Card, DataGrid, Figure, PageHeader, Segmented, StatusBadge, Td, Th } from "@/components/admin/ui";
 import { AreaTrend, HBars, ViewToggle } from "@/components/admin/charts";
@@ -11,7 +11,7 @@ import type { CrmLead } from "@/components/admin/crm";
 import { lessonCount, totalMinutes, type Course } from "@/lib/courses/types";
 import { KIND_LABEL, phase, type LiveSession } from "@/lib/live/types";
 
-type Tab = "overview" | "admissions" | "finance" | "courses" | "live";
+type Tab = "overview" | "admissions" | "students" | "finance" | "courses" | "live";
 type Period = "7" | "30" | "90" | "365" | "all";
 const PERIOD_LABEL: Record<Period, string> = { "7": "Last 7 days", "30": "Last 30 days", "90": "Last 90 days", "365": "Last 12 months", all: "All time" };
 
@@ -48,7 +48,29 @@ export default function ReportsPage() {
   const inRange = (iso?: string | null) => !!iso && Date.parse(iso) >= since && Date.parse(iso) <= Date.now() + 86400000;
 
   const L = useMemo(() => (leads ?? []).filter((l) => inRange(l.createdAt)), [leads, since]); // eslint-disable-line react-hooks/exhaustive-deps
-  const P = useMemo(() => fin.payments.filter((p) => p.status === "Success" && inRange(p.date)), [fin.payments, since]); // eslint-disable-line react-hooks/exhaustive-deps
+  const isReceived = (status: string) => status === "Success" || status === "Partly Paid";
+  const P = useMemo(() => fin.payments.filter((p) => isReceived(p.status) && inRange(p.date)), [fin.payments, since]); // eslint-disable-line react-hooks/exhaustive-deps
+  // students admitted in the period (each one is also a lead that reached Admitted)
+  const S2 = useMemo(() => fin.students.filter((s) => inRange(s.createdAt)), [fin.students, since]); // eslint-disable-line react-hooks/exhaustive-deps
+  const ledger = useMemo(() => studentLedger(S2, leads ?? []), [S2, leads]);
+  const register = useMemo(() => paymentRegister(fin.students, leads ?? []).filter((r) => inRange(r.date)), [fin.students, leads, since]); // eslint-disable-line react-hooks/exhaustive-deps
+  const funnel = useMemo(() => admissionFunnel(L, S2), [L, S2]);
+  const sources = useMemo(() => sourceSummary(L, S2), [L, S2]);
+  const centres = useMemo(() => centreSummary(L, S2), [L, S2]);
+  const courseOf = useMemo(() => new Map(fin.accounts.map((a) => [a.id, a.course])), [fin.accounts]);
+  const invOf = useMemo(() => new Map(fin.invoices.map((i) => [`${i.accountId}#${i.instNo}`, i.id])), [fin.invoices]);
+  const gst = useMemo(
+    () =>
+      P.reduce(
+        (a, p) => {
+          const g = gstSplit(p.amount);
+          return { taxable: a.taxable + g.taxable, cgst: a.cgst + g.cgst, sgst: a.sgst + g.sgst, tax: a.tax + g.tax };
+        },
+        { taxable: 0, cgst: 0, sgst: 0, tax: 0 },
+      ),
+    [P],
+  );
+  const tone = (s: string) => (s === "Paid" || s === "Active" || s === "Success" ? "good" : s === "Partly Paid" || s === "Pending" ? "warning" : "neutral") as "good" | "warning" | "neutral";
   const E = useMemo(() => expenses.filter((e) => inRange(e.date)), [expenses, since]); // eslint-disable-line react-hooks/exhaustive-deps
   // sessions that started in the period, plus everything still upcoming
   const S = useMemo(() => (live ?? []).filter((s) => Date.parse(s.startsAt) >= since), [live, since]);
@@ -64,7 +86,7 @@ export default function ReportsPage() {
     const m = new Map<string, number>();
     const now = new Date();
     for (let i = 11; i >= 0; i--) m.set(new Date(now.getFullYear(), now.getMonth() - i, 1).toISOString().slice(0, 7), 0);
-    for (const p of fin.payments) if (p.status === "Success" && m.has(monthKey(p.date))) m.set(monthKey(p.date), (m.get(monthKey(p.date)) ?? 0) + p.amount);
+    for (const p of fin.payments) if (isReceived(p.status) && m.has(monthKey(p.date))) m.set(monthKey(p.date), (m.get(monthKey(p.date)) ?? 0) + p.amount);
     return Array.from(m, ([k, v]) => ({ month: monthLabel(k), value: v }));
   }, [fin.payments]);
 
@@ -73,8 +95,26 @@ export default function ReportsPage() {
   const exportCurrent = () => {
     const tag = `${tab}-${period === "all" ? "all-time" : `last-${period}-days`}.csv`;
     if (tab === "admissions" || tab === "overview")
-      downloadCsv(`leads-${tag}`, ["Created", "Name", "Phone", "Source", "Interest", "Stage", "Owner", "Value"], L.map((l) => [l.createdAt.slice(0, 10), l.name, l.phone, l.source, l.interest, l.stage, l.owner, l.value]));
-    else if (tab === "finance") downloadCsv(`payments-${tag}`, ["Date", "Receipt", "Student", "Item", "Method", "Amount"], P.map((p) => [p.date, p.receiptNo ?? "", p.student, p.item, p.method, p.amount]));
+      downloadCsv(
+        `leads-${tag}`,
+        ["Created", "Lead ID", "Name", "Phone", "Source", "Interest", "Centre", "Stage", "Owner", "Expected fee"],
+        L.map((l) => [l.createdAt.slice(0, 10), l.id, l.name, l.phone, l.source, l.interest, l.location ?? "", l.stage, l.owner, l.value]),
+      );
+    else if (tab === "students")
+      downloadCsv(
+        `students-fee-ledger-${tag}`,
+        ["Student ID", "Student", "Parent", "Phone", "Lead ID", "Source", "Owner", "Centre", "Course", "Admitted on", "Status", "Total fee", "Paid", "Balance", "Fee status", "Payments", "Last payment", "Receipts", "Invoices"],
+        ledger.map((r) => [r.studentId, r.studentName, r.parentName, r.phone, r.leadId, r.source, r.owner, r.centre, r.course, r.admittedOn, r.status, r.totalFee, r.paid, r.balance, r.feeStatus, r.parts, r.lastPaymentOn, r.receipts, r.invoices]),
+      );
+    else if (tab === "finance")
+      downloadCsv(
+        `payments-register-${tag}`,
+        ["Date", "Receipt", "Invoice", "Student", "Course", "Mode", "Reference", "Taxable", "CGST 9%", "SGST 9%", "Amount", "Status"],
+        P.map((p) => {
+          const g = gstSplit(p.amount);
+          return [p.date, p.receiptNo ?? "", invOf.get(`${p.accountId}#${p.instNo}`) ?? "", p.student, courseOf.get(p.accountId) ?? p.item, p.method, p.ref, g.taxable, g.cgst, g.sgst, p.amount, p.status];
+        }),
+      );
     else if (tab === "courses")
       downloadCsv(
         `courses.csv`,
@@ -91,7 +131,7 @@ export default function ReportsPage() {
 
   return (
     <AdminShell>
-      <PageHeader title="Reports" sub={`Admissions, finance, courses and live sessions · ${PERIOD_LABEL[period]}`}>
+      <PageHeader title="Reports" sub={`Enquiry → BMIT → admission → fees, receipts & invoices, courses and live sessions · ${PERIOD_LABEL[period]}`}>
         <Segmented
           label="Period"
           value={period}
@@ -111,6 +151,7 @@ export default function ReportsPage() {
           options={[
             { value: "overview", label: "Overview" },
             { value: "admissions", label: "Admissions" },
+            { value: "students", label: "Students & fees" },
             { value: "finance", label: "Finance" },
             { value: "courses", label: "Courses" },
             { value: "live", label: "Live sessions" },
@@ -162,9 +203,13 @@ export default function ReportsPage() {
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Figure label="New leads" value={String(L.length)} icon="kanban" />
             <Figure label="Admitted" value={String(admitted)} sub={`${pct(admitted, L.length)}% of leads`} icon="check" />
-            <Figure label="BMIT stage or later" value={String(L.filter((l) => ["BMIT", "Negotiation", "Admitted", "Demo"].includes(l.stage)).length)} icon="calendar" />
+            <Figure label="BMIT stage or later" value={String(L.filter((l) => ["BMIT", "Negotiation", "Admitted"].includes(l.stage)).length)} sub="booked or attended BMIT" icon="calendar" />
             <Figure label="Dropped" value={String(L.filter((l) => l.stage === "Dropped").length)} icon="x" />
           </section>
+          <Card title="Admissions funnel · enquiry → BMIT → admission → fee" className="mt-4">
+            <HBars table={table} valueCol="Count" data={funnel.map((f) => ({ label: f.label, value: f.count }))} note={(i) => (i === 0 || !funnel[0].count ? null : `${pct(funnel[i].count, funnel[0].count)}%`)} />
+            {!L.length && <Empty />}
+          </Card>
           <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
             <Card title="Pipeline by stage">
               {(() => {
@@ -189,21 +234,110 @@ export default function ReportsPage() {
                   <Th right>Admitted</Th>
                   <Th right>Conversion</Th>
                   <Th right>Open pipeline</Th>
+                  <Th right>Students</Th>
+                  <Th right>Fees collected</Th>
+                  <Th right>Balance due</Th>
                 </tr>
               </thead>
               <tbody>
-                {group(L, (l) => l.source).map(({ k, v }) => (
-                  <tr key={k} className="border-b border-[#F4F7F6]">
-                    <Td className="font-semibold text-brand-ink">{k}</Td>
-                    <Td right>{v.length}</Td>
-                    <Td right>{v.filter((l) => l.stage === "Admitted").length}</Td>
-                    <Td right>{pct(v.filter((l) => l.stage === "Admitted").length, v.length)}%</Td>
-                    <Td right>{inr(v.filter((l) => l.stage !== "Dropped" && l.stage !== "Admitted").reduce((a, l) => a + (l.value || 0), 0), true)}</Td>
+                {sources.map((r) => (
+                  <tr key={r.source} className="border-b border-[#F4F7F6]">
+                    <Td className="font-semibold text-brand-ink">{r.source}</Td>
+                    <Td right>{r.leads}</Td>
+                    <Td right>{r.admitted}</Td>
+                    <Td right>{pct(r.admitted, r.leads)}%</Td>
+                    <Td right>{inr(r.openValue, true)}</Td>
+                    <Td right>{r.students}</Td>
+                    <Td right className="font-semibold text-brand-ink">{inr(r.collected, true)}</Td>
+                    <Td right className={r.balance > 0 ? "text-[#B42E2E]" : ""}>{inr(r.balance, true)}</Td>
                   </tr>
                 ))}
               </tbody>
             </DataGrid>
             {!L.length && <Empty />}
+          </Card>
+          <Card title="Centre-wise admissions & fees" className="mt-4">
+            <DataGrid minWidth={720}>
+              <thead>
+                <tr className="border-b border-[#EEF3F1]">
+                  <Th>Centre</Th>
+                  <Th right>Leads</Th>
+                  <Th right>Admitted</Th>
+                  <Th right>Students</Th>
+                  <Th right>Billed</Th>
+                  <Th right>Collected</Th>
+                  <Th right>Balance due</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {centres.map((c) => (
+                  <tr key={c.centre} className="border-b border-[#F4F7F6]">
+                    <Td className="font-semibold text-brand-ink">{c.centre}</Td>
+                    <Td right>{c.leads}</Td>
+                    <Td right>{c.admitted}</Td>
+                    <Td right>{c.students}</Td>
+                    <Td right>{inr(c.billed, true)}</Td>
+                    <Td right className="font-semibold text-brand-ink">{inr(c.collected, true)}</Td>
+                    <Td right className={c.balance > 0 ? "text-[#B42E2E]" : ""}>{inr(c.balance, true)}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </DataGrid>
+            {!centres.length && <Empty />}
+          </Card>
+        </>
+      ) : tab === "students" ? (
+        <>
+          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Figure label="Students admitted" value={String(ledger.length)} sub={`${ledger.filter((r) => r.status === "Pending").length} pending first payment`} icon="users" />
+            <Figure label="Partly paid" value={String(ledger.filter((r) => r.feeStatus === "Partly Paid").length)} sub={`${inr(ledger.filter((r) => r.feeStatus === "Partly Paid").reduce((a, r) => a + r.balance, 0), true)} balance due`} icon="clock" />
+            <Figure label="Fully paid" value={String(ledger.filter((r) => r.feeStatus === "Paid").length)} sub={`${pct(ledger.filter((r) => r.feeStatus === "Paid").length, ledger.length)}% of admissions`} icon="checkCircle" />
+            <Figure label="Fees collected" value={inr(ledger.reduce((a, r) => a + r.paid, 0), true)} sub={`of ${inr(ledger.reduce((a, r) => a + r.totalFee, 0), true)} billed`} meter={pct(ledger.reduce((a, r) => a + r.paid, 0), ledger.reduce((a, r) => a + r.totalFee, 0))} icon="rupee" />
+          </section>
+          <Card title="Student fee ledger · lead → admission → payments → receipts & invoices" className="mt-4">
+            <DataGrid minWidth={1100}>
+              <thead>
+                <tr className="border-b border-[#EEF3F1]">
+                  <Th>Student</Th>
+                  <Th>Lead source</Th>
+                  <Th>Centre</Th>
+                  <Th>Course</Th>
+                  <Th>Admitted</Th>
+                  <Th right>Total fee</Th>
+                  <Th right>Paid</Th>
+                  <Th right>Balance</Th>
+                  <Th>Status</Th>
+                  <Th>Receipts · invoices</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {ledger.map((r) => (
+                  <tr key={r.studentId} className="border-b border-[#F4F7F6]">
+                    <Td>
+                      <span className="block font-semibold text-brand-ink">{r.studentName}</span>
+                      <span className="block font-mono text-[11px] text-[#7B8E89]">{r.studentId}{r.leadId ? ` · ${r.leadId}` : ""}</span>
+                    </Td>
+                    <Td>
+                      <span className="block text-[#41564f]">{r.source}</span>
+                      <span className="block text-[11px] text-[#7B8E89]">{r.owner}</span>
+                    </Td>
+                    <Td className="text-[#41564f]">{r.centre}</Td>
+                    <Td className="text-[#41564f]">{r.course}</Td>
+                    <Td className="whitespace-nowrap text-[#41564f]">{r.admittedOn}</Td>
+                    <Td right>{inr(r.totalFee)}</Td>
+                    <Td right className="font-semibold text-brand-ink">{inr(r.paid)}</Td>
+                    <Td right className={r.balance > 0 ? "font-semibold text-[#B42E2E]" : ""}>{inr(r.balance)}</Td>
+                    <Td>
+                      <StatusBadge tone={tone(r.feeStatus === "Unpaid" ? r.status : r.feeStatus)}>{r.feeStatus === "Unpaid" ? r.status : r.feeStatus}</StatusBadge>
+                    </Td>
+                    <Td className="text-[11px] text-[#41564f]">
+                      {r.parts ? `${r.parts} payment${r.parts > 1 ? "s" : ""} · ${r.receipts}` : "—"}
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </DataGrid>
+            {!ledger.length && <Empty text="No students admitted in this period." />}
           </Card>
         </>
       ) : tab === "finance" ? (
@@ -214,13 +348,54 @@ export default function ReportsPage() {
             <Figure label="Outstanding now" value={inr(fin.outstanding, true)} sub={`${pct(fin.collected, fin.billed)}% of billed fees collected`} meter={pct(fin.collected, fin.billed)} icon="clock" />
             <Figure label="Overdue now" value={inr(fin.overdue, true)} sub={`${fin.totals.filter((t) => t.t.overdue > 0).length} students`} icon="alert" />
           </section>
+          <section className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <Figure label="Taxable value" value={inr(gst.taxable, true)} sub="fees collected excl. GST" icon="lessons" />
+            <Figure label="CGST 9%" value={inr(gst.cgst, true)} sub="on fees collected" icon="check" />
+            <Figure label="SGST 9%" value={inr(gst.sgst, true)} sub="on fees collected" icon="check" />
+            <Figure label="Total GST (18%)" value={inr(gst.tax, true)} sub={`${P.filter((p) => p.status === "Partly Paid").length} part payments · ${P.filter((p) => p.status === "Success").length} full`} icon="rupee" />
+          </section>
+          <Card title="Payments, receipts & invoices register" className="mt-4">
+            <DataGrid minWidth={1000}>
+              <thead>
+                <tr className="border-b border-[#EEF3F1]">
+                  <Th>Date</Th>
+                  <Th>Receipt</Th>
+                  <Th>Invoice</Th>
+                  <Th>Student</Th>
+                  <Th>Course</Th>
+                  <Th>Mode</Th>
+                  <Th right>GST</Th>
+                  <Th right>Amount</Th>
+                  <Th>Status</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {P.slice()
+                  .sort((a, b) => (a.date < b.date ? 1 : -1))
+                  .map((p) => (
+                    <tr key={p.id} className="border-b border-[#F4F7F6]">
+                      <Td className="whitespace-nowrap text-[#41564f]">{p.date}</Td>
+                      <Td className="font-mono text-[11.5px] text-[#41564f]">{p.receiptNo ?? "—"}</Td>
+                      <Td className="font-mono text-[11.5px] text-[#41564f]">{invOf.get(`${p.accountId}#${p.instNo}`) ?? "—"}</Td>
+                      <Td className="font-semibold text-brand-ink">{p.student}</Td>
+                      <Td className="text-[#41564f]">{courseOf.get(p.accountId) ?? p.item}</Td>
+                      <Td className="text-[#41564f]">{p.method}</Td>
+                      <Td right>{inr(gstSplit(p.amount).tax)}</Td>
+                      <Td right className="font-semibold text-brand-ink">{inr(p.amount)}</Td>
+                      <Td><StatusBadge tone={tone(p.status)}>{p.status === "Success" ? "Paid in full" : p.status}</StatusBadge></Td>
+                    </tr>
+                  ))}
+              </tbody>
+            </DataGrid>
+            {!P.length && <Empty text="No payments recorded in this period." />}
+          </Card>
           <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
             <Card title="Collected by method">
               <HBars table={table} valueCol="Amount" format={(v) => inr(v, true)} data={group(P, (p) => p.method).map((g) => ({ label: g.k, value: g.v.reduce((a, p) => a + p.amount, 0) })).sort((a, b) => b.value - a.value)} />
               {!P.length && <Empty />}
             </Card>
             <Card title="Collected by course">
-              <HBars table={table} valueCol="Amount" format={(v) => inr(v, true)} data={group(P, (p) => p.item).map((g) => ({ label: g.k, value: g.v.reduce((a, p) => a + p.amount, 0) })).sort((a, b) => b.value - a.value).slice(0, 8)} />
+              <HBars table={table} valueCol="Amount" format={(v) => inr(v, true)} data={group(P, (p) => courseOf.get(p.accountId) ?? p.item).map((g) => ({ label: g.k, value: g.v.reduce((a, p) => a + p.amount, 0) })).sort((a, b) => b.value - a.value).slice(0, 8)} />
               {!P.length && <Empty />}
             </Card>
             <Card title="Expenses by category">

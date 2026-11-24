@@ -127,6 +127,7 @@ export function useFinance() {
     const sum = (f: (t: ReturnType<typeof accountTotals>) => number) => totals.reduce((s, x) => s + f(x.t), 0);
     return {
       accounts,
+      students,
       invoices,
       payments,
       receipts: payments.filter((p) => p.receiptNo),

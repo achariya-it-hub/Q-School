@@ -57,7 +57,7 @@ export default function ReceiptsPage() {
                 <Td className="text-[#41564f]">{r.method}</Td>
                 <Td right className="font-semibold text-brand-ink">{inr(r.amount)}</Td>
                 <Td>
-                  <StatusBadge tone={TXN_TONE[r.status]}>{r.status === "Success" ? "Issued" : r.status}</StatusBadge>
+                  <StatusBadge tone={TXN_TONE[r.status]}>{r.status === "Success" || r.status === "Partly Paid" ? "Issued" : r.status}</StatusBadge>
                 </Td>
                 <Td right>
                   <button onClick={() => setOpen(r)} className="rounded-lg border border-[#E2ECE9] px-2.5 py-1.5 text-[12px] font-medium text-[#41564f] hover:border-brand-teal">

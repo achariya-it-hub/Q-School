@@ -7,7 +7,9 @@ import {
   fmtDateIN,
   gstSplit,
   inr,
+  invoiceNoFor,
   numberToWords,
+  receiptNoFor,
   studentFeeSummary,
   TODAY_ISO,
   type FeeAccount,
@@ -67,10 +69,8 @@ export function buildDocsForStudentPayment(student: StudentRecord, paymentIndex?
   const itemLabel = isPartPayment
     ? `${courseName} — Part Payment #${partNumber}${balanceAfterThis === 0 ? " (Final Settlement)" : ""}`
     : courseName;
-  const receiptNo = target.receiptNo?.startsWith("REC-")
-    ? target.receiptNo
-    : `REC-${student.id.replace(/\D/g, "").padStart(4, "0")}-${String(partNumber).padStart(2, "0")}`;
-  const invoiceNo = `INV-2026-${student.id.replace(/\D/g, "").padStart(4, "0")}-${String(partNumber).padStart(2, "0")}`;
+  const receiptNo = receiptNoFor(student.id, partNumber, target.receiptNo);
+  const invoiceNo = invoiceNoFor(student.id, partNumber);
 
   const installments: FeeAccount["installments"] = fee.payments.slice(0, idx + 1).map((p, k) => ({
     no: k + 1,

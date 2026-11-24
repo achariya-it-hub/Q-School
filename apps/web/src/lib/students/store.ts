@@ -9,7 +9,10 @@ import {
   PAYMENT_MODES,
   centreName,
   inferStudentCourseFee,
+  invoiceNoFor,
   leadCentreId,
+  receiptNoFor,
+  studentFeeSummary,
   studentPayments,
   type AdmissionPayment,
   type PayLink,
@@ -18,6 +21,7 @@ import {
 } from "@qschool/shared";
 import { DATA_DIR, dataFile } from "@/lib/data-dir";
 import { isDbConfigured, getDbStudents, insertDbUser, saveDbStudentsBulk } from "@/lib/db";
+import { recordAuditLog } from "@/lib/audit/store";
 
 const FILE = dataFile("students.json");
 const PHOTO_DIR = path.join(DATA_DIR, "student-photos");
@@ -261,7 +265,23 @@ function findMatchingStudent(all: StudentRecord[], lead: LeadEnrollmentSource): 
  * Automatically create (or link) a StudentRecord when a CRM lead reaches "Admitted".
  * Idempotent: moving or syncing the same lead twice never duplicates the student.
  */
-export function enrollLeadAsStudent(lead: LeadEnrollmentSource): Promise<{ student: StudentRecord; created: boolean }> {
+export async function enrollLeadAsStudent(lead: LeadEnrollmentSource): Promise<{ student: StudentRecord; created: boolean }> {
+  const res = await enrollLeadAsStudentLocked(lead);
+  if (res.created) {
+    await recordAuditLog({
+      action: "CREATE",
+      module: "Students",
+      entityId: res.student.id,
+      entityName: res.student.studentName,
+      summary: `Admitted lead ${lead.name} (${lead.id}) enrolled as student ${res.student.id} · ${res.student.grade || "program"} · fee ₹${(res.student.totalFee ?? 0).toLocaleString("en-IN")} · ${centreName(res.student.centreId)}`,
+      performedBy: lead.owner || "CRM",
+      newData: { studentId: res.student.id, leadId: lead.id, totalFee: res.student.totalFee, centre: res.student.centreId },
+    }).catch(() => {});
+  }
+  return res;
+}
+
+function enrollLeadAsStudentLocked(lead: LeadEnrollmentSource): Promise<{ student: StudentRecord; created: boolean }> {
   return locked(async () => {
     const all = await read();
     const idx = findMatchingStudent(all, lead);
@@ -325,10 +345,51 @@ export interface PaymentInput {
 }
 
 /**
+ * Everything that must follow a recorded payment (kept outside the students lock because it touches the CRM store):
+ * an audit-trail entry and a timeline note + fee status on the originating lead, so Reports and the lead card agree.
+ */
+async function afterPayment(student: StudentRecord, payment: AdmissionPayment | undefined, by: string) {
+  if (!payment) return;
+  try {
+    const fee = studentFeeSummary(student);
+    const part = fee.payments.length;
+    const status = fee.balance > 0 ? "Partly Paid" : "Paid";
+    const money = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+    const rec = receiptNoFor(student.id, part, payment.receiptNo);
+    const inv = invoiceNoFor(student.id, part);
+    await recordAuditLog({
+      action: "CREATE",
+      module: "Fees & Payments",
+      entityId: student.id,
+      entityName: student.studentName,
+      summary: `${money(payment.amount)} received from ${student.studentName} (${student.id}) via ${payment.mode} · ${status}${fee.balance > 0 ? ` · balance ${money(fee.balance)}` : ""} · Receipt ${rec} · Invoice ${inv}`,
+      performedBy: by,
+      newData: { studentId: student.id, part, amount: payment.amount, mode: payment.mode, receiptNo: rec, invoiceNo: inv, paid: fee.paid, balance: fee.balance, status },
+    });
+    if (student.leadId) {
+      const { updateLead } = await import("@/lib/crm/store");
+      await updateLead(student.leadId, {
+        activity: `Fee ${part > 1 ? `part payment #${part}` : "payment"} ${money(payment.amount)} received (${payment.mode}) · ${status}${fee.balance > 0 ? ` · balance ${money(fee.balance)}` : ""} · Receipt ${rec}`,
+        extra: { "Fee Status": status, "Fee Paid": String(fee.paid), "Fee Balance": String(fee.balance), "Student ID": student.id },
+      });
+    }
+  } catch (e) {
+    console.warn("[students] post-payment hooks failed:", e);
+  }
+}
+
+/**
  * Record a full or part payment against a student.
  * Activates Pending students on their first payment and appends subsequent part payments until balance reaches 0.
  */
-export function activateStudent(id: string, p: PaymentInput, by: string): Promise<StudentRecord> {
+export async function activateStudent(id: string, p: PaymentInput, by: string): Promise<StudentRecord> {
+  const student = await activateStudentLocked(id, p, by);
+  const pays = studentPayments(student);
+  await afterPayment(student, pays[pays.length - 1], by);
+  return student;
+}
+
+function activateStudentLocked(id: string, p: PaymentInput, by: string): Promise<StudentRecord> {
   return locked(async () => {
     const all = await read();
     const i = all.findIndex((s) => s.id === id);
@@ -412,7 +473,19 @@ export function addPayLink(studentId: string, link: PayLink, totalFee?: number):
  * A link was paid (full or part payment): mark the link Paid, append the payment to `payments`,
  * and ensure the admission is Active. Safe to call twice (webhook + return / manual check).
  */
-export function settlePayLink(linkId: string, paid: { paymentId?: string; method?: string; amount: number }, mode: string): Promise<StudentRecord | null> {
+export async function settlePayLink(linkId: string, paid: { paymentId?: string; method?: string; amount: number }, mode: string): Promise<StudentRecord | null> {
+  const rec: { p: AdmissionPayment | null } = { p: null };
+  const next = await settlePayLinkLocked(linkId, paid, mode, rec);
+  if (next && rec.p) await afterPayment(next, rec.p, "Payment link");
+  return next;
+}
+
+function settlePayLinkLocked(
+  linkId: string,
+  paid: { paymentId?: string; method?: string; amount: number },
+  mode: string,
+  rec: { p: AdmissionPayment | null },
+): Promise<StudentRecord | null> {
   return locked(async () => {
     const all = await read();
     const i = all.findIndex((s) => s.payLinks?.some((l) => l.id === linkId));
@@ -445,6 +518,7 @@ export function settlePayLink(linkId: string, paid: { paymentId?: string; method
       };
       const payments = [...existingPayments, payment];
       next = { ...next, status: "Active", payment, payments };
+      rec.p = payment;
     } else if (next.status === "Pending") {
       next = { ...next, status: "Active" };
     }

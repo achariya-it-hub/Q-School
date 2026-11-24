@@ -450,7 +450,9 @@ export async function updateLead(
     const l = leads.find((x) => x.id === id);
     if (!l) return null;
     const when = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+    let stageChange: { from: string; to: string } | null = null;
     if (patch.stage && STAGES.includes(patch.stage) && patch.stage !== l.stage) {
+      stageChange = { from: l.stage, to: patch.stage };
       l.stage = patch.stage;
       l.timeline.push({ when, what: `Moved to ${patch.stage}` });
     }
@@ -480,8 +482,32 @@ export async function updateLead(
     l.lastActivity = "Just now";
     await writeJson(LEADS_FILE, leads);
     if (isDbConfigured()) await saveDbLead(l);
+    if (stageChange) {
+      await recordAuditLog({
+        action: "STATUS_CHANGE",
+        module: "Leads",
+        entityId: l.id,
+        entityName: l.name,
+        summary: `Lead ${l.name} moved ${stageChange.from} → ${stageChange.to} (${l.owner})`,
+        previousData: { stage: stageChange.from },
+        newData: { stage: stageChange.to, owner: l.owner },
+      }).catch(() => {});
+    }
     return l;
   });
+}
+
+/** Find the lead for a phone number (last 10 digits) and apply a stage / timeline update. Used by BMIT bookings & check-ins. */
+export async function updateLeadByPhone(
+  phone: string,
+  patch: { stage?: Stage; activity?: string; extra?: Record<string, any>; onlyFromStages?: Stage[] },
+): Promise<CrmLead | null> {
+  const key = phoneKey(phone);
+  if (!key) return null;
+  const lead = (await listLeads()).find((l) => phoneKey(l.phone) === key);
+  if (!lead) return null;
+  const stage = patch.stage && (!patch.onlyFromStages || patch.onlyFromStages.includes(lead.stage)) ? patch.stage : undefined;
+  return updateLead(lead.id, { stage, activity: patch.activity, extra: patch.extra });
 }
 
 export async function bulkIngestLeads(
