@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { COURSE_STATS, STAGES, admissionFunnel, centreSummary, gstSplit, inr, paymentRegister, sourceSummary, studentLedger } from "@qschool/shared";
+import { COURSE_STATS, STAGES, accountLedger, admissionFunnel, centreSummary, gstSplit, inr, paymentRegister, sourceSummary, studentLedger } from "@qschool/shared";
 import { AdminShell } from "@/components/admin/shell";
 import { Btn, Card, DataGrid, Figure, PageHeader, Segmented, StatusBadge, Td, Th } from "@/components/admin/ui";
 import { AreaTrend, HBars, ViewToggle } from "@/components/admin/charts";
@@ -52,11 +52,12 @@ export default function ReportsPage() {
   const P = useMemo(() => fin.payments.filter((p) => isReceived(p.status) && inRange(p.date)), [fin.payments, since]); // eslint-disable-line react-hooks/exhaustive-deps
   // students admitted in the period (each one is also a lead that reached Admitted)
   const S2 = useMemo(() => fin.students.filter((s) => inRange(s.createdAt)), [fin.students, since]); // eslint-disable-line react-hooks/exhaustive-deps
-  const ledger = useMemo(() => studentLedger(S2, leads ?? []), [S2, leads]);
+  const plans = useMemo(() => fin.accounts.filter((a) => a.id.startsWith("FA-") && inRange(a.installments[0]?.due)), [fin.accounts, since]); // eslint-disable-line react-hooks/exhaustive-deps
+  const ledger = useMemo(() => [...studentLedger(S2, leads ?? []), ...accountLedger(plans)], [S2, plans, leads]);
   const register = useMemo(() => paymentRegister(fin.students, leads ?? []).filter((r) => inRange(r.date)), [fin.students, leads, since]); // eslint-disable-line react-hooks/exhaustive-deps
   const funnel = useMemo(() => admissionFunnel(L, S2), [L, S2]);
-  const sources = useMemo(() => sourceSummary(L, S2), [L, S2]);
-  const centres = useMemo(() => centreSummary(L, S2), [L, S2]);
+  const sources = useMemo(() => sourceSummary(L, S2, plans), [L, S2, plans]);
+  const centres = useMemo(() => centreSummary(L, S2, plans), [L, S2, plans]);
   const courseOf = useMemo(() => new Map(fin.accounts.map((a) => [a.id, a.course])), [fin.accounts]);
   const invOf = useMemo(() => new Map(fin.invoices.map((i) => [`${i.accountId}#${i.instNo}`, i.id])), [fin.invoices]);
   const gst = useMemo(

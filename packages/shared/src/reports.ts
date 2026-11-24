@@ -5,7 +5,7 @@
  */
 import { STAGES } from "./admin";
 import { centreName, leadCentreId, studentFeeSummary, studentPayments, type StudentRecord } from "./admission";
-import { gstSplit } from "./finance";
+import { accountTotals, gstSplit, type FeeAccount } from "./finance";
 
 export interface LeadLike {
   id: string;
@@ -160,6 +160,40 @@ export interface FunnelStep {
   count: number;
 }
 
+const PLAN_SOURCE = "Fee plan (manual)";
+const planKey = (id: string) => id.replace(/[^A-Za-z0-9]/g, "");
+const paidParts = (a: FeeAccount) => a.installments.filter((i) => i.paidOn && !i.refunded);
+
+/** Ledger rows for manual fee plans (FA-…) so they appear in Reports next to admitted students. */
+export function accountLedger(accounts: FeeAccount[]): StudentLedgerRow[] {
+  return accounts.map((a) => {
+    const t = accountTotals(a);
+    const pays = paidParts(a);
+    const feeStatus: FeeStatus = t.paid <= 0 ? "Unpaid" : t.outstanding > 0 ? "Partly Paid" : "Paid";
+    return {
+      studentId: a.id,
+      studentName: a.student,
+      parentName: a.fatherName || "",
+      phone: a.phone,
+      leadId: "",
+      source: PLAN_SOURCE,
+      owner: "",
+      centre: a.centre,
+      course: a.course,
+      admittedOn: a.installments[0]?.due ?? "",
+      status: feeStatus === "Unpaid" ? "Pending" : feeStatus === "Partly Paid" ? "Partly Paid" : "Active",
+      totalFee: r2(t.total),
+      paid: r2(t.paid),
+      balance: Math.max(0, r2(t.outstanding)),
+      feeStatus,
+      parts: pays.length,
+      lastPaymentOn: pays.length ? pays[pays.length - 1].paidOn ?? "" : "",
+      receipts: pays.map((i) => (i.ref?.startsWith("REC-") ? i.ref : `REC-${planKey(a.id)}-${nn(i.no)}`)).join(" · "),
+      invoices: pays.map((i) => `INV-2026-${planKey(a.id)}-${nn(i.no)}`).join(" · "),
+    };
+  });
+}
+
 /** Cumulative admissions funnel: how many leads reached each stage, then how many students paid / paid in full. */
 export function admissionFunnel(leads: LeadLike[], students: StudentRecord[]): FunnelStep[] {
   const live = leads.filter((l) => l.stage !== "Dropped");
@@ -190,7 +224,7 @@ export interface SourceRow {
 }
 
 /** Lead source performance, including the fees actually collected from the students each source produced. */
-export function sourceSummary(leads: LeadLike[], students: StudentRecord[]): SourceRow[] {
+export function sourceSummary(leads: LeadLike[], students: StudentRecord[], plans: FeeAccount[] = []): SourceRow[] {
   const map = new Map<string, SourceRow>();
   const row = (k: string) => {
     const key = k || "Unknown";
@@ -212,6 +246,13 @@ export function sourceSummary(leads: LeadLike[], students: StudentRecord[]): Sou
     r.collected = r2(r.collected + f.paid);
     r.balance = r2(r.balance + f.balance);
   }
+  for (const a of plans) {
+    const r = row(PLAN_SOURCE);
+    const t = accountTotals(a);
+    r.students++;
+    r.collected = r2(r.collected + t.paid);
+    r.balance = r2(r.balance + Math.max(0, t.outstanding));
+  }
   return Array.from(map.values()).sort((a, b) => b.leads + b.students - (a.leads + a.students));
 }
 
@@ -226,7 +267,7 @@ export interface CentreRow {
 }
 
 /** Centre-wise view: leads, admissions and fee position for each branch. */
-export function centreSummary(leads: LeadLike[], students: StudentRecord[]): CentreRow[] {
+export function centreSummary(leads: LeadLike[], students: StudentRecord[], plans: FeeAccount[] = []): CentreRow[] {
   const map = new Map<string, CentreRow>();
   const row = (k: string) => {
     if (!map.has(k)) map.set(k, { centre: k, leads: 0, admitted: 0, students: 0, billed: 0, collected: 0, balance: 0 });
@@ -244,6 +285,14 @@ export function centreSummary(leads: LeadLike[], students: StudentRecord[]): Cen
     r.billed = r2(r.billed + f.totalFee);
     r.collected = r2(r.collected + f.paid);
     r.balance = r2(r.balance + f.balance);
+  }
+  for (const a of plans) {
+    const r = row(a.centre || "Unassigned");
+    const t = accountTotals(a);
+    r.students++;
+    r.billed = r2(r.billed + t.total);
+    r.collected = r2(r.collected + t.paid);
+    r.balance = r2(r.balance + Math.max(0, t.outstanding));
   }
   return Array.from(map.values()).sort((a, b) => b.leads + b.students - (a.leads + a.students));
 }

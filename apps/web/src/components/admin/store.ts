@@ -239,6 +239,31 @@ export function recordPayment(accountId: string, instNo: number, method: PayMeth
     }),
   }));
   pushFinanceAccounts(state.accounts);
+  auditFeePayment(accountId, instNo, method, ref, paidAmount);
+}
+
+/** Audit-trail entry for a fee-plan (FA-…) payment so it is recorded the same way as student payments. */
+function auditFeePayment(accountId: string, instNo: number, method: PayMethod, ref: string, paidAmount?: number) {
+  if (typeof window === "undefined") return;
+  const a = state.accounts.find((x) => x.id === accountId);
+  if (!a) return;
+  const t = a.installments.reduce((s, i) => s + i.amount, 0);
+  const paid = a.installments.filter((i) => i.paidOn && !i.refunded).reduce((s, i) => s + i.amount, 0);
+  const balance = Math.max(0, Math.round((t - paid) * 100) / 100);
+  const amt = paidAmount && paidAmount > 0 ? paidAmount : a.installments.find((i) => i.no === instNo)?.amount ?? 0;
+  const money = (n: number) => `₹${n.toLocaleString("en-IN")}`;
+  fetch("/api/admin/audit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "CREATE",
+      module: "Fees & Payments",
+      entityId: a.id,
+      entityName: a.student,
+      summary: `${money(amt)} received from ${a.student} (${a.id}) via ${method} · ${balance > 0 ? `Partly Paid · balance ${money(balance)}` : "Paid"}${ref ? ` · Ref ${ref}` : ""}`,
+      newData: { accountId: a.id, instNo, amount: amt, method, ref, paid, balance },
+    }),
+  }).catch(() => {});
 }
 
 export function addFeeAccount(input: { student: string; phone: string; course: string; batch: string; centre: string; total: number; parts: number; firstDue: string }) {
