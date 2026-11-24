@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { fmtDate, gstSplit, inr, type PayMethod, type PaymentTxn } from "@qschool/shared";
+import { accountTotals, fmtDate, gstSplit, inr, type FeeAccount, type PayMethod, type PaymentTxn } from "@qschool/shared";
 import { AdminShell } from "@/components/admin/shell";
-import { Btn, Card, DataGrid, Figure, PageHeader, SearchInput, Segmented, StatusBadge, Td, Th } from "@/components/admin/ui";
+import { Btn, Card, DataGrid, Field, Figure, Modal, PageHeader, SearchInput, Segmented, StatusBadge, Td, Th, Toast, inputCls, useToast } from "@/components/admin/ui";
 import { HBars, ViewToggle } from "@/components/admin/charts";
-import { PaymentPrintPromptModal, TXN_TONE, useFinance, type GeneratedFeeDocs } from "@/components/admin/finance";
+import { CollectModal, PaymentPrintPromptModal, TXN_TONE, useFinance, type GeneratedFeeDocs } from "@/components/admin/finance";
 import { downloadCsv } from "@/components/admin/store";
 
 type F = "All" | "Success" | "Partly Paid" | "Failed" | "Refunded";
@@ -16,6 +16,13 @@ export default function PaymentsPage() {
   const [status, setStatus] = useState<F>("All");
   const [mixTable, setMixTable] = useState(false);
   const [printDocs, setPrintDocs] = useState<GeneratedFeeDocs | null>(null);
+  const [pickOpen, setPickOpen] = useState(false);
+  const [collectAcc, setCollectAcc] = useState<FeeAccount | null>(null);
+  const [toast, show] = useToast();
+  const unpaidAccounts = useMemo(
+    () => f.accounts.filter((a) => accountTotals(a).outstanding > 0),
+    [f.accounts],
+  );
 
   const list = useMemo(
     () =>
@@ -96,6 +103,17 @@ export default function PaymentsPage() {
         >
           Export CSV
         </Btn>
+        {unpaidAccounts.length > 0 && (
+          <Btn
+            icon="plus"
+            onClick={() => {
+              if (unpaidAccounts.length === 1) setCollectAcc(unpaidAccounts[0]);
+              else setPickOpen(true);
+            }}
+          >
+            Record payment
+          </Btn>
+        )}
       </PageHeader>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -176,7 +194,47 @@ export default function PaymentsPage() {
           <p className="mt-4 text-[12px] text-[#6b807b]">Successful payments, all time, excluding refunds.</p>
         </Card>
       </div>
+      <Modal open={pickOpen} title="Select student to collect fee" onClose={() => setPickOpen(false)}>
+        <div className="space-y-3 text-[13px]">
+          <Field label="Student / Fee Account">
+            <select
+              className={inputCls}
+              defaultValue=""
+              onChange={(e) => {
+                const chosen = unpaidAccounts.find((a) => a.id === e.target.value);
+                if (chosen) {
+                  setPickOpen(false);
+                  setCollectAcc(chosen);
+                }
+              }}
+            >
+              <option value="" disabled>
+                Choose a student with pending balance…
+              </option>
+              {unpaidAccounts.map((a) => {
+                const t = accountTotals(a);
+                return (
+                  <option key={a.id} value={a.id}>
+                    {a.student} ({a.id}) — {a.course} · Bal {inr(t.outstanding)}
+                  </option>
+                );
+              })}
+            </select>
+          </Field>
+        </div>
+      </Modal>
+      <CollectModal
+        account={collectAcc}
+        onClose={() => setCollectAcc(null)}
+        onDone={(m, docs) => {
+          setCollectAcc(null);
+          show(m);
+          if (docs) setPrintDocs(docs);
+          f.reloadStudents?.();
+        }}
+      />
       <PaymentPrintPromptModal docs={printDocs} onClose={() => setPrintDocs(null)} />
+      <Toast msg={toast} />
     </AdminShell>
   );
 }

@@ -9,13 +9,14 @@ import {
   fmtDate,
   inr,
   studentFeeSummary,
+  studentPayments,
   TODAY_ISO,
   type FeeAccount,
   type PayMethod,
   type StudentRecord,
 } from "@qschool/shared";
 import { Btn, Field, Modal, inputCls, type Tone } from "./ui";
-import { recordPayment, useConsole } from "./store";
+import { recordPayment, syncFinanceAccounts, useConsole } from "./store";
 import { useStudents } from "./students-view";
 import {
   buildDocsForAccountPayment,
@@ -81,16 +82,45 @@ function studentToFeeAccount(s: StudentRecord): FeeAccount {
   };
 }
 
-/** All finance views derive from the same ledger (local fee plans + enrolled students). */
+/** All finance views derive from the same ledger (DB-synced fee plans + enrolled students). */
 export function useFinance() {
   const localAccounts = useConsole((s) => s.accounts);
   const { students, reload: reloadStudents } = useStudents();
+
+  useEffect(() => {
+    void syncFinanceAccounts();
+    const t = window.setInterval(() => {
+      void syncFinanceAccounts();
+    }, 30000);
+    return () => window.clearInterval(t);
+  }, []);
+
   return useMemo(() => {
-    const existingNames = new Set(localAccounts.map((a) => a.student.trim().toLowerCase()));
+    const norm = (v: string) => v.trim().toLowerCase();
+    const hasPaidInst = (a: FeeAccount) => a.installments.some((i) => !!i.paidOn && !i.refunded);
+
+    // Never let an unpaid FA-... plan shadow a paid STU-... student, or vice-versa.
+    const paidLocalNames = new Set(localAccounts.filter(hasPaidInst).map((a) => norm(a.student)));
+    const allLocalNames = new Set(localAccounts.map((a) => norm(a.student)));
+    const paidStudentNames = new Set(
+      students.filter((s) => studentPayments(s).length > 0).map((s) => norm(s.studentName)),
+    );
+
     const enrolledAccounts = students
-      .filter((s) => !existingNames.has(s.studentName.trim().toLowerCase()))
+      .filter((s) => {
+        const key = norm(s.studentName);
+        if (studentPayments(s).length > 0) return true; // always include paid students
+        return !allLocalNames.has(key);
+      })
       .map(studentToFeeAccount);
-    const accounts = [...enrolledAccounts, ...localAccounts];
+
+    const effectiveLocalAccounts = localAccounts.filter((a) => {
+      const key = norm(a.student);
+      if (hasPaidInst(a)) return true; // always include paid fee plans
+      return !paidStudentNames.has(key) && !paidLocalNames.has(key);
+    });
+
+    const accounts = [...enrolledAccounts, ...effectiveLocalAccounts];
     const invoices = deriveInvoices(accounts);
     const payments = derivePayments(accounts);
     const totals = accounts.map((a) => ({ a, t: accountTotals(a) }));
@@ -105,14 +135,17 @@ export function useFinance() {
       collected: sum((t) => t.paid),
       outstanding: sum((t) => t.outstanding),
       overdue: sum((t) => t.overdue),
-      reloadStudents,
+      reloadStudents: () => {
+        void reloadStudents();
+        void syncFinanceAccounts();
+      },
     };
   }, [localAccounts, students, reloadStudents]);
 }
 
 const METHODS: PayMethod[] = ["UPI", "Card", "Net Banking", "Cash", "Cheque", "EMI"];
 
-/** Record a full or part fee payment against an account's unpaid installment → issues Receipt + GST Tax Invoice and prompts to print. */
+/** Record a full or part fee payment against an account's unpaid installment → issues Receipt + Invoice and prompts to print. */
 export function CollectModal({
   account,
   onClose,
@@ -126,11 +159,13 @@ export function CollectModal({
   const [ref, setRef] = useState("");
   const [payAmount, setPayAmount] = useState("");
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
   const unpaid = account?.installments.filter((i) => !i.paidOn) ?? [];
   const [instNo, setInstNo] = useState<number | null>(null);
   const chosen = unpaid.find((i) => i.no === (instNo ?? unpaid[0]?.no));
 
   useEffect(() => {
+    setErr("");
     if (chosen) {
       setPayAmount(String(chosen.amount));
     }
@@ -147,7 +182,8 @@ export function CollectModal({
           onSubmit={async (e) => {
             e.preventDefault();
             if (!(numericPay >= 1)) return;
-            const receiptRef = ref.trim() || `${method}/${Date.now().toString().slice(-8)}`;
+            setErr("");
+            const receiptRef = ref.trim() || `REC-${account.id.replace(/[^A-Za-z0-9]/g, "")}-${Date.now().toString().slice(-5)}`;
             let docs: GeneratedFeeDocs | undefined;
             if (account.id.startsWith("STU-")) {
               setBusy(true);
@@ -166,6 +202,10 @@ export function CollectModal({
               });
               const j = await res.json().catch(() => ({}));
               setBusy(false);
+              if (!res.ok) {
+                setErr(j.error || "Could not save payment. Please refresh or sign in again.");
+                return;
+              }
               docs =
                 (j.student ? buildDocsForStudentPayment(j.student) : null) ??
                 buildDocsForAccountPayment(account, numericPay, method, receiptRef, chosen.no);
@@ -175,8 +215,8 @@ export function CollectModal({
             }
             onDone(
               remainingAfter > 0
-                ? `Part payment of ${inr(numericPay)} recorded — Receipt & Tax Invoice generated`
-                : `Payment of ${inr(numericPay)} recorded — Receipt & Tax Invoice generated`,
+                ? `Part payment of ${inr(numericPay)} recorded — Receipt & Invoice generated`
+                : `Payment of ${inr(numericPay)} recorded — Receipt & Invoice generated`,
               docs,
             );
             setRef("");
@@ -265,8 +305,9 @@ export function CollectModal({
             </div>
           </Field>
           <Field label="Reference (UTR / txn id / cheque no.)">
-            <input className={inputCls} value={ref} onChange={(e) => setRef(e.target.value)} placeholder="Optional" />
+            <input className={inputCls} value={ref} onChange={(e) => setRef(e.target.value)} placeholder="Optional — auto-generated if blank" />
           </Field>
+          {err && <p className="text-[12.5px] font-semibold text-[#B42E2E]">{err}</p>}
           <div className="flex items-center justify-between pt-1">
             <p className="text-[13px] text-[#5C716C]">
               Collecting <span className="text-[18px] font-bold text-brand-ink">{inr(numericPay)}</span>

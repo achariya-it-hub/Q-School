@@ -8,5 +8,6 @@ export async function caller(): Promise<Caller | null> {
   if (isAdmin()) return { kind: "admin", name: "Admin" };
   const s = await currentStaff();
   if (s?.centre) return { kind: "centre", name: s.name, centreId: s.centre };
+  if (s) return { kind: "admin", name: s.name };
   return null;
 }

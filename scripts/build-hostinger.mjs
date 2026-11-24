@@ -44,6 +44,9 @@ const SKIP = new Set([
   "site-media",
   "course-media",
   "leads.json",
+  "students.json",
+  "student-photos",
+  "finance-accounts.json",
 ]);
 const skip = (name) => SKIP.has(name) || name.startsWith("crm-") || name.endsWith(".tmp");
 

@@ -104,8 +104,61 @@ const set = (fn: (s: State) => State) => {
   emit();
 };
 
+function pushFinanceAccounts(accounts: FeeAccount[]) {
+  if (typeof window === "undefined") return;
+  fetch("/api/admin/finance", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accounts }),
+  }).catch(() => {});
+}
+
+let financeSyncInFlight = false;
+/** Sync FA-... fee accounts with the server DB so plans & payments appear across all browsers, tabs, and domains. */
+export async function syncFinanceAccounts(): Promise<void> {
+  if (typeof window === "undefined" || financeSyncInFlight) return;
+  financeSyncInFlight = true;
+  try {
+    const r = await fetch("/api/admin/finance", { cache: "no-store" });
+    if (!r.ok) return;
+    const j = await r.json().catch(() => ({}));
+    const remote: FeeAccount[] = Array.isArray(j.accounts) ? j.accounts : [];
+    const local = state.accounts;
+
+    // Merge by id: if an account exists in both, prefer whichever has more paid installments/amount.
+    const paidScore = (a: FeeAccount) =>
+      a.installments.filter((i) => i.paidOn && !i.refunded).reduce((sum, i) => sum + i.amount, 0);
+
+    const byId = new Map<string, FeeAccount>();
+    for (const a of remote) byId.set(a.id, a);
+    let localHadUnsynced = false;
+    for (const a of local) {
+      const existing = byId.get(a.id);
+      if (!existing) {
+        byId.set(a.id, a);
+        localHadUnsynced = true;
+      } else if (paidScore(a) > paidScore(existing)) {
+        byId.set(a.id, a);
+        localHadUnsynced = true;
+      }
+    }
+    const merged = Array.from(byId.values());
+    const changed = JSON.stringify(merged) !== JSON.stringify(local);
+    if (changed) {
+      set((s) => ({ ...s, accounts: merged }));
+    }
+    if (localHadUnsynced) {
+      pushFinanceAccounts(merged);
+    }
+  } catch {
+  } finally {
+    financeSyncInFlight = false;
+  }
+}
+
 export function clearFeeAccounts() {
   set((s) => ({ ...s, accounts: [] }));
+  pushFinanceAccounts([]);
 }
 
 export function restoreDefaultFeeAccounts() {
@@ -185,6 +238,7 @@ export function recordPayment(accountId: string, instNo: number, method: PayMeth
       };
     }),
   }));
+  pushFinanceAccounts(state.accounts);
 }
 
 export function addFeeAccount(input: { student: string; phone: string; course: string; batch: string; centre: string; total: number; parts: number; firstDue: string }) {
@@ -211,6 +265,7 @@ export function addFeeAccount(input: { student: string; phone: string; course: s
       ...s.accounts,
     ],
   }));
+  pushFinanceAccounts(state.accounts);
 }
 
 export function addExpense(e: Omit<Expense, "id">) {

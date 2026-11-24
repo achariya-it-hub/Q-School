@@ -565,6 +565,40 @@ export async function saveDbStudentsBulk(students: any[]): Promise<boolean> {
   }
 }
 
+export async function getDbMetaJson<T = any>(key: string): Promise<T | null> {
+  const sql = getSql();
+  if (!sql) return null;
+  await ensureTables();
+  try {
+    const rows = await sql`SELECT value FROM qs_meta WHERE key = ${key} LIMIT 1;`;
+    if (!rows.length || !rows[0]?.value) return null;
+    return JSON.parse(rows[0].value) as T;
+  } catch (err) {
+    console.error("[db] getDbMetaJson error:", err);
+    return null;
+  }
+}
+
+export async function setDbMetaJson(key: string, data: unknown): Promise<boolean> {
+  const sql = getSql();
+  if (!sql) return false;
+  await ensureTables();
+  try {
+    const raw = JSON.stringify(data);
+    await sql`
+      INSERT INTO qs_meta (key, value, updated_at)
+      VALUES (${key}, ${raw}, NOW())
+      ON CONFLICT (key) DO UPDATE SET
+        value = EXCLUDED.value,
+        updated_at = NOW();
+    `;
+    return true;
+  } catch (err) {
+    console.error("[db] setDbMetaJson error:", err);
+    return false;
+  }
+}
+
 export async function resetDbDemoData(): Promise<boolean> {
   const sql = getSql();
   if (!sql) return false;
@@ -573,6 +607,7 @@ export async function resetDbDemoData(): Promise<boolean> {
     await sql`DELETE FROM qs_crm_leads;`;
     await sql`DELETE FROM qs_student_progress;`;
     await sql`DELETE FROM qs_students;`;
+    await sql`DELETE FROM qs_meta WHERE key = 'finance_accounts_v1';`;
     return true;
   } catch (err) {
     console.error("[db] resetDbDemoData error:", err);
