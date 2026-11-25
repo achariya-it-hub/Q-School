@@ -366,16 +366,54 @@ async function afterPayment(student: StudentRecord, payment: AdmissionPayment | 
       performedBy: by,
       newData: { studentId: student.id, part, amount: payment.amount, mode: payment.mode, receiptNo: rec, invoiceNo: inv, paid: fee.paid, balance: fee.balance, status },
     });
-    if (student.leadId) {
-      const { updateLead } = await import("@/lib/crm/store");
-      await updateLead(student.leadId, {
-        activity: `Fee ${part > 1 ? `part payment #${part}` : "payment"} ${money(payment.amount)} received (${payment.mode}) · ${status}${fee.balance > 0 ? ` · balance ${money(fee.balance)}` : ""} · Receipt ${rec}`,
-        extra: { "Fee Status": status, "Fee Paid": String(fee.paid), "Fee Balance": String(fee.balance), "Student ID": student.id },
-      });
+    // The fee is paid (in full or part), so the lead is now Admitted.
+    const { updateLead, updateLeadByPhone } = await import("@/lib/crm/store");
+    const leadPatch = {
+      stage: "Admitted" as const,
+      activity: `Fee ${part > 1 ? `part payment #${part}` : "payment"} ${money(payment.amount)} received (${payment.mode}) · ${status}${fee.balance > 0 ? ` · balance ${money(fee.balance)}` : ""} · Receipt ${rec}`,
+      extra: { "Fee Status": status, "Fee Paid": String(fee.paid), "Fee Balance": String(fee.balance), "Student ID": student.id },
+    };
+    const lead = student.leadId ? await updateLead(student.leadId, leadPatch, { paid: true }) : null;
+    if (!lead && student.phone) {
+      const byPhone = await updateLeadByPhone(student.phone, leadPatch, { paid: true });
+      if (byPhone) await linkLead(student.id, byPhone.id);
     }
   } catch (e) {
     console.warn("[students] post-payment hooks failed:", e);
   }
+}
+
+/** Remember which CRM lead a student came from (set when a payment finds the lead by phone). */
+function linkLead(studentId: string, leadId: string): Promise<void> {
+  return locked(async () => {
+    const all = await read();
+    const i = all.findIndex((s) => s.id === studentId);
+    if (i < 0 || all[i].leadId) return;
+    all[i] = { ...all[i], leadId };
+    await write(all);
+  });
+}
+
+/**
+ * A payment was recorded on a fee plan (FA-…) for this child: the admission is confirmed.
+ * Marks the matching student Active (status only: the money stays on the fee plan, so it is not counted twice).
+ * Match: the given student id, else child name + phone. Returns the student, or null if none matches.
+ */
+export function confirmAdmissionFromFeePlan(m: { studentId?: string; name: string; phone: string }): Promise<StudentRecord | null> {
+  return locked(async () => {
+    const all = await read();
+    const p10 = phone10(m.phone);
+    const name = m.name.trim().toLowerCase();
+    const i = all.findIndex(
+      (s) => (m.studentId && s.id === m.studentId) || (name && p10 && s.studentName.trim().toLowerCase() === name && phone10(s.phone) === p10),
+    );
+    if (i < 0) return null;
+    if (all[i].status !== "Active") {
+      all[i] = { ...all[i], status: "Active" };
+      await write(all);
+    }
+    return all[i];
+  });
 }
 
 /**

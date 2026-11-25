@@ -94,10 +94,10 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const who = await caller();
   if (!who) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
-  // Ensure any CRM leads in "Admitted" stage are enrolled into the Students list automatically.
+  // Ensure any CRM leads at "Application" or "Admitted" are enrolled into the Students list automatically.
   try {
     const crmLeads = await listLeads();
-    const admitted = crmLeads.filter((l) => l.stage === "Admitted" || l.formName === "Q-School Admission Form");
+    const admitted = crmLeads.filter((l) => l.stage === "Admitted" || l.stage === "Application" || l.formName === "Q-School Admission Form");
     if (admitted.length > 0) await syncAdmittedLeads(admitted);
   } catch (e) {
     console.warn("[students] syncAdmittedLeads warning:", e);

@@ -5,6 +5,11 @@
  */
 
 export const TODAY_ISO = new Date().toISOString().slice(0, 10);
+
+/** Today's date in India (YYYY-MM-DD), taken at the moment of the call (a payment at 1 AM IST is dated today, not yesterday). */
+export function istToday(now = new Date()): string {
+  return new Date(now.getTime() + 330 * 60000).toISOString().slice(0, 10);
+}
 export const GST_RATE = 0.18;
 
 export type PayMethod = "UPI" | "Card" | "Net Banking" | "Cash" | "EMI" | "Cheque";
@@ -132,6 +137,47 @@ export function accountTotals(a: FeeAccount, today = TODAY_ISO) {
           : "Due";
   return { total, paid, outstanding, overdue, next, status, maxDaysLate };
 }
+
+/**
+ * Mark an installment of a fee plan as paid (full or part). A part payment splits the installment:
+ * the paid part is recorded and the remainder becomes a new installment due a month later.
+ * Pure, so the browser and the server apply a payment identically.
+ */
+export function applyInstallmentPayment(
+  a: FeeAccount,
+  instNo: number,
+  method: PayMethod,
+  ref: string,
+  paidAmount?: number,
+  today = istToday(),
+): FeeAccount | null {
+  const target = a.installments.find((i) => i.no === instNo);
+  if (!target || target.paidOn) return null;
+  const actualPaid =
+    paidAmount && paidAmount > 0 && paidAmount < target.amount ? Math.round(paidAmount * 100) / 100 : target.amount;
+  const remainder = Math.max(0, Math.round((target.amount - actualPaid) * 100) / 100);
+  const receiptRef = ref || `${method}/${Date.now().toString().slice(-8)}`;
+  const nextDueDate = (() => {
+    const d = new Date(target.due + "T00:00:00Z");
+    if (Number.isNaN(d.getTime())) return today;
+    d.setUTCMonth(d.getUTCMonth() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
+  const updated: Installment[] = [];
+  for (const inst of a.installments) {
+    if (inst.no === instNo) {
+      updated.push({ ...inst, amount: actualPaid, paidOn: today, method, ref: receiptRef });
+      if (remainder > 0) updated.push({ no: 0, due: nextDueDate, amount: remainder });
+    } else {
+      updated.push(inst);
+    }
+  }
+  return { ...a, installments: updated.map((inst, idx) => ({ ...inst, no: idx + 1 })) };
+}
+
+/** Amount actually received on a fee plan (refunds excluded). */
+export const accountPaidAmount = (a: FeeAccount) =>
+  a.installments.filter((i) => i.paidOn && !i.refunded).reduce((s, i) => s + i.amount, 0);
 
 /** Receivables aging of overdue amounts. */
 export function aging(accounts: FeeAccount[], today = TODAY_ISO) {

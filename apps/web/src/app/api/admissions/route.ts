@@ -1,6 +1,7 @@
 /**
  * Public admission form endpoint (hosted on any domain — CORS is open, set ADMISSIONS_ALLOW_ORIGIN to lock it).
- * Creates the student as "Pending"; the respective centre activates them after confirming payment.
+ * Creates the student as "Pending" and the CRM lead at "Application"; the first fee payment activates the student
+ * and moves the lead to "Admitted".
  */
 import { NextResponse } from "next/server";
 import { ADMISSION_CENTRES, centreName } from "@qschool/shared";
@@ -146,7 +147,7 @@ export async function POST(req: Request) {
         location: locName,
         centreId: rec.centreId,
         owner: CENTRE_MANAGERS[rec.centreId],
-        stage: "Admitted",
+        stage: "Application", // becomes Admitted when the first fee payment is recorded
         extra: extraData,
       });
     } catch (crmErr) {

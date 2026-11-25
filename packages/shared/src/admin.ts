@@ -48,6 +48,7 @@ export const FUNNEL: { stage: string; value: number }[] = [
   { stage: "Contacted", value: 0 },
   { stage: "BMIT", value: 0 },
   { stage: "Negotiation", value: 0 },
+  { stage: "Application", value: 0 },
   { stage: "Admitted", value: 0 },
 ];
 
@@ -62,7 +63,11 @@ export const LEAD_SOURCES: { source: string; value: number }[] = [
 
 /* ───────────── CRM pipeline ───────────── */
 
-export const STAGES = ["Enquiry", "Contacted", "BMIT", "Negotiation", "Admitted", "Dropped"] as const;
+/**
+ * Lead pipeline. "Application" = admission form submitted / student created, fee not paid yet.
+ * A lead becomes "Admitted" only when the first fee payment is recorded (see afterPayment in the students store).
+ */
+export const STAGES = ["Enquiry", "Contacted", "BMIT", "Negotiation", "Application", "Admitted", "Dropped"] as const;
 export type Stage = (typeof STAGES)[number];
 
 export interface PipelineLead {

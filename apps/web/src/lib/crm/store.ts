@@ -12,7 +12,7 @@ import { DATA_DIR, dataFile } from "@/lib/data-dir";
 import { persistRead, persistWrite } from "@/lib/persist";
 import { recordAuditLog } from "@/lib/audit/store";
 import { enrollLeadAsStudent, syncAdmittedLeads } from "@/lib/students/store";
-import { AGENTS, PIPELINE, STAGES, centreName, leadCentreId, resolveCentreId, type PipelineLead, type Stage } from "@qschool/shared";
+import { AGENTS, PIPELINE, STAGES, centreName, leadCentreId, resolveCentreId, studentPayments, type PipelineLead, type Stage } from "@qschool/shared";
 import {
   isDbConfigured,
   getDbLeads,
@@ -382,6 +382,26 @@ export async function ingestLead(input: IncomingLead): Promise<{ result: "create
           dup.location = clip(input.location, 120);
         }
         if (input.isTest) dup.isTest = true;
+        // An admission form for a parent who is already a lead moves that lead forward to Application
+        // (never to Admitted: that happens only on payment) and links the new student record.
+        const behind = STAGES.indexOf(dup.stage) < STAGES.indexOf("Application") || dup.stage === "Dropped";
+        if (input.stage === "Application" && behind) {
+          dup.timeline.push({ when, what: `Moved to Application (admission form submitted, was ${dup.stage})` });
+          dup.stage = "Application";
+        }
+        if (input.extra) {
+          const add: Record<string, string> = {};
+          for (const [k, v] of Object.entries(input.extra)) if (!(dup.extra && k in dup.extra)) add[k] = v;
+          if (Object.keys(add).length) dup.extra = { ...(dup.extra || {}), ...add };
+        }
+        if (dup.stage === "Application" || dup.stage === "Admitted") {
+          try {
+            const { student } = await enrollLeadAsStudent(dup);
+            if (dup.extra?.["Student ID"] !== student.id) dup.extra = { ...(dup.extra || {}), "Student ID": student.id };
+          } catch (e) {
+            console.error("[crm] failed to link student for re-enquiring lead:", e);
+          }
+        }
         await writeJson(LEADS_FILE, leads);
         if (isDbConfigured()) await saveDbLead(dup);
       }
@@ -400,7 +420,8 @@ export async function ingestLead(input: IncomingLead): Promise<{ result: "create
       interest: clip(input.interest, 120) || clip(input.formName, 120) || "General enquiry",
       source,
       sourceKey: input.sourceKey,
-      stage: input.stage && STAGES.includes(input.stage) ? input.stage : "Enquiry",
+      // A new lead never starts as Admitted: that needs a recorded payment. Forms arrive as Application.
+      stage: input.stage && STAGES.includes(input.stage) ? (input.stage === "Admitted" ? "Application" : input.stage) : "Enquiry",
       owner,
       value: typeof input.value === "number" ? input.value : 0,
       location,
@@ -432,11 +453,11 @@ export async function ingestLead(input: IncomingLead): Promise<{ result: "create
     if (isDbConfigured()) await saveDbLead(lead);
     await writeJson(STATE_FILE, st);
     await log({ at: new Date().toISOString(), sourceKey: input.sourceKey, source, result: "created", leadId: lead.id, name: lead.name });
-    if (lead.stage === "Admitted") {
+    if (lead.stage === "Application") {
       try {
         const { student } = await enrollLeadAsStudent(lead);
         lead.extra = { ...(lead.extra || {}), "Student ID": student.id };
-        lead.timeline.push({ when, what: `Automatically enrolled in Students (${student.id})` });
+        lead.timeline.push({ when, what: `Automatically enrolled in Students (${student.id}) · Pending until the first fee payment` });
         await writeJson(LEADS_FILE, leads);
         if (isDbConfigured()) await saveDbLead(lead);
       } catch (e) {
@@ -452,6 +473,7 @@ export async function ingestLead(input: IncomingLead): Promise<{ result: "create
 export async function updateLead(
   id: string,
   patch: { stage?: Stage; owner?: string; value?: number; activity?: string; extra?: Record<string, any> },
+  opts: { paid?: boolean } = {},
 ): Promise<CrmLead | null> {
   return serial(async () => {
     const leads = await readLeads();
@@ -473,17 +495,28 @@ export async function updateLead(
       l.extra = { ...(l.extra || {}), ...patch.extra };
     }
     if (patch.activity) l.timeline.push({ when, what: clip(patch.activity, 300) });
-    if (l.stage === "Admitted") {
+    if (l.stage === "Application" || l.stage === "Admitted") {
+      let hasPayment = !!opts.paid;
       try {
         const { student, created } = await enrollLeadAsStudent(l);
         if (l.extra?.["Student ID"] !== student.id) {
           l.extra = { ...(l.extra || {}), "Student ID": student.id };
         }
         if (created) {
-          l.timeline.push({ when, what: `Automatically enrolled in Students (${student.id})` });
+          l.timeline.push({ when, what: `Automatically enrolled in Students (${student.id}) · Pending until the first fee payment` });
         }
+        if (studentPayments(student).length > 0) hasPayment = true;
       } catch (e) {
-        console.error("[crm] failed to auto-enroll admitted lead:", e);
+        console.error("[crm] failed to auto-enroll lead:", e);
+      }
+      // Admitted = fee paid. Moving a lead there by hand before any payment keeps it at Application;
+      // it moves to Admitted automatically when the first payment is recorded.
+      if (stageChange && stageChange.to === "Admitted" && !hasPayment) {
+        l.stage = "Application";
+        const k = l.timeline.map((t) => t.what).lastIndexOf("Moved to Admitted");
+        if (k >= 0) l.timeline.splice(k, 1);
+        l.timeline.push({ when, what: "Kept at Application: the lead becomes Admitted automatically once the first fee payment is recorded" });
+        stageChange = stageChange.from === "Application" ? null : { from: stageChange.from, to: "Application" };
       }
     }
     l.slaBreached = false;
@@ -509,13 +542,14 @@ export async function updateLead(
 export async function updateLeadByPhone(
   phone: string,
   patch: { stage?: Stage; activity?: string; extra?: Record<string, any>; onlyFromStages?: Stage[] },
+  opts: { paid?: boolean } = {},
 ): Promise<CrmLead | null> {
   const key = phoneKey(phone);
   if (!key) return null;
   const lead = (await listLeads()).find((l) => phoneKey(l.phone) === key);
   if (!lead) return null;
   const stage = patch.stage && (!patch.onlyFromStages || patch.onlyFromStages.includes(lead.stage)) ? patch.stage : undefined;
-  return updateLead(lead.id, { stage, activity: patch.activity, extra: patch.extra });
+  return updateLead(lead.id, { stage, activity: patch.activity, extra: patch.extra }, opts);
 }
 
 export async function bulkIngestLeads(

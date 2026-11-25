@@ -12,7 +12,6 @@ import {
   PIPELINE,
   applyTaskAction,
   type TaskAction,
-  TODAY_ISO,
   type Expense,
   type StaffTask,
   type TaskStatus,
@@ -117,7 +116,13 @@ function pushKey(k: SyncKey) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ key: k, items: state[k] }),
   })
-    .then((r) => (r.ok ? dirty.delete(k) : dirty.add(k)))
+    .then(async (r) => {
+      if (!r.ok) return void dirty.add(k);
+      dirty.delete(k);
+      // The server kept payments newer than this browser's copy (another device): reload the list.
+      const j = await r.json().catch(() => ({}));
+      if (j.kept) void syncConsoleData();
+    })
     .catch(() => dirty.add(k));
 }
 
@@ -250,69 +255,28 @@ export function useConsole<T>(select: (s: State) => T): T {
 
 /* ───────── Finance ───────── */
 
-export function recordPayment(accountId: string, instNo: number, method: PayMethod, ref: string, paidAmount?: number) {
-  set((s) => ({
-    ...s,
-    accounts: s.accounts.map((a) => {
-      if (a.id !== accountId) return a;
-      const target = a.installments.find((i) => i.no === instNo);
-      if (!target) return a;
-      const actualPaid =
-        paidAmount && paidAmount > 0 && paidAmount < target.amount
-          ? Math.round(paidAmount * 100) / 100
-          : target.amount;
-      const remainder = Math.max(0, Math.round((target.amount - actualPaid) * 100) / 100);
-      const receiptRef = ref || `${method}/${Date.now().toString().slice(-8)}`;
-
-      const nextDueDate = (() => {
-        const d = new Date(target.due + "T00:00:00Z");
-        if (Number.isNaN(d.getTime())) return TODAY_ISO;
-        d.setUTCMonth(d.getUTCMonth() + 1);
-        return d.toISOString().slice(0, 10);
-      })();
-
-      const updated: FeeAccount["installments"] = [];
-      for (const inst of a.installments) {
-        if (inst.no === instNo) {
-          updated.push({ ...inst, amount: actualPaid, paidOn: TODAY_ISO, method, ref: receiptRef });
-          if (remainder > 0) {
-            updated.push({ no: 0, due: nextDueDate, amount: remainder });
-          }
-        } else {
-          updated.push(inst);
-        }
-      }
-      return {
-        ...a,
-        installments: updated.map((inst, idx) => ({ ...inst, no: idx + 1 })),
-      };
-    }),
-  }));
-  auditFeePayment(accountId, instNo, method, ref, paidAmount);
-}
-
-/** Audit-trail entry for a fee-plan (FA-…) payment so it is recorded the same way as student payments. */
-function auditFeePayment(accountId: string, instNo: number, method: PayMethod, ref: string, paidAmount?: number) {
-  if (typeof window === "undefined") return;
-  const a = state.accounts.find((x) => x.id === accountId);
-  if (!a) return;
-  const t = a.installments.reduce((s, i) => s + i.amount, 0);
-  const paid = a.installments.filter((i) => i.paidOn && !i.refunded).reduce((s, i) => s + i.amount, 0);
-  const balance = Math.max(0, Math.round((t - paid) * 100) / 100);
-  const amt = paidAmount && paidAmount > 0 ? paidAmount : a.installments.find((i) => i.no === instNo)?.amount ?? 0;
-  const money = (n: number) => `₹${n.toLocaleString("en-IN")}`;
-  fetch("/api/admin/audit", {
+/**
+ * Record a fee-plan (FA-…) payment on the server: every device sees it, and the server moves the matching lead to
+ * Admitted and the matching student to Active. Throws when the server could not save it (nothing is recorded then).
+ */
+export async function recordPayment(accountId: string, instNo: number, method: PayMethod, ref: string, paidAmount?: number): Promise<FeeAccount> {
+  const local = state.accounts.find((a) => a.id === accountId);
+  const r = await fetch("/api/admin/fee-plans/pay", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "CREATE",
-      module: "Fees & Payments",
-      entityId: a.id,
-      entityName: a.student,
-      summary: `${money(amt)} received from ${a.student} (${a.id}) via ${method} · ${balance > 0 ? `Partly Paid · balance ${money(balance)}` : "Paid"}${ref ? ` · Ref ${ref}` : ""}`,
-      newData: { accountId: a.id, instNo, amount: amt, method, ref, paid, balance },
-    }),
-  }).catch(() => {});
+    body: JSON.stringify({ accountId, instNo, method, ref, amount: paidAmount ?? local?.installments.find((i) => i.no === instNo)?.amount, account: local }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.account) throw new Error(j.error || "Could not save the payment. Check the connection and try again.");
+  const saved = j.account as FeeAccount;
+  // Already saved on the server: update this browser's copy without uploading it again.
+  applyingRemote = true;
+  try {
+    set((s) => ({ ...s, accounts: s.accounts.some((a) => a.id === saved.id) ? s.accounts.map((a) => (a.id === saved.id ? saved : a)) : [saved, ...s.accounts] }));
+  } finally {
+    applyingRemote = false;
+  }
+  return saved;
 }
 
 export function addFeeAccount(input: { student: string; phone: string; course: string; batch: string; centre: string; total: number; parts: number; firstDue: string }) {

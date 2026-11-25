@@ -47,15 +47,17 @@ export function CrmDashboard() {
 
   const funnel = useMemo(() => {
     const total = leads.length;
-    const contacted = leads.filter((l) => ["Contacted", "BMIT", "Negotiation", "Admitted"].includes(l.stage)).length;
-    const bmit = leads.filter((l) => ["BMIT", "Negotiation", "Admitted"].includes(l.stage)).length;
-    const negotiation = leads.filter((l) => ["Negotiation", "Admitted"].includes(l.stage)).length;
+    const contacted = leads.filter((l) => ["Contacted", "BMIT", "Negotiation", "Application", "Admitted"].includes(l.stage)).length;
+    const bmit = leads.filter((l) => ["BMIT", "Negotiation", "Application", "Admitted"].includes(l.stage)).length;
+    const negotiation = leads.filter((l) => ["Negotiation", "Application", "Admitted"].includes(l.stage)).length;
+    const application = leads.filter((l) => ["Application", "Admitted"].includes(l.stage)).length;
     const admitted = leads.filter((l) => l.stage === "Admitted").length;
     return [
       { stage: "Enquiries", value: total },
       { stage: "Contacted", value: contacted },
       { stage: "BMIT", value: bmit },
       { stage: "Negotiation", value: negotiation },
+      { stage: "Application", value: application },
       { stage: "Admitted", value: admitted },
     ];
   }, [leads]);

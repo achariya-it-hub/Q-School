@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import { NextResponse } from "next/server";
 import type { FeeAccount } from "@qschool/shared";
+import { keepSavedPayments } from "@/lib/console-sync";
 import { caller } from "@/lib/students/access";
 import { dataFile } from "@/lib/data-dir";
 import { getDbMetaJson, isDbConfigured, setDbMetaJson } from "@/lib/db";
@@ -49,6 +50,8 @@ export async function POST(req: Request) {
   const clean: FeeAccount[] = b.accounts
     .filter((a: any) => a && typeof a.id === "string" && typeof a.student === "string" && Array.isArray(a.installments))
     .slice(0, 2000);
-  await writeAccounts(clean);
-  return NextResponse.json({ ok: true, accounts: clean });
+  // A stale copy from another device must not undo a payment that is already saved.
+  const next = keepSavedPayments(clean, await readAccounts());
+  await writeAccounts(next);
+  return NextResponse.json({ ok: true, accounts: next });
 }

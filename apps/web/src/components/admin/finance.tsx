@@ -102,6 +102,7 @@ export function useFinance() {
     // Never let an unpaid FA-... plan shadow a paid STU-... student, or vice-versa.
     const paidLocalNames = new Set(localAccounts.filter(hasPaidInst).map((a) => norm(a.student)));
     const allLocalNames = new Set(localAccounts.map((a) => norm(a.student)));
+    const linkedStudentIds = new Set(localAccounts.map((a) => a.admissionNo).filter((x): x is string => !!x && x.startsWith("STU-")));
     const paidStudentNames = new Set(
       students.filter((s) => studentPayments(s).length > 0).map((s) => norm(s.studentName)),
     );
@@ -110,7 +111,7 @@ export function useFinance() {
       .filter((s) => {
         const key = norm(s.studentName);
         if (studentPayments(s).length > 0) return true; // always include paid students
-        return !allLocalNames.has(key);
+        return !allLocalNames.has(key) && !linkedStudentIds.has(s.id);
       })
       .map(studentToFeeAccount);
 
@@ -211,8 +212,17 @@ export function CollectModal({
                 (j.student ? buildDocsForStudentPayment(j.student) : null) ??
                 buildDocsForAccountPayment(account, numericPay, method, receiptRef, chosen.no);
             } else {
+              // Saved on the server first (all devices see it; the lead moves to Admitted, the student to Active).
+              setBusy(true);
+              try {
+                await recordPayment(account.id, chosen.no, method, receiptRef, numericPay);
+              } catch (e) {
+                setBusy(false);
+                setErr((e as Error).message);
+                return;
+              }
+              setBusy(false);
               docs = buildDocsForAccountPayment(account, numericPay, method, receiptRef, chosen.no);
-              recordPayment(account.id, chosen.no, method, receiptRef, numericPay);
             }
             onDone(
               remainingAfter > 0

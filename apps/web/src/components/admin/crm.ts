@@ -2,7 +2,7 @@
 
 /** Client hooks for the server-backed CRM (leads come from Meta, Google Ads, WhatsApp, website, webhooks). */
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PipelineLead, Stage } from "@qschool/shared";
+import { STAGES, type PipelineLead, type Stage } from "@qschool/shared";
 
 export interface CrmLead extends PipelineLead {
   email?: string;
@@ -61,7 +61,7 @@ function saveCachedLeads(leads: CrmLead[]) {
   } catch {}
 }
 
-const VALID_STAGES = new Set<string>(["Enquiry", "Contacted", "BMIT", "Negotiation", "Admitted", "Dropped"]);
+const VALID_STAGES = new Set<string>(STAGES);
 
 /**
  * Make every lead safe to render: a missing/unknown stage, non-string name/phone, non-numeric value or

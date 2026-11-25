@@ -203,8 +203,8 @@ export default function ReportsPage() {
         <>
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Figure label="New leads" value={String(L.length)} icon="kanban" />
-            <Figure label="Admitted" value={String(admitted)} sub={`${pct(admitted, L.length)}% of leads`} icon="check" />
-            <Figure label="BMIT stage or later" value={String(L.filter((l) => ["BMIT", "Negotiation", "Admitted"].includes(l.stage)).length)} sub="booked or attended BMIT" icon="calendar" />
+            <Figure label="Admitted (fee paid)" value={String(admitted)} sub={`${pct(admitted, L.length)}% of leads`} icon="check" />
+            <Figure label="BMIT stage or later" value={String(L.filter((l) => ["BMIT", "Negotiation", "Application", "Admitted"].includes(l.stage)).length)} sub="booked or attended BMIT" icon="calendar" />
             <Figure label="Dropped" value={String(L.filter((l) => l.stage === "Dropped").length)} icon="x" />
           </section>
           <Card title="Admissions funnel · enquiry → BMIT → admission → fee" className="mt-4">

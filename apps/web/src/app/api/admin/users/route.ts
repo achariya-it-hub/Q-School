@@ -51,7 +51,7 @@ export async function GET() {
     // Ensure any admitted CRM leads and enrolled students are synced into qs_users as Student accounts.
     try {
       const crmLeads = await listLeads();
-      const admitted = crmLeads.filter((l) => l.stage === "Admitted" || l.formName === "Q-School Admission Form");
+      const admitted = crmLeads.filter((l) => l.stage === "Admitted" || l.stage === "Application" || l.formName === "Q-School Admission Form");
       if (admitted.length > 0) await syncAdmittedLeads(admitted);
       const students = await listStudents();
       const currentUsers = await readUsers();

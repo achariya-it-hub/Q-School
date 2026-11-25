@@ -11,6 +11,16 @@ import { WaChat } from "@/components/admin/whatsapp";
 import { downloadCsvFile, parseCsvRows } from "@/lib/csv-helper";
 import { useAdminRole } from "@/lib/centre-head";
 
+
+/** Toast after a stage change. Admitted needs a recorded payment: before that the server keeps the lead at Application. */
+function stageToast(l: { name: string; extra?: Record<string, string> }, stage: Stage) {
+  const name = l.name;
+  if (stage === "Application") return `${name} moved to Application & enrolled in Students (fee pending)`;
+  if (stage === "Admitted")
+    return Number(l.extra?.["Fee Paid"]) > 0 ? `${name} admitted` : `${name} stays at Application until the first fee payment, then becomes Admitted`;
+  return `${name} moved to ${stage}`;
+}
+
 const SOURCE_FILTERS = [
   { key: "all", label: "All sources" },
   { key: "meta", label: "Meta (FB/IG)" },
@@ -83,6 +93,18 @@ const STAGE_THEME: Record<Stage, StageTheme> = {
     headerText: "text-teal-900",
     cardBorderLeft: "border-l-teal-500",
     barColor: "#14B8A6",
+  },
+  Application: {
+    name: "Application",
+    dotBg: "bg-sky-500",
+    badgeBg: "bg-sky-100",
+    badgeText: "text-sky-800",
+    colBg: "bg-[#F0F9FF]",
+    colBorder: "border-sky-200",
+    headerGradient: "from-sky-600 to-blue-600",
+    headerText: "text-sky-900",
+    cardBorderLeft: "border-l-sky-500",
+    barColor: "#0EA5E9",
   },
   Admitted: {
     name: "Admitted",
@@ -224,7 +246,7 @@ export default function LeadsPage() {
     const l = leads.find((x) => x.id === drag);
     if (l && l.stage !== stage) {
       patch(l.id, { stage });
-      show(stage === "Admitted" ? `${l.name} admitted & automatically enrolled in Students` : `${l.name} moved to ${stage}`);
+      show(stageToast(l, stage));
     }
     setDrag(null);
     setOver(null);
@@ -587,7 +609,7 @@ export default function LeadsPage() {
                           onChange={(e) => {
                             const newStage = e.target.value as Stage;
                             patch(l.id, { stage: newStage });
-                            show(newStage === "Admitted" ? `${l.name} admitted & automatically enrolled in Students` : `${l.name} moved to ${newStage}`);
+                            show(stageToast(l, newStage));
                             if (newStage === "BMIT" && !l.extra?.["BMIT Test Date"]) {
                               setOpen(l.id);
                             }
@@ -941,13 +963,13 @@ function LeadCard({
             <span>BMIT: {l.extra["BMIT Test Date Formatted"] || l.extra["BMIT Test Date"]}</span>
           </span>
         )}
-        {l.stage === "Admitted" && (
+        {(l.stage === "Application" || l.stage === "Admitted") && (
           <Link
             href="/admin/enrolments"
             onClick={(e) => e.stopPropagation()}
             className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10.5px] font-bold text-emerald-800 border border-emerald-200 hover:bg-emerald-700 hover:text-white transition"
           >
-            ✓ Enrolled in Students →
+            {l.stage === "Admitted" ? "✓ Enrolled in Students →" : "Fee pending · Collect →"}
           </Link>
         )}
         {l.isTest && <span className="rounded-md bg-[#FFF6E0] px-1.5 py-0.5 text-[10.5px] font-semibold text-[#8A5A00]">Test</span>}
@@ -1354,12 +1376,12 @@ function LeadDetail({
     <div className="space-y-5 text-[13px]">
       <div className="flex flex-wrap gap-2">
         <StatusBadge tone="info">{lead.stage || "Enquiry"}</StatusBadge>
-        {lead.stage === "Admitted" && (
+        {(lead.stage === "Application" || lead.stage === "Admitted") && (
           <Link
             href="/admin/enrolments"
             className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11.5px] font-bold text-emerald-800 hover:bg-emerald-700 hover:text-white transition"
           >
-            ✓ View in Students &amp; Collect Fee →
+            {lead.stage === "Admitted" ? "✓ View in Students & Collect Fee →" : "Fee pending · Collect in Students →"}
           </Link>
         )}
         {lead.slaBreached && <StatusBadge tone="serious">SLA breached</StatusBadge>}
@@ -1510,7 +1532,7 @@ function LeadDetail({
             onChange={(e) => {
               const nextStage = e.target.value as Stage;
               onPatch({ stage: nextStage });
-              onToast(nextStage === "Admitted" ? `Admitted & automatically enrolled in Students` : `Moved to ${nextStage}`);
+              onToast(stageToast(lead, nextStage));
               if (nextStage === "BMIT" && !lead.extra?.["BMIT Test Date"]) {
                 setBmitModalOpen(true);
               }

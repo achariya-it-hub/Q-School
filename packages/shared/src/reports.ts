@@ -1,6 +1,6 @@
 /**
  * Report aggregation for the whole ERP chain:
- *   Lead (Enquiry → Contacted → BMIT → Negotiation → Admitted) → Student → Fee payments → Receipts & GST invoices.
+ *   Lead (Enquiry → Contacted → BMIT → Negotiation → Application → Admitted on first fee payment) → Student → Fee payments → Receipts & GST invoices.
  * Pure functions so the Reports screen, CSV exports and automated checks all agree on the same numbers.
  */
 import { STAGES } from "./admin";
@@ -207,7 +207,8 @@ export function admissionFunnel(leads: LeadLike[], students: StudentRecord[]): F
     { label: "Contacted", count: reached("Contacted") },
     { label: "BMIT", count: reached("BMIT") },
     { label: "Negotiation", count: reached("Negotiation") },
-    { label: "Admitted", count: reached("Admitted") },
+    { label: "Application (form submitted)", count: reached("Application") },
+    { label: "Admitted (fee paid)", count: reached("Admitted") },
     { label: "Fee paid (part or full)", count: fees.filter((f) => f.paid > 0).length },
     { label: "Fully paid", count: fees.filter((f) => f.feeState === "Paid").length },
   ];

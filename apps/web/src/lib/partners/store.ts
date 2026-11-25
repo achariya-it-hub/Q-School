@@ -281,6 +281,8 @@ export async function createPartnerAdmission(input: NewPartnerAdmissionInput): P
         email: input.email?.trim() || undefined,
         interest: `${input.course} (Admission by ${partner.name})${concessionText}`,
         message: `Direct admission processed via Referral App by ${partner.name} [Code: ${partner.code}]. Fee: Rs.${finalFee}${concessionAmount ? ` (Concession: -Rs.${concessionAmount})` : ""}. ERP ID: ${student.id}`,
+        stage: "Application", // becomes Admitted when the first fee payment is recorded
+        extra: { "Application ID": student.id, "Student Name": input.studentName.trim(), "Parent Name": input.parentName.trim() },
       });
     } catch (crmErr) {
       console.warn("CRM ingest warning for partner admission:", crmErr);
