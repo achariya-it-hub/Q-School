@@ -13,8 +13,22 @@ import { DEFAULT_USERS } from "@/lib/default-users";
 
 export const COOKIE = "qs_console";
 
+/**
+ * Demo logins (the built-in "admin123"-style passwords and the sample accounts that ship in the code) are only
+ * for development. On a live server (NODE_ENV=production) they are OFF unless ALLOW_DEMO_LOGIN=true is set on purpose.
+ */
+export function demoLoginAllowed(): boolean {
+  if (process.env.ALLOW_DEMO_LOGIN === "true") return true;
+  if (process.env.ALLOW_DEMO_LOGIN === "false") return false;
+  return process.env.NODE_ENV !== "production";
+}
+
+/** Passwords published in the source code: never valid when demo logins are off. */
+const WEAK_PASSWORDS = new Set(["admin123", "adminpassword123"]);
+export const isWeakPassword = (pw?: string) => !!pw && WEAK_PASSWORDS.has(pw);
+
 function secret() {
-  return process.env.SESSION_SECRET || "dev-only-change-me";
+  return process.env.SESSION_SECRET || (demoLoginAllowed() ? "dev-only-change-me" : "");
 }
 
 export function sign(email: string) {
@@ -25,7 +39,7 @@ export function sign(email: string) {
 }
 
 export function verify(token?: string): string | null {
-  if (!token) return null;
+  if (!token || !secret()) return null; // no secret configured on a live server: no session is trusted
   try {
     const [email, exp, mac] = Buffer.from(token, "base64url").toString().split("|");
     const good = createHmac("sha256", secret()).update(`${email}|${exp}`).digest("hex");
@@ -52,22 +66,21 @@ export function getCurrentUserEmail(): string {
 }
 
 export function productionLoginProblem(): string | null {
-  if (process.env.ALLOW_DEMO_LOGIN === "false") {
-    const missing = ["ADMIN_EMAIL", "ADMIN_PASSWORD", "SESSION_SECRET"].filter((k) => !process.env[k]);
-    if (missing.length) return `Console login is locked until ${missing.join(", ")} ${missing.length > 1 ? "are" : "is"} set in the server's environment variables.`;
-    if ((process.env.ADMIN_PASSWORD ?? "").length < 10) return "ADMIN_PASSWORD must be at least 10 characters on a live server.";
+  if (!demoLoginAllowed()) {
+    if ((process.env.SESSION_SECRET ?? "").length < 16) return "Console login is locked until SESSION_SECRET (at least 16 characters) is set in the server's environment variables.";
   }
   return null;
 }
 
 export function checkCredentials(email: string, password: string) {
   if (productionLoginProblem()) return false;
+  const demo = demoLoginAllowed();
   const inputEmail = (email || "").trim().toLowerCase();
   const inputPw = (password || "").trim();
   if (!inputEmail || !inputPw) return false;
 
   const envEmail = (process.env.ADMIN_EMAIL || "admin@qschool.com").trim().replace(/^["']|["']$/g, "").toLowerCase();
-  const envPassword = (process.env.ADMIN_PASSWORD || "admin123").trim().replace(/^["']|["']$/g, "");
+  const envPassword = (process.env.ADMIN_PASSWORD || "").trim().replace(/^["']|["']$/g, "");
 
   // Recognized admin emails
   const allowedAdminEmails = new Set([
@@ -79,17 +92,17 @@ export function checkCredentials(email: string, password: string) {
   if (allowedAdminEmails.has(inputEmail)) {
     const changed = checkOverridePassword(inputPw); // set via Profile -> Change password
     if (changed === true) return true;
-    if (inputPw === envPassword || inputPw === "admin123" || inputPw === "adminpassword123") {
-      return true;
-    }
+    // The real password lives in ADMIN_PASSWORD. On a live server it must be a proper one (10+ characters).
+    if (envPassword && (demo || envPassword.length >= 10) && safeEqual(inputPw, envPassword)) return true;
+    if (demo && (inputPw === "admin123" || inputPw === "adminpassword123" || (!envPassword && inputPw === "admin123"))) return true;
     if (changed === false) return false;
   }
 
-  // Check bundled default users first
+  // Sample accounts bundled with the code (their passwords are public): development only
   const defaultUser = DEFAULT_USERS.find(
     (u) => u.email.toLowerCase() === inputEmail
   );
-  if (defaultUser) {
+  if (defaultUser && demo) {
     if (defaultUser.password && (defaultUser.password === inputPw || inputPw === "admin123" || inputPw === "adminpassword123")) {
       return true;
     }
@@ -121,10 +134,10 @@ export function checkCredentials(email: string, password: string) {
     if (Array.isArray(users)) {
       const u = users.find((x: any) => x && x.email && String(x.email).trim().toLowerCase() === inputEmail);
       if (u) {
-        if (u.password && (u.password === inputPw || inputPw === "admin123" || inputPw === "adminpassword123")) {
+        if (u.password && ((u.password === inputPw && (demo || !isWeakPassword(u.password))) || (demo && (inputPw === "admin123" || inputPw === "adminpassword123")))) {
           return true;
         }
-        if (!u.password && (inputPw === "admin123" || inputPw === "adminpassword123")) {
+        if (!u.password && demo && (inputPw === "admin123" || inputPw === "adminpassword123")) {
           return true;
         }
       }
@@ -143,7 +156,7 @@ export function safeEqual(a: string, b: string) {
 
 /** Verify Meta's X-Hub-Signature-256 (HMAC-SHA256 of the raw body with the app secret). */
 export function verifyMetaSignature(raw: string, header: string | null, appSecret?: string) {
-  if (!appSecret) return { ok: true, skipped: true } as const; // not configured yet (dev)
+  if (!appSecret) return { ok: demoLoginAllowed(), skipped: true } as const; // not configured: only accepted in development
   if (!header?.startsWith("sha256=")) return { ok: false } as const;
   const expected = "sha256=" + createHmac("sha256", appSecret).update(raw, "utf8").digest("hex");
   return { ok: safeEqual(header, expected) } as const;
