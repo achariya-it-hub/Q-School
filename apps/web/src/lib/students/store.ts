@@ -140,7 +140,10 @@ function decodePhoto(dataUrl: string): { buf: Buffer; ext: string } {
   return { buf, ext };
 }
 
-const isDup = (all: StudentRecord[], i: NewStudent) => all.find((s) => s.studentName.toLowerCase() === i.studentName.toLowerCase() && digits(s.phone) === digits(i.phone));
+/** Compare phone numbers on their last 10 digits, so "+91 90000 11111" and "9000011111" are the same parent. */
+const phoneKey = (s: string) => digits(s || "").slice(-10);
+const isDup = (all: StudentRecord[], i: NewStudent) =>
+  all.find((s) => s.studentName.trim().toLowerCase() === i.studentName.trim().toLowerCase() && !!phoneKey(i.phone) && phoneKey(s.phone) === phoneKey(i.phone));
 const nextNum = (all: StudentRecord[]) => all.reduce((m, s) => Math.max(m, Number(s.id.replace(/\D/g, "")) || 0), 0) + 1;
 const stuId = (n: number) => `STU-${String(n).padStart(4, "0")}`;
 
@@ -149,7 +152,44 @@ export function addStudent(input: NewStudent, photoDataUrl: string | null): Prom
   return locked(async () => {
     const all = await read();
     const dup = isDup(all, input);
-    if (dup) return { student: dup, duplicate: true };
+    if (dup) {
+      // The child may already exist because the CRM created them from the lead (name + phone only). Fill in
+      // whatever the admission form adds (date of birth, parents, address, photo…) instead of throwing it away.
+      const at = all.findIndex((s) => s.id === dup.id);
+      const merged: StudentRecord = { ...dup };
+      let changed = false;
+      for (const [k, v] of Object.entries(input)) {
+        if (v === undefined || v === null || v === "" || k === "ref" || k === "totalFee" || k === "leadId") continue;
+        const have = (merged as unknown as Record<string, unknown>)[k];
+        if (have === undefined || have === null || have === "") {
+          (merged as unknown as Record<string, unknown>)[k] = v;
+          changed = true;
+        }
+      }
+      if (dup.leadId && input.address && (!dup.address || dup.address === centreName(dup.centreId))) {
+        merged.address = input.address;
+        changed = true;
+      }
+      if (dup.leadId && input.parentName && dup.parentName === dup.studentName) {
+        merged.parentName = input.parentName;
+        changed = true;
+      }
+      if (!merged.photo && photoDataUrl) {
+        try {
+          const { buf, ext } = decodePhoto(photoDataUrl);
+          await fs.mkdir(PHOTO_DIR, { recursive: true });
+          merged.photo = `${dup.id}.${ext}`;
+          await fs.writeFile(path.join(PHOTO_DIR, merged.photo), buf);
+          merged.photoData = photoDataUrl;
+          changed = true;
+        } catch {}
+      }
+      if (changed && at >= 0) {
+        all[at] = merged;
+        await write(all);
+      }
+      return { student: merged, duplicate: true };
+    }
 
     const id = stuId(nextNum(all));
     let photo = "";
@@ -448,8 +488,21 @@ function activateStudentLocked(id: string, p: PaymentInput, by: string): Promise
     const autoReceipt = `REC-${cur.id.replace("STU-", "")}-P${existingPayments.length + 1}-${Date.now().toString().slice(-4)}`;
     const cleanReceipt = p.receiptNo?.trim() ? p.receiptNo.trim().slice(0, 40) : autoReceipt;
 
+    // Money safeguards: never collect more than is due, never record the same receipt twice, and ignore a
+    // double-click that re-sends the identical payment.
+    const amount = Math.round(p.amount * 100) / 100;
+    const alreadyPaid = Math.round(existingPayments.reduce((s, x) => s + (Number(x.amount) || 0), 0) * 100) / 100;
+    const balance = Math.round((nextTotalFee - alreadyPaid) * 100) / 100;
+    if (balance <= 0) throw new Error("This student's fee is already fully paid. There is nothing more to collect.");
+    if (amount > balance + 0.009) throw new Error(`₹${amount.toLocaleString("en-IN")} is more than the balance due (₹${balance.toLocaleString("en-IN")}). Enter ₹${balance.toLocaleString("en-IN")} or less.`);
+    if (p.receiptNo?.trim() && existingPayments.some((x) => x.receiptNo === cleanReceipt)) throw new Error(`Receipt number ${cleanReceipt} is already recorded for this student.`);
+    const justNow = Date.now() - 30_000;
+    if (existingPayments.some((x) => x.amount === amount && x.mode === p.mode && Date.parse(x.confirmedAt) > justNow)) {
+      throw new Error("This exact payment was recorded a moment ago. Refresh to see it before adding it again.");
+    }
+
     const payment: AdmissionPayment = {
-      amount: Math.round(p.amount * 100) / 100,
+      amount,
       mode: p.mode as PaymentMode,
       receiptNo: cleanReceipt,
       note: p.note?.trim().slice(0, 200) || undefined,
@@ -463,26 +516,54 @@ function activateStudentLocked(id: string, p: PaymentInput, by: string): Promise
   });
 }
 
-export function setStudentTotalFee(id: string, totalFee: number): Promise<StudentRecord> {
+export function setStudentTotalFee(id: string, totalFee: number, by = "Admin"): Promise<StudentRecord> {
   return locked(async () => {
     if (!(totalFee > 0)) throw new Error("Enter a valid total course fee");
     const all = await read();
     const i = all.findIndex((s) => s.id === id);
     if (i < 0) throw new Error("Student not found");
-    all[i] = { ...all[i], totalFee: Math.round(totalFee * 100) / 100 };
+    const before = studentFeeSummary(all[i]);
+    const next = Math.round(totalFee * 100) / 100;
+    if (next < before.paid) throw new Error(`Total fee can't be lower than the ₹${before.paid.toLocaleString("en-IN")} already received`);
+    all[i] = { ...all[i], totalFee: next };
     await write(all);
+    if (next !== before.totalFee) {
+      await recordAuditLog({
+        action: "UPDATE",
+        module: "Students",
+        entityId: id,
+        entityName: all[i].studentName,
+        summary: `Total fee for ${all[i].studentName} (${id}) changed ₹${before.totalFee.toLocaleString("en-IN")} → ₹${next.toLocaleString("en-IN")}`,
+        performedBy: by,
+        previousData: { totalFee: before.totalFee },
+        newData: { totalFee: next, paid: before.paid },
+      }).catch(() => {});
+    }
     return all[i];
   });
 }
 
-export function setCentre(id: string, centreId: string): Promise<StudentRecord> {
+export function setCentre(id: string, centreId: string, by = "Admin"): Promise<StudentRecord> {
   return locked(async () => {
     if (!ADMISSION_CENTRES.some((c) => c.id === centreId)) throw new Error("Unknown centre");
     const all = await read();
     const i = all.findIndex((s) => s.id === id);
     if (i < 0) throw new Error("Student not found");
+    const was = all[i].centreId;
     all[i] = { ...all[i], centreId };
     await write(all);
+    if (was !== centreId) {
+      await recordAuditLog({
+        action: "UPDATE",
+        module: "Students",
+        entityId: id,
+        entityName: all[i].studentName,
+        summary: `${all[i].studentName} (${id}) moved from ${centreName(was)} to ${centreName(centreId)}`,
+        performedBy: by,
+        previousData: { centreId: was },
+        newData: { centreId },
+      }).catch(() => {});
+    }
     return all[i];
   });
 }

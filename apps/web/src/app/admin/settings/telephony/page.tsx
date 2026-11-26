@@ -57,7 +57,7 @@ export default function TelephonySettingsPage() {
   const tel = data.telephony;
   const u = <K extends keyof Form>(k: K) => (v: Form[K]) => setF({ ...f, [k]: v });
   const dirty = JSON.stringify(saved) !== JSON.stringify(f);
-  const webhookUrl = `${origin}/api/telephony/webhook`;
+  const webhookUrl = `${origin}/api/telephony/webhook?key=YOUR_TELEPHONY_WEBHOOK_KEY`;
 
   const runTestCall = async (channelOverride?: "sip" | "android_gateway" | "usb_dongle") => {
     const ch = channelOverride || testChannel;

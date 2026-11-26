@@ -5,6 +5,8 @@ import {
   recordPartnerClick,
 } from "@/lib/partners/store";
 import { jsonWithCors, handleCorsOptions } from "@/lib/cors";
+import { maskPartner } from "@/lib/partners/mask";
+import { clientIp, rateLimited } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -89,6 +91,9 @@ export async function GET(req: Request) {
   if (!code) {
     return jsonWithCors({ error: "Partner code is required" }, { status: 400 });
   }
+  if (rateLimited(`partner-code:${clientIp(req)}`, 40, 10 * 60_000)) {
+    return jsonWithCors({ error: "Too many attempts. Please wait a few minutes." }, { status: 429 });
+  }
 
   if (isDemoPartnerCode(code)) {
     return jsonWithCors({
@@ -111,7 +116,7 @@ export async function GET(req: Request) {
 
   return jsonWithCors({
     ok: true,
-    partner,
+    partner: maskPartner(partner), // codes are shared in links: keep payout details hidden
     admissions,
   });
 }
@@ -165,6 +170,9 @@ export async function POST(req: Request) {
     if (!code || typeof code !== "string") {
       return jsonWithCors({ error: "Partner code is required" }, { status: 400 });
     }
+    if (rateLimited(`partner-code:${clientIp(req)}`, 40, 10 * 60_000)) {
+      return jsonWithCors({ error: "Too many attempts. Please wait a few minutes." }, { status: 429 });
+    }
 
     if (isDemoPartnerCode(code)) {
       return jsonWithCors({
@@ -193,7 +201,7 @@ export async function POST(req: Request) {
 
     return jsonWithCors({
       ok: true,
-      partner,
+      partner: maskPartner(partner),
       admissions,
     });
   } catch (err) {

@@ -3,6 +3,7 @@ import { ingestLead } from "@/lib/crm/store";
 import { register } from "@/lib/live/store";
 import { KIND_LABEL } from "@/lib/live/types";
 import { liveRegistered } from "@/lib/whatsapp/automations";
+import { clientIp, rateLimited } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
  * drops the person into the CRM pipeline (source "Website", interest = session title).
  */
 export async function POST(req: Request) {
+  if (rateLimited(`live-register:${clientIp(req)}`, 10, 60_000)) return NextResponse.json({ error: "Too many sign-ups. Please wait a minute and try again." }, { status: 429 });
   const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   const name = String(b.name ?? "").trim().slice(0, 80);
   const phone = String(b.phone ?? "").trim().slice(0, 20);

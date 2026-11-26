@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { addAttendee } from "@/lib/crm/events-store";
+import { clientIp, rateLimited } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -26,11 +27,16 @@ export async function POST(req: Request) {
   // Honeypot check for bots
   if (b.website) return json({ ok: true });
 
+  if (rateLimited(`events-register:${clientIp(req)}`, 10, 60_000)) return json({ ok: false, error: "Too many submissions. Please wait a minute and try again." }, 429);
+
   const parentName = String(b.parentName || b.name || "").trim();
   const phone = String(b.parentPhone || b.phone || "").trim();
 
   if (!parentName || !phone) {
     return json({ ok: false, error: "Parent name and phone number are required" }, 400);
+  }
+  if (phone.replace(/\D/g, "").length < 10) {
+    return json({ ok: false, error: "Enter a valid 10-digit phone number" }, 400);
   }
 
   const eventCode = String(b.eventCode || b.event || "bmit").trim().toLowerCase();

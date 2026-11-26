@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { safeEqual } from "@/lib/crm/auth";
 import { listLeads, updateLead } from "@/lib/crm/store";
 import { getSettings } from "@/lib/settings/store";
 
@@ -13,6 +14,13 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  // Call events must carry the shared key (…/api/telephony/webhook?key=KEY, or an x-api-key header). Without it
+  // anyone could add notes and links to any lead, or push leads to "Contacted", just by knowing a phone number.
+  const expected = process.env.TELEPHONY_WEBHOOK_KEY || process.env.LEADS_WEBHOOK_KEY;
+  if (!expected) return NextResponse.json({ error: "Set TELEPHONY_WEBHOOK_KEY (or LEADS_WEBHOOK_KEY) on the server first" }, { status: 503 });
+  const given = new URL(req.url).searchParams.get("key") || req.headers.get("x-api-key") || "";
+  if (!given || !safeEqual(given, expected)) return NextResponse.json({ error: "Invalid key" }, { status: 403 });
+
   const body = await req.json().catch(() => ({}));
   const {
     leadId,

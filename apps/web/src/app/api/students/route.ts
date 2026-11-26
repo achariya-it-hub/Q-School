@@ -9,7 +9,9 @@
  *            { rows: [{...}] }           bulk CSV import (Pending). A centre login always adds to its own centre.
  */
 import { NextResponse } from "next/server";
-import { ADMISSION_CENTRES, type PayLink } from "@qschool/shared";
+import { randomBytes } from "crypto";
+import { ADMISSION_CENTRES, studentFeeSummary, type PayLink } from "@qschool/shared";
+import { recordAuditLog } from "@/lib/audit/store";
 import { caller } from "@/lib/students/access";
 import {
   activateStudent,
@@ -131,16 +133,21 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ ok: true, student });
     }
     if (b.action === "setTotalFee") {
-      const student = await setStudentTotalFee(id, Number(b.totalFee));
+      const student = await setStudentTotalFee(id, Number(b.totalFee), who.name);
       return NextResponse.json({ ok: true, student });
     }
     if (b.action === "setCentre") {
       if (who.kind !== "admin") return NextResponse.json({ error: "Only admins can move a student between centres" }, { status: 403 });
-      return NextResponse.json({ ok: true, student: await setCentre(id, String(b.centreId ?? "")) });
+      return NextResponse.json({ ok: true, student: await setCentre(id, String(b.centreId ?? ""), who.name) });
     }
     if (b.action === "payLink") {
       const amount = Math.round(Number(b.amount) * 100) / 100;
       if (!(amount >= 1)) return NextResponse.json({ error: "Enter the amount to collect" }, { status: 400 });
+      // A link can't ask for more than is still due.
+      const feeNow = studentFeeSummary(s);
+      const dueNow = Math.round(((b.totalFee ? Number(b.totalFee) : feeNow.totalFee) - feeNow.paid) * 100) / 100;
+      if (dueNow <= 0) return NextResponse.json({ error: "This student's fee is already fully paid." }, { status: 400 });
+      if (amount > dueNow + 0.009) return NextResponse.json({ error: `The balance due is ₹${dueNow.toLocaleString("en-IN")}. Enter that amount or less.` }, { status: 400 });
       const description = String(b.description ?? "").trim().slice(0, 200) || `Admission fee - ${s.studentName}`;
       const totalFee = b.totalFee ? Number(b.totalFee) : undefined;
       let link: PayLink;
@@ -151,13 +158,24 @@ export async function PATCH(req: Request) {
       } else if (b.provider === "easebuzz") {
         if (!easebuzzConfigured()) return NextResponse.json({ error: "Easebuzz is not set up yet. Add EASEBUZZ_KEY and EASEBUZZ_SALT on the server and restart." }, { status: 400 });
         if (s.phone.replace(/\D/g, "").length < 10) return NextResponse.json({ error: "Add the parent's 10-digit mobile number first (Easebuzz needs it)" }, { status: 400 });
-        const linkId = `EB${s.id.replace(/[^A-Za-z0-9]/g, "")}${Date.now().toString(36).toUpperCase()}`;
+        // Link ids are part of a public URL, so they carry a random part and can't be guessed from a student id + time.
+        const linkId = `EB${s.id.replace(/[^A-Za-z0-9]/g, "")}${Date.now().toString(36).toUpperCase()}${randomBytes(5).toString("hex").toUpperCase()}`;
         link = { provider: "easebuzz", id: linkId, url: `${publicBase(req)}/pay/${linkId}`, amount, description, createdBy: who.name, createdAt: new Date().toISOString(), status: "Created", attempts: [] };
       } else {
         const r = await createPayLink({ amount, description, reference: `${s.id}-${Date.now().toString(36)}`, name: s.parentName, phone: s.phone, email: s.email || undefined, notes: { studentId: s.id, centreId: s.centreId, student: s.studentName }, expireDays: 14 });
         link = { provider: "razorpay", id: r.id, url: r.url, amount, description, createdBy: who.name, createdAt: new Date().toISOString(), status: "Created" };
       }
-      return NextResponse.json({ ok: true, link, student: await addPayLink(id, link, totalFee) });
+      const saved = await addPayLink(id, link, totalFee);
+      await recordAuditLog({
+        action: "CREATE",
+        module: "Fees & Payments",
+        entityId: s.id,
+        entityName: s.studentName,
+        summary: `${link.provider} payment link for ₹${amount.toLocaleString("en-IN")} created for ${s.studentName} (${s.id})`,
+        performedBy: who.name,
+        newData: { linkId: link.id, provider: link.provider, amount },
+      }).catch(() => {});
+      return NextResponse.json({ ok: true, link, student: saved });
     }
     if (b.action === "checkLink") {
       const linkId = String(b.linkId ?? "");
