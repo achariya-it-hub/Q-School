@@ -13,7 +13,8 @@ class PartnerApiService {
   String _baseUrl = defaultBaseUrl();
 
   static String defaultBaseUrl() {
-    return 'https://erp.theqschool.com';
+    // Override for local testing: flutter run --dart-define=API_BASE=http://localhost:3000
+    return const String.fromEnvironment('API_BASE', defaultValue: 'https://erp.theqschool.com');
   }
 
   String get baseUrl => _baseUrl;

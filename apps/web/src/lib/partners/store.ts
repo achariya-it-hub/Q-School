@@ -219,6 +219,17 @@ export async function createPartnerAdmission(input: NewPartnerAdmissionInput): P
       throw new Error(`Partner code "${partner.code}" is currently deactivated.`);
     }
 
+    // The same partner re-submitting the same child (double tap / retry) must not create a second
+    // admission record — that would double the commission.
+    {
+      const key10 = (s: string) => String(s || "").replace(/\D/g, "").slice(-10);
+      const nm = (s: string) => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+      const prior = (await listPartnerAdmissions()).find(
+        (a) => a.partnerId === partner.id && key10(a.phone) === key10(input.phone) && nm(a.studentName) === nm(input.studentName),
+      );
+      if (prior) return { admission: prior, studentId: prior.studentId, isDuplicateStudent: true };
+    }
+
     // 1. Concession & Referral Bonus Calculations (as per Q-School Policy)
     const originalFee = Number(input.originalFee) || Number(input.feeAmount) || 0;
     const concessionType: ConcessionType = input.concessionType || "none";

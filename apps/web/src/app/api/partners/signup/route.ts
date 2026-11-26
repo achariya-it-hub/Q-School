@@ -1,6 +1,7 @@
 import { createPartner, listPartners, type PartnerCategory } from "@/lib/partners/store";
 import { jsonWithCors, handleCorsOptions } from "@/lib/cors";
 import { ingestLead } from "@/lib/crm/store";
+import { clientIp, rateLimited } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,10 @@ export async function POST(req: Request) {
       body = await req.json();
     } catch {
       return jsonWithCors({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    if (rateLimited(`partner-signup:${clientIp(req)}`, 8, 10 * 60_000)) {
+      return jsonWithCors({ error: "Too many sign-ups from this network. Please try again later." }, { status: 429 });
     }
 
     const name = String(body.name || "").trim();
@@ -49,8 +54,7 @@ export async function POST(req: Request) {
     if (dup) {
       return jsonWithCors(
         {
-          error: `An account already exists with this phone/email or code. Your referral code is: ${dup.code}`,
-          partner: dup,
+          error: `An account already exists with this phone/email or code. Sign in with your referral code (or Gmail), or contact Q-School support if you've forgotten it.`,
         },
         { status: 409 }
       );

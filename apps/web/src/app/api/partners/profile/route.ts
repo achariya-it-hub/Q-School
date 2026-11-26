@@ -32,6 +32,19 @@ export async function PATCH(req: Request) {
       return jsonWithCors({ error: "Partner not found" }, { status: 404 });
     }
 
+    if (bankDetails) {
+      const merged = mergeBankDetails(partner.bankDetails, bankDetails);
+      const acc = String(merged.accountNumber || "").replace(/\s/g, "");
+      const ifsc = String(merged.ifscCode || "").trim().toUpperCase();
+      const upi = String(merged.upiId || "").trim();
+      if (acc && !/^\d{9,18}$/.test(acc)) return jsonWithCors({ error: "Account number must be 9–18 digits" }, { status: 400 });
+      if (ifsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) return jsonWithCors({ error: "IFSC code looks wrong (e.g. HDFC0001234)" }, { status: 400 });
+      if (upi && !/^[\w.\-]{2,}@[A-Za-z]{2,}$/.test(upi)) return jsonWithCors({ error: "UPI ID looks wrong (e.g. name@bank)" }, { status: 400 });
+      if ((acc && !ifsc) || (!acc && ifsc)) return jsonWithCors({ error: "Enter both the account number and IFSC code" }, { status: 400 });
+      bankDetails.accountNumber = acc || undefined;
+      bankDetails.ifscCode = ifsc || undefined;
+    }
+
     const updated = await updatePartner(partner.id, {
       ...(phone ? { phone: phone.trim() } : {}),
       ...(email ? { email: email.trim().toLowerCase() } : {}),

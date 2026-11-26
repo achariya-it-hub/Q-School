@@ -48,6 +48,14 @@ export async function POST(req: Request) {
       return jsonWithCors({ error: "Grade/Class is required" }, { status: 400 });
     }
 
+    for (const [label, v] of [["Fee", body.feeAmount], ["Original fee", body.originalFee]] as const) {
+      if (v === undefined || v === null || (v as unknown) === "") continue;
+      const n = Number(v);
+      if (!Number.isFinite(n) || n < 0 || n > 500000) {
+        return jsonWithCors({ error: `${label} must be between ₹0 and ₹5,00,000` }, { status: 400 });
+      }
+    }
+
     const result = await createPartnerAdmission(body);
 
     return jsonWithCors({
