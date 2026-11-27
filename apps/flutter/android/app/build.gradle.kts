@@ -29,7 +29,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.qschool.qschool"
+        applicationId = "com.qschool"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

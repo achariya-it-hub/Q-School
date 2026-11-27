@@ -180,7 +180,7 @@ class GoogleAuthService {
           details.contains('sign_in_failed') ||
           details.contains('developer_error')) {
         throw const GoogleAuthException(
-          'Google Sign-In needs Android OAuth SHA-1 / google-services.json configured for package com.qschool.qschool (see docs/09-flutter-google-signin.md).',
+          'Google Sign-In needs Android OAuth SHA-1 / google-services.json configured for package com.qschool (see docs/09-flutter-google-signin.md).',
         );
       }
       if (kIsWeb && (details.contains('client_id') || details.contains('idpiframe'))) {
