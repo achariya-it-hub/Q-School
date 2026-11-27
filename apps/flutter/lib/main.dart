@@ -7,7 +7,8 @@ import 'screens/course_detail.dart';
 import 'screens/help_support.dart';
 import 'screens/interests.dart';
 import 'screens/live_class.dart';
-import 'screens/login.dart';
+import 'screens/role_select.dart';
+import 'screens/splash.dart';
 import 'screens/notes.dart';
 import 'screens/notifications.dart';
 import 'screens/offline.dart';
@@ -18,7 +19,6 @@ import 'screens/settings.dart';
 import 'screens/shell.dart';
 import 'screens/signup.dart';
 import 'screens/webinars.dart';
-import 'screens/welcome.dart';
 import 'screens/workshops.dart';
 import 'partner/login_screen.dart';
 import 'theme.dart';
@@ -40,8 +40,8 @@ class QSchoolApp extends StatelessWidget {
       theme: buildTheme(),
       initialRoute: '/',
       routes: {
-        '/': (_) => const WelcomeScreen(),
-        '/login': (_) => const LoginScreen(),
+        '/': (_) => const SplashScreen(),
+        '/login': (_) => const RoleSelectScreen(),
         '/signup': (_) => const SignupScreen(),
         '/interests': (_) => const InterestsScreen(),
         '/app': (_) => const AppShell(),

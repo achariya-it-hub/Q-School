@@ -11,14 +11,17 @@ import '../partner/partner_shell.dart';
 import '../partner/set_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.initialRole = 0});
+
+  /// Chosen on the role screen: 0 Student, 1 Teacher, 2 Admin, 3 Partner.
+  final int initialRole;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  int _selectedRole = 0; // 0: Student, 1: Teacher, 2: Admin, 3: Partner
+  late int _selectedRole = widget.initialRole; // 0: Student, 1: Teacher, 2: Admin, 3: Partner
   bool _securePassword = true;
   bool _isLoading = false;
   bool _isGoogleLoading = false;
@@ -276,20 +279,31 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Role Selector Segment
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEEF5F3),
-                      borderRadius: BorderRadius.circular(16),
+                  // Role chosen on the previous screen
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3F4F0),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.badge_outlined, size: 16, color: QS.teal),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${['Student', 'Teacher', 'Admin', 'Partner'][_selectedRole]} sign-in',
+                            style: const TextStyle(color: QS.teal, fontWeight: FontWeight.w800, fontSize: 13),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        _roleChip(0, 'Student'),
-                        _roleChip(1, 'Teacher'),
-                        _roleChip(2, 'Admin'),
-                        _roleChip(3, 'Partner'),
-                      ],
+                  ),
+                  Center(
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      child: const Text('Not your role? Change', style: TextStyle(color: QS.sub, fontSize: 12.5)),
                     ),
                   ),
                   const SizedBox(height: 14),
