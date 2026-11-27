@@ -186,15 +186,7 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  icon: const Icon(Icons.settings, color: QS.sub, size: 20),
-                  onPressed: _showServerSettings,
-                  tooltip: 'Server Settings',
-                ),
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
               // Brand logo
               const Center(child: QSchoolLogo(size: 96)),
               const SizedBox(height: 24),
