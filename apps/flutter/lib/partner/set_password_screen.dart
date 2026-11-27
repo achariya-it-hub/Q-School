@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
+import '../widgets/brand_logo.dart';
 import 'api_service.dart';
 import 'models.dart';
 
@@ -89,7 +90,7 @@ class _PartnerSetPasswordScreenState extends State<PartnerSetPasswordScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 30),
-                const Center(child: Icon(Icons.lock_reset_rounded, color: QS.teal, size: 54)),
+                const Center(child: QSchoolLogo(size: 72)),
                 const SizedBox(height: 18),
                 const Center(
                   child: Text('Create your password', style: TextStyle(color: QS.ink, fontSize: 22, fontWeight: FontWeight.bold)),

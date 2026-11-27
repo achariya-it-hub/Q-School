@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../screens/login.dart';
 import '../services/google_auth_service.dart';
 import '../theme.dart';
+import '../widgets/brand_logo.dart';
 import '../widgets/google_logo.dart';
 import 'api_service.dart';
 import 'models.dart';
@@ -194,34 +195,8 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Brand Icon
-              Center(
-                child: Container(
-                  height: 72,
-                  width: 72,
-                  decoration: BoxDecoration(
-                    gradient: QS.primaryGradient,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: QS.teal.withOpacity(0.25),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'Q',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              // Brand logo
+              const Center(child: QSchoolLogo(size: 96)),
               const SizedBox(height: 24),
 
               // Title
