@@ -120,10 +120,10 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
 
   InputDecoration _dec(String hint, IconData icon) => InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontWeight: FontWeight.normal, letterSpacing: 0),
-        prefixIcon: Icon(icon, color: QS.mint, size: 22),
+        hintStyle: TextStyle(color: Color(0xFF94A6A1), fontWeight: FontWeight.normal, letterSpacing: 0),
+        prefixIcon: Icon(icon, color: QS.teal, size: 22),
         filled: true,
-        fillColor: Colors.black.withOpacity(0.25),
+        fillColor: QS.field,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
       );
 
@@ -178,7 +178,7 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: QS.deeper,
+        backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -188,7 +188,7 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
               Align(
                 alignment: Alignment.topRight,
                 child: IconButton(
-                  icon: const Icon(Icons.settings, color: Colors.white54, size: 20),
+                  icon: const Icon(Icons.settings, color: QS.sub, size: 20),
                   onPressed: _showServerSettings,
                   tooltip: 'Server Settings',
                 ),
@@ -204,7 +204,7 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: QS.mint.withOpacity(0.2),
+                        color: QS.teal.withOpacity(0.25),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
@@ -229,7 +229,7 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                 child: Text(
                   'Partner & Referrals',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: QS.ink,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5,
@@ -241,7 +241,7 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                 child: Text(
                   'Make on-field student admissions, link to ERP, and track your commission earnings.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white60, fontSize: 13, height: 1.4),
+                  style: TextStyle(color: QS.sub, fontSize: 13, height: 1.4),
                 ),
               ),
               const SizedBox(height: 36),
@@ -250,12 +250,12 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
               Container(
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
-                  color: QS.darkSurface,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                  border: Border.all(color: QS.line),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withOpacity(0.06),
                       blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),
@@ -267,37 +267,37 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                     if (_codeMode) ...[
                       const Text(
                         'YOUR REFERRAL CODE',
-                        style: TextStyle(color: QS.mint, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
+                        style: TextStyle(color: QS.teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
                       ),
                       const SizedBox(height: 10),
                       TextField(
                         controller: _codeController,
                         textCapitalization: TextCapitalization.characters,
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                        style: const TextStyle(color: QS.ink, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.5),
                         decoration: _dec('e.g. MKT-BALA', Icons.qr_code),
                       ),
                       const SizedBox(height: 8),
                       const Text(
                         'For partners who used a code before. You will be asked to create a password right after.',
-                        style: TextStyle(color: Colors.white54, fontSize: 11.5, height: 1.4),
+                        style: TextStyle(color: QS.sub, fontSize: 11.5, height: 1.4),
                       ),
                     ] else ...[
                       const Text(
                         'MOBILE NUMBER OR EMAIL',
-                        style: TextStyle(color: QS.mint, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
+                        style: TextStyle(color: QS.teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
                       ),
                       const SizedBox(height: 10),
                       TextField(
                         controller: _idController,
                         keyboardType: TextInputType.emailAddress,
                         autofillHints: const [AutofillHints.username],
-                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                        style: const TextStyle(color: QS.ink, fontSize: 16, fontWeight: FontWeight.w600),
                         decoration: _dec('98765 43210 or you@email.com', Icons.person_outline),
                       ),
                       const SizedBox(height: 14),
                       const Text(
                         'PASSWORD',
-                        style: TextStyle(color: QS.mint, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
+                        style: TextStyle(color: QS.teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
                       ),
                       const SizedBox(height: 10),
                       TextField(
@@ -305,10 +305,10 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                         obscureText: _obscure,
                         autofillHints: const [AutofillHints.password],
                         onSubmitted: (_) => _signIn(),
-                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                        style: const TextStyle(color: QS.ink, fontSize: 16, fontWeight: FontWeight.w600),
                         decoration: _dec('Your password', Icons.lock_outline).copyWith(
                           suffixIcon: IconButton(
-                            icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: Colors.white54, size: 20),
+                            icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: QS.sub, size: 20),
                             onPressed: () => setState(() => _obscure = !_obscure),
                           ),
                         ),
@@ -376,27 +376,27 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
+                        Expanded(child: Divider(color: QS.line)),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: Text(
                             'OR',
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.45),
+                              color: QS.sub,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1,
                             ),
                           ),
                         ),
-                        Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.12))),
+                        Expanded(child: Divider(color: QS.line)),
                       ],
                     ),
                     const SizedBox(height: 16),
                     GmailSignInButton(
                       loading: _googleLoading,
                       label: 'Sign in with Gmail',
-                      darkSurface: true,
+                      darkSurface: false,
                       onTap: _loginWithGmail,
                     ),
                     const SizedBox(height: 10),
@@ -408,7 +408,7 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                           backgroundColor: Colors.transparent,
                           builder: (_) => const PartnerSignupSheet(),
                         ),
-                        child: const Text('New here? Create a partner account', style: TextStyle(color: QS.mint, fontWeight: FontWeight.w700, fontSize: 13)),
+                        child: const Text('New here? Create a partner account', style: TextStyle(color: QS.teal, fontWeight: FontWeight.w700, fontSize: 13)),
                       ),
                     ),
                     Center(
@@ -420,13 +420,13 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                         child: Text(
                           _codeMode ? 'Back to mobile / email sign-in' : 'Used a referral code before? Sign in once with your code',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white60, fontSize: 12),
+                          style: const TextStyle(color: QS.sub, fontSize: 12),
                         ),
                       ),
                     ),
                     if (!_codeMode)
                       const Center(
-                        child: Text('Forgot your password? Ask Q-School admin to reset it.', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                        child: Text('Forgot your password? Ask Q-School admin to reset it.', style: TextStyle(color: Color(0xFF94A6A1), fontSize: 11)),
                       ),
                   ],
                 ),
@@ -436,7 +436,7 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
               Center(
                 child: Text(
                   'Connected to Q-School Cloud ERP • erp.theqschool.com',
-                  style: TextStyle(color: Colors.white.withOpacity(0.25), fontSize: 11),
+                  style: TextStyle(color: Color(0xFF94A6A1), fontSize: 11),
                 ),
               ),
             ],

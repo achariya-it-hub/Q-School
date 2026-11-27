@@ -63,14 +63,14 @@ class _PartnerSetPasswordScreenState extends State<PartnerSetPasswordScreen> {
 
   InputDecoration _dec(String hint) => InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-        prefixIcon: const Icon(Icons.lock_outline, color: QS.mint, size: 22),
+        hintStyle: TextStyle(color: Color(0xFF94A6A1)),
+        prefixIcon: const Icon(Icons.lock_outline, color: QS.teal, size: 22),
         suffixIcon: IconButton(
-          icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: Colors.white54, size: 20),
+          icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: QS.sub, size: 20),
           onPressed: () => setState(() => _obscure = !_obscure),
         ),
         filled: true,
-        fillColor: Colors.black.withOpacity(0.25),
+        fillColor: QS.field,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
       );
 
@@ -81,7 +81,7 @@ class _PartnerSetPasswordScreenState extends State<PartnerSetPasswordScreen> {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: QS.deeper,
+        backgroundColor: Colors.white,
         body: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -89,36 +89,36 @@ class _PartnerSetPasswordScreenState extends State<PartnerSetPasswordScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 30),
-                const Center(child: Icon(Icons.lock_reset_rounded, color: QS.mint, size: 54)),
+                const Center(child: Icon(Icons.lock_reset_rounded, color: QS.teal, size: 54)),
                 const SizedBox(height: 18),
                 const Center(
-                  child: Text('Create your password', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                  child: Text('Create your password', style: TextStyle(color: QS.ink, fontSize: 22, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Hi ${p.name}! To keep your commission and payout details safe, sign-in now uses a password. '
                   'Next time, sign in with $login and this password.',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white60, fontSize: 13, height: 1.4),
+                  style: const TextStyle(color: QS.sub, fontSize: 13, height: 1.4),
                 ),
                 const SizedBox(height: 28),
                 Container(
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(color: QS.darkSurface, borderRadius: BorderRadius.circular(24)),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), border: Border.all(color: QS.line)),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('NEW PASSWORD', style: TextStyle(color: QS.mint, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+                      const Text('NEW PASSWORD', style: TextStyle(color: QS.teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
                       const SizedBox(height: 10),
-                      TextField(controller: _pw1, obscureText: _obscure, style: const TextStyle(color: Colors.white), decoration: _dec('At least 8 characters')),
+                      TextField(controller: _pw1, obscureText: _obscure, style: const TextStyle(color: QS.ink), decoration: _dec('At least 8 characters')),
                       const SizedBox(height: 14),
-                      const Text('CONFIRM PASSWORD', style: TextStyle(color: QS.mint, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+                      const Text('CONFIRM PASSWORD', style: TextStyle(color: QS.teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
                       const SizedBox(height: 10),
                       TextField(
                         controller: _pw2,
                         obscureText: _obscure,
                         onSubmitted: (_) => _save(),
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: QS.ink),
                         decoration: _dec('Type it again'),
                       ),
                       if (_error.isNotEmpty) ...[
