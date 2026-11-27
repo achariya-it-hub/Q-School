@@ -6,7 +6,9 @@ import {
 } from "@/lib/partners/store";
 import { jsonWithCors, handleCorsOptions } from "@/lib/cors";
 import { maskPartner } from "@/lib/partners/mask";
-import { clientIp, rateLimited } from "@/lib/rate-limit";
+import { clientIp, loginBlocked, loginFailed, loginSucceeded, rateLimited } from "@/lib/rate-limit";
+import { listPartners } from "@/lib/partners/store";
+import { partnerAuthorised, signPartnerToken, verifyPassword, withoutSecrets } from "@/lib/partners/session";
 
 export const dynamic = "force-dynamic";
 
@@ -112,7 +114,7 @@ export async function GET(req: Request) {
     await recordPartnerClick(code);
   }
 
-  const admissions = await listPartnerAdmissions(partner.id);
+  const admissions = partnerAuthorised(req, partner) ? await listPartnerAdmissions(partner.id) : [];
 
   return jsonWithCors({
     ok: true,
@@ -163,7 +165,38 @@ export async function POST(req: Request) {
       }
 
       const admissions = await listPartnerAdmissions(partner.id);
-      return jsonWithCors({ ok: true, partner, admissions });
+      return jsonWithCors({ ok: true, partner: withoutSecrets(partner), admissions, token: signPartnerToken(partner) });
+    }
+
+    // Mobile number / email + password
+    const identifier = typeof body?.identifier === "string" ? body.identifier.trim() : "";
+    if (identifier) {
+      const password = typeof body?.password === "string" ? body.password : "";
+      const failKey = `partner-login:${clientIp(req)}:${identifier.toLowerCase()}`;
+      if (loginBlocked(failKey) || rateLimited(`partner-login-ip:${clientIp(req)}`, 30, 10 * 60_000)) {
+        return jsonWithCors({ error: "Too many attempts. Please wait a few minutes and try again." }, { status: 429 });
+      }
+      const email = identifier.toLowerCase();
+      const digits = identifier.replace(/\D/g, "").slice(-10);
+      const found = (await listPartners()).find(
+        (p) => p.email.toLowerCase() === email || (digits.length === 10 && p.phone.replace(/\D/g, "").slice(-10) === digits),
+      );
+      const good = verifyPassword(password, found?.passwordHash);
+      if (!found || !good) {
+        loginFailed(failKey);
+        return jsonWithCors({ error: "Wrong mobile/email or password." }, { status: 401 });
+      }
+      if (found.status !== "active") {
+        return jsonWithCors({ error: "This partner account is inactive. Please contact management." }, { status: 403 });
+      }
+      loginSucceeded(failKey);
+      return jsonWithCors({
+        ok: true,
+        partner: withoutSecrets(found),
+        admissions: await listPartnerAdmissions(found.id),
+        token: signPartnerToken(found),
+        needsPassword: !!found.mustChangePassword,
+      });
     }
 
     const code = body?.code;
@@ -197,12 +230,22 @@ export async function POST(req: Request) {
       );
     }
 
+    if (partner.passwordHash) {
+      return jsonWithCors(
+        { error: "This account now uses a password. Sign in with your mobile number or email and password.", passwordRequired: true },
+        { status: 403 },
+      );
+    }
+
     const admissions = await listPartnerAdmissions(partner.id);
 
+    // Legacy code-only account: let them in this one time, and tell the app to make them set a password.
     return jsonWithCors({
       ok: true,
       partner: maskPartner(partner),
       admissions,
+      token: signPartnerToken(partner),
+      needsPassword: true,
     });
   } catch (err) {
     return jsonWithCors({ error: (err as Error).message }, { status: 500 });

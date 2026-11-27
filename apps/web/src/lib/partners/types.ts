@@ -113,6 +113,10 @@ export interface Partner {
   bankDetails?: PartnerBankDetails;
   stats: PartnerStats;
   notes?: string;
+  /** scrypt "salt:hash" — never sent to clients (see session.ts withoutSecrets). */
+  passwordHash?: string;
+  /** Set when an admin issued a temporary password: the partner must choose their own on next sign-in. */
+  mustChangePassword?: boolean;
   createdAt: string; // ISO
   updatedAt: string; // ISO
 }

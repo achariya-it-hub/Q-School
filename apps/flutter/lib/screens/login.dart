@@ -8,6 +8,7 @@ import '../widgets/kit.dart';
 import '../partner/api_service.dart';
 import '../partner/models.dart';
 import '../partner/partner_shell.dart';
+import '../partner/set_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -196,12 +197,12 @@ class _LoginScreenState extends State<LoginScreen> {
         final partner = res['partner'] as Partner;
         final admissions = res['admissions'] as List<PartnerAdmission>;
         if (!mounted) return;
+        final shell = PartnerShell(partner: partner, initialAdmissions: admissions);
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (_) => PartnerShell(
-              partner: partner,
-              initialAdmissions: admissions,
-            ),
+            builder: (_) => res['needsPassword'] == true
+                ? PartnerSetPasswordScreen(partner: partner, next: shell)
+                : shell,
           ),
           (_) => false,
         );
@@ -685,6 +686,7 @@ class _PartnerSignupSheetState extends State<PartnerSignupSheet> {
   final _orgCtrl = TextEditingController();
   final _upiCtrl = TextEditingController();
   final _codeCtrl = TextEditingController();
+  final _pwCtrl = TextEditingController();
 
   String _category = 'Education Consultant';
   String _centreId = 'all';
@@ -729,6 +731,11 @@ class _PartnerSignupSheetState extends State<PartnerSignupSheet> {
       setState(() => _error = 'Please enter a valid email address');
       return;
     }
+    final pw = _pwCtrl.text;
+    if (pw.length < 8 || !RegExp(r'[A-Za-z]').hasMatch(pw) || !RegExp(r'\d').hasMatch(pw)) {
+      setState(() => _error = 'Choose a password of at least 8 characters with a letter and a number');
+      return;
+    }
 
     setState(() {
       _submitting = true;
@@ -745,6 +752,7 @@ class _PartnerSignupSheetState extends State<PartnerSignupSheet> {
         centreId: _centreId,
         upiId: _upiCtrl.text.trim(),
         requestedCode: _codeCtrl.text.trim().toUpperCase(),
+        password: pw,
       );
 
       final partner = res['partner'] as Partner;
@@ -987,6 +995,10 @@ class _PartnerSignupSheetState extends State<PartnerSignupSheet> {
                   ),
                   const SizedBox(height: 12),
 
+                  _fieldLabel('Create a Password *'),
+                  _textInput(_pwCtrl, 'At least 8 characters, letters + a number', Icons.lock_outline, obscure: true),
+                  const SizedBox(height: 12),
+
                   _fieldLabel('Preferred Referral Code (Optional)'),
                   _textInput(_codeCtrl, 'e.g. MKT-BALA (auto-generated if empty)', Icons.tag_rounded),
                   const SizedBox(height: 18),
@@ -1076,6 +1088,7 @@ class _PartnerSignupSheetState extends State<PartnerSignupSheet> {
     String hint,
     IconData icon, {
     TextInputType keyboard = TextInputType.text,
+    bool obscure = false,
   }) {
     return Container(
       height: 46,
@@ -1093,6 +1106,7 @@ class _PartnerSignupSheetState extends State<PartnerSignupSheet> {
             child: TextField(
               controller: controller,
               keyboardType: keyboard,
+              obscureText: obscure,
               style: const TextStyle(fontSize: 13, color: QS.ink),
               decoration: InputDecoration(
                 hintText: hint,

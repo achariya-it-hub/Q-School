@@ -3,6 +3,7 @@ import { maskPartner, mergeBankDetails } from "@/lib/partners/mask";
 import { recordAuditLog } from "@/lib/audit/store";
 import { clientIp, rateLimited } from "@/lib/rate-limit";
 import { jsonWithCors, handleCorsOptions } from "@/lib/cors";
+import { partnerAuthorised } from "@/lib/partners/session";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,9 @@ export async function PATCH(req: Request) {
     const partner = await getPartnerByCode(code);
     if (!partner) {
       return jsonWithCors({ error: "Partner not found" }, { status: 404 });
+    }
+    if (!partnerAuthorised(req, partner)) {
+      return jsonWithCors({ error: "Please sign in again.", authRequired: true }, { status: 401 });
     }
 
     if (bankDetails) {

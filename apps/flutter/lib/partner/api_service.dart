@@ -22,46 +22,75 @@ class PartnerApiService {
     _baseUrl = url.replaceAll(RegExp(r'/+$'), '');
   }
 
-  /// Authenticate/lookup partner by referral code
-  Future<Map<String, dynamic>> loginWithCode(String code) async {
-    final cleanCode = code.trim().toUpperCase();
-    final uri = Uri.parse('$_baseUrl/api/partners/auth');
+  // ── Session token (set by every sign-in; sent on later calls) ──────────────
+  String? _token;
+  String? get token => _token;
+  void setToken(String? t) => _token = (t == null || t.isEmpty) ? null : t;
+  void signOut() => _token = null;
+
+  Map<String, String> _headers() => {
+        'Content-Type': 'application/json',
+        if (_token != null) 'Authorization': 'Bearer $_token',
+      };
+
+  Map<String, dynamic> _json(http.Response res) {
     try {
-      final res = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'code': cleanCode}),
-      );
-
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      if (res.statusCode != 200 || data['ok'] != true) {
-        throw Exception(data['error'] ?? 'Partner verification failed');
-      }
-
-      final partner = Partner.fromJson(data['partner']);
-      final admissionsList = (data['admissions'] as List? ?? [])
-          .map((a) => PartnerAdmission.fromJson(a))
-          .toList();
-
-      return {
-        'partner': partner,
-        'admissions': admissionsList,
-      };
-    } catch (e) {
-      // In case browser preflight or POST fails, attempt GET fallback
-      final getUri = Uri.parse('$_baseUrl/api/partners/auth?code=${Uri.encodeComponent(cleanCode)}');
-      final getRes = await http.get(getUri);
-      final getData = jsonDecode(getRes.body) as Map<String, dynamic>;
-      if (getRes.statusCode != 200 || getData['ok'] != true) {
-        throw Exception(getData['error'] ?? 'Partner verification failed');
-      }
-      return {
-        'partner': Partner.fromJson(getData['partner']),
-        'admissions': (getData['admissions'] as List? ?? [])
-            .map((a) => PartnerAdmission.fromJson(a))
-            .toList(),
-      };
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    } catch (_) {
+      throw Exception('Server error (${res.statusCode}). Please try again.');
     }
+  }
+
+  Map<String, dynamic> _signedIn(Map<String, dynamic> data) {
+    setToken(data['token']?.toString() ?? data['partnerToken']?.toString());
+    return {
+      'partner': Partner.fromJson(data['partner']),
+      'admissions': (data['admissions'] as List? ?? []).map((a) => PartnerAdmission.fromJson(a)).toList(),
+      'needsPassword': data['needsPassword'] == true,
+    };
+  }
+
+  /// Sign in with mobile number (or email) + password
+  Future<Map<String, dynamic>> loginWithPassword(String identifier, String password) async {
+    final res = await http.post(
+      Uri.parse('$_baseUrl/api/partners/auth'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'identifier': identifier.trim(), 'password': password}),
+    );
+    final data = _json(res);
+    if (res.statusCode != 200 || data['ok'] != true) {
+      throw Exception(data['error'] ?? 'Sign-in failed');
+    }
+    return _signedIn(data);
+  }
+
+  /// One-time sign-in for existing partners who only have a referral code.
+  /// The app must then make them set a password.
+  Future<Map<String, dynamic>> loginWithCode(String code) async {
+    final res = await http.post(
+      Uri.parse('$_baseUrl/api/partners/auth'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'code': code.trim().toUpperCase()}),
+    );
+    final data = _json(res);
+    if (res.statusCode != 200 || data['ok'] != true) {
+      throw Exception(data['error'] ?? 'Partner verification failed');
+    }
+    return _signedIn(data);
+  }
+
+  /// Set (or change) the sign-in password. `currentPassword` is required when one already exists.
+  Future<void> setPassword({required String newPassword, String? currentPassword}) async {
+    final res = await http.post(
+      Uri.parse('$_baseUrl/api/partners/password'),
+      headers: _headers(),
+      body: jsonEncode({'newPassword': newPassword, if (currentPassword != null) 'currentPassword': currentPassword}),
+    );
+    final data = _json(res);
+    if (res.statusCode != 200 || data['ok'] != true) {
+      throw Exception(data['error'] ?? 'Could not set the password');
+    }
+    setToken(data['token']?.toString());
   }
 
   /// Authenticate/lookup partner by verified Google OAuth tokens
@@ -90,6 +119,7 @@ class PartnerApiService {
       throw Exception(data['error'] ?? 'Partner Google sign-in failed');
     }
 
+    setToken(data['token']?.toString());
     final partner = Partner.fromJson(data['partner']);
     final admissionsList = (data['admissions'] as List? ?? [])
         .map((a) => PartnerAdmission.fromJson(a))
@@ -107,7 +137,7 @@ class PartnerApiService {
     final uri = Uri.parse('$_baseUrl/api/partners/admissions');
     final res = await http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode(req.toJson()),
     );
 
@@ -129,7 +159,7 @@ class PartnerApiService {
   /// Fetch partner's admissions history
   Future<List<PartnerAdmission>> fetchAdmissions(String partnerCode) async {
     final uri = Uri.parse('$_baseUrl/api/partners/admissions?code=${Uri.encodeComponent(partnerCode)}');
-    final res = await http.get(uri);
+    final res = await http.get(uri, headers: _headers());
 
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     if (res.statusCode != 200 || data['ok'] != true) {
@@ -152,6 +182,7 @@ class PartnerApiService {
     String? centreId,
     String? upiId,
     String? requestedCode,
+    String? password,
   }) async {
     final uri = Uri.parse('$_baseUrl/api/partners/signup');
     final res = await http.post(
@@ -166,6 +197,7 @@ class PartnerApiService {
         'centreId': centreId ?? 'all',
         'upiId': upiId?.trim() ?? '',
         'code': requestedCode?.trim().toUpperCase() ?? '',
+        'password': password ?? '',
       }),
     );
 
@@ -174,6 +206,7 @@ class PartnerApiService {
       throw Exception(data['error'] ?? 'Partner registration failed');
     }
 
+    setToken(data['token']?.toString());
     final partner = Partner.fromJson(data['partner']);
     return {
       'partner': partner,
@@ -189,7 +222,7 @@ class PartnerApiService {
     final uri = Uri.parse('$_baseUrl/api/partners/profile');
     final res = await http.patch(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: _headers(),
       body: jsonEncode({
         'code': code,
         'bankDetails': bankDetails.toJson(),

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/lib/crm/auth";
 import { createPartner, listPartnerAdmissions, listPartners, type NewPartnerInput } from "@/lib/partners/store";
+import { withoutSecrets } from "@/lib/partners/session";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export async function GET() {
 
     return NextResponse.json({
       ok: true,
-      partners,
+      partners: partners.map(withoutSecrets),
       admissions,
       stats: {
         totalPartners: partners.length,

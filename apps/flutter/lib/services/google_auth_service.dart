@@ -134,6 +134,7 @@ class GoogleAuthService {
           if (role == 'partner') {
             if (body['partnerFound'] == true && body['partner'] != null) {
               matchedPartner = Partner.fromJson(body['partner'] as Map<String, dynamic>);
+              PartnerApiService().setToken(body['partnerToken']?.toString());
               admissions = (body['admissions'] as List? ?? [])
                   .map((a) => PartnerAdmission.fromJson(a as Map<String, dynamic>))
                   .toList();

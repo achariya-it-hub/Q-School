@@ -1,5 +1,6 @@
 import { createPartnerAdmission, getPartnerByCode, listPartnerAdmissions, type NewPartnerAdmissionInput } from "@/lib/partners/store";
 import { jsonWithCors, handleCorsOptions } from "@/lib/cors";
+import { partnerAuthorised } from "@/lib/partners/session";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,9 @@ export async function GET(req: Request) {
   const partner = await getPartnerByCode(code);
   if (!partner) {
     return jsonWithCors({ error: "Invalid partner code" }, { status: 404 });
+  }
+  if (!partnerAuthorised(req, partner)) {
+    return jsonWithCors({ error: "Please sign in again.", authRequired: true }, { status: 401 });
   }
 
   const admissions = await listPartnerAdmissions(partner.id);
@@ -54,6 +58,11 @@ export async function POST(req: Request) {
       if (!Number.isFinite(n) || n < 0 || n > 500000) {
         return jsonWithCors({ error: `${label} must be between ₹0 and ₹5,00,000` }, { status: 400 });
       }
+    }
+
+    const submitting = await getPartnerByCode(body.partnerCode);
+    if (submitting && !partnerAuthorised(req, submitting)) {
+      return jsonWithCors({ error: "Please sign in again.", authRequired: true }, { status: 401 });
     }
 
     const result = await createPartnerAdmission(body);

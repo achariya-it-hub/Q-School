@@ -1,4 +1,5 @@
-import { createPartner, listPartners, type PartnerCategory } from "@/lib/partners/store";
+import { createPartner, listPartners, updatePartner, type PartnerCategory } from "@/lib/partners/store";
+import { hashPassword, passwordProblem, signPartnerToken, withoutSecrets } from "@/lib/partners/session";
 import { jsonWithCors, handleCorsOptions } from "@/lib/cors";
 import { ingestLead } from "@/lib/crm/store";
 import { clientIp, rateLimited } from "@/lib/rate-limit";
@@ -39,6 +40,12 @@ export async function POST(req: Request) {
     }
     if (!email || !email.includes("@")) {
       return jsonWithCors({ error: "A valid email address is required" }, { status: 400 });
+    }
+
+    const password = String(body.password || "");
+    const pwProblem = password ? passwordProblem(password) : "Please choose a password (update the app if you can't see this field)";
+    if (pwProblem) {
+      return jsonWithCors({ error: pwProblem }, { status: 400 });
     }
 
     // Check if phone or email is already registered
@@ -86,9 +93,12 @@ export async function POST(req: Request) {
       message: `New Partner Enrolled: ${category} (${organization || "Independent"}). Referral Code: ${newPartner.code}`,
     }).catch(() => {});
 
+    const protectedPartner = (await updatePartner(newPartner.id, { passwordHash: hashPassword(password) })) || newPartner;
+
     return jsonWithCors({
       ok: true,
-      partner: newPartner,
+      partner: withoutSecrets(protectedPartner),
+      token: signPartnerToken(protectedPartner),
       message: "Partner account created successfully! You can now start referring students.",
     });
   } catch (err: any) {

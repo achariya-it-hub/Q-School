@@ -6,6 +6,7 @@ import '../widgets/google_logo.dart';
 import 'api_service.dart';
 import 'models.dart';
 import 'partner_shell.dart';
+import 'set_password_screen.dart';
 
 class PartnerLoginScreen extends StatefulWidget {
   const PartnerLoginScreen({super.key});
@@ -16,6 +17,10 @@ class PartnerLoginScreen extends StatefulWidget {
 
 class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
   final _codeController = TextEditingController();
+  final _idController = TextEditingController();
+  final _pwController = TextEditingController();
+  bool _codeMode = false; // legacy one-time referral-code sign-in
+  bool _obscure = true;
   bool _loading = false;
   bool _googleLoading = false;
   String _errorMessage = '';
@@ -68,10 +73,27 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
     }
   }
 
-  Future<void> _login(String code) async {
-    final cleanCode = code.trim().toUpperCase();
-    if (cleanCode.isEmpty) {
-      setState(() => _errorMessage = 'Please enter your partner referral code.');
+  /// Goes to the app; existing code-only partners (or after an admin reset) must set a password first.
+  void _enter(Map<String, dynamic> res) {
+    final partner = res['partner'] as Partner;
+    final admissions = res['admissions'] as List<PartnerAdmission>;
+    final shell = PartnerShell(partner: partner, initialAdmissions: admissions);
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => res['needsPassword'] == true
+            ? PartnerSetPasswordScreen(partner: partner, next: shell, hasCurrent: _codeMode ? false : true, currentPassword: _codeMode ? null : _pwController.text)
+            : shell,
+      ),
+      (_) => false,
+    );
+  }
+
+  Future<void> _signIn() async {
+    final id = _idController.text.trim();
+    final pw = _pwController.text;
+    final code = _codeController.text.trim();
+    if (_codeMode ? code.isEmpty : (id.isEmpty || pw.isEmpty)) {
+      setState(() => _errorMessage = _codeMode ? 'Please enter your partner referral code.' : 'Enter your mobile number (or email) and password.');
       return;
     }
 
@@ -81,20 +103,11 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
     });
 
     try {
-      final res = await PartnerApiService().loginWithCode(cleanCode);
-      final partner = res['partner'] as Partner;
-      final admissions = res['admissions'] as List<PartnerAdmission>;
-
+      final res = _codeMode
+          ? await PartnerApiService().loginWithCode(code)
+          : await PartnerApiService().loginWithPassword(id, pw);
       if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (_) => PartnerShell(
-            partner: partner,
-            initialAdmissions: admissions,
-          ),
-        ),
-        (_) => false,
-      );
+      _enter(res);
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -104,6 +117,15 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
       if (mounted) setState(() => _loading = false);
     }
   }
+
+  InputDecoration _dec(String hint, IconData icon) => InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontWeight: FontWeight.normal, letterSpacing: 0),
+        prefixIcon: Icon(icon, color: QS.mint, size: 22),
+        filled: true,
+        fillColor: Colors.black.withOpacity(0.25),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+      );
 
   void _showServerSettings() {
     final urlController = TextEditingController(text: PartnerApiService().baseUrl);
@@ -242,41 +264,56 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'YOUR REFERRAL CODE',
-                      style: TextStyle(
-                        color: QS.mint,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
+                    if (_codeMode) ...[
+                      const Text(
+                        'YOUR REFERRAL CODE',
+                        style: TextStyle(color: QS.mint, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: _codeController,
-                      textCapitalization: TextCapitalization.characters,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _codeController,
+                        textCapitalization: TextCapitalization.characters,
+                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                        decoration: _dec('e.g. MKT-BALA', Icons.qr_code),
                       ),
-                      decoration: InputDecoration(
-                        hintText: 'e.g. MKT-BALA',
-                        hintStyle: TextStyle(
-                          color: Colors.white.withOpacity(0.3),
-                          fontWeight: FontWeight.normal,
-                          letterSpacing: 0,
+                      const SizedBox(height: 8),
+                      const Text(
+                        'For partners who used a code before. You will be asked to create a password right after.',
+                        style: TextStyle(color: Colors.white54, fontSize: 11.5, height: 1.4),
+                      ),
+                    ] else ...[
+                      const Text(
+                        'MOBILE NUMBER OR EMAIL',
+                        style: TextStyle(color: QS.mint, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _idController,
+                        keyboardType: TextInputType.emailAddress,
+                        autofillHints: const [AutofillHints.username],
+                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                        decoration: _dec('98765 43210 or you@email.com', Icons.person_outline),
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'PASSWORD',
+                        style: TextStyle(color: QS.mint, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _pwController,
+                        obscureText: _obscure,
+                        autofillHints: const [AutofillHints.password],
+                        onSubmitted: (_) => _signIn(),
+                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                        decoration: _dec('Your password', Icons.lock_outline).copyWith(
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, color: Colors.white54, size: 20),
+                            onPressed: () => setState(() => _obscure = !_obscure),
+                          ),
                         ),
-                        prefixIcon: const Icon(Icons.qr_code, color: QS.mint, size: 22),
-                        filled: true,
-                        fillColor: Colors.black.withOpacity(0.25),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
-                        ),
                       ),
-                    ),
+                    ],
                     if (_errorMessage.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       Container(
@@ -312,7 +349,7 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),
-                        onPressed: _loading ? null : () => _login(_codeController.text),
+                        onPressed: _loading ? null : _signIn,
                         child: _loading
                           ? const SizedBox(
                               height: 22,
@@ -362,6 +399,35 @@ class _PartnerLoginScreenState extends State<PartnerLoginScreen> {
                       darkSurface: true,
                       onTap: _loginWithGmail,
                     ),
+                    const SizedBox(height: 10),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => const PartnerSignupSheet(),
+                        ),
+                        child: const Text('New here? Create a partner account', style: TextStyle(color: QS.mint, fontWeight: FontWeight.w700, fontSize: 13)),
+                      ),
+                    ),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => setState(() {
+                          _codeMode = !_codeMode;
+                          _errorMessage = '';
+                        }),
+                        child: Text(
+                          _codeMode ? 'Back to mobile / email sign-in' : 'Used a referral code before? Sign in once with your code',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white60, fontSize: 12),
+                        ),
+                      ),
+                    ),
+                    if (!_codeMode)
+                      const Center(
+                        child: Text('Forgot your password? Ask Q-School admin to reset it.', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                      ),
                   ],
                 ),
               ),

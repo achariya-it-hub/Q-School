@@ -5,6 +5,7 @@ import { findDbStaffLogin, findDbUserByEmail } from "@/lib/db";
 import { DEFAULT_STAFF } from "@/lib/default-staff";
 import { DEFAULT_USERS } from "@/lib/default-users";
 import { getPartnerByEmail, listPartnerAdmissions } from "@/lib/partners/store";
+import { signPartnerToken, withoutSecrets } from "@/lib/partners/session";
 import { listStudents } from "@/lib/students/store";
 
 export const dynamic = "force-dynamic";
@@ -152,7 +153,8 @@ export async function POST(req: Request) {
           photoUrl,
           role: "partner",
         },
-        partner,
+        partner: withoutSecrets(partner),
+        partnerToken: signPartnerToken(partner),
         admissions,
       });
     }

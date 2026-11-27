@@ -181,6 +181,23 @@ function PartnersContent() {
     }
   };
 
+  // Issue a one-time temporary password (partner must change it at next sign-in)
+  const resetPartnerPassword = async (partner: Partner) => {
+    if (!window.confirm(`Issue a temporary password to ${partner.name}? Their current password stops working.`)) return;
+    try {
+      const res = await fetch("/api/admin/partners/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ partnerId: partner.id }),
+      });
+      const d = await res.json();
+      if (!res.ok || !d.ok) throw new Error(d.error || "failed");
+      window.prompt(`Temporary password for ${partner.name}. Share it privately; they sign in with ${d.login} and must then set their own.`, d.tempPassword);
+    } catch {
+      show("Could not reset the password");
+    }
+  };
+
   // Update commission payout status
   const handleUpdatePayout = async (admissionId: string, status: PayoutStatus) => {
     try {
@@ -986,6 +1003,14 @@ function PartnersContent() {
                               title={p.status === "active" ? "Deactivate" : "Activate"}
                             >
                               {p.status === "active" ? "Deactivate" : "Activate"}
+                            </button>
+
+                            <button
+                              onClick={() => resetPartnerPassword(p)}
+                              className="p-1.5 rounded-lg border border-[#E2ECE9] hover:bg-[#E3F4F0] text-brand-teal transition text-xs font-semibold"
+                              title="Issue a temporary sign-in password"
+                            >
+                              Reset password
                             </button>
                           </div>
                         </td>
