@@ -193,7 +193,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       setState(() => _isLoading = true);
       try {
-        final res = await PartnerApiService().loginWithCode(code);
+        final pw = _passwordController.text;
+        final res = pw.isNotEmpty
+            ? await PartnerApiService().loginWithPassword(_emailController.text.trim(), pw)
+            : await PartnerApiService().loginWithCode(code);
         final partner = res['partner'] as Partner;
         final admissions = res['admissions'] as List<PartnerAdmission>;
         if (!mounted) return;
@@ -201,7 +204,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (_) => res['needsPassword'] == true
-                ? PartnerSetPasswordScreen(partner: partner, next: shell)
+                ? PartnerSetPasswordScreen(partner: partner, next: shell, hasCurrent: pw.isNotEmpty, currentPassword: pw.isNotEmpty ? pw : null)
                 : shell,
           ),
           (_) => false,
@@ -369,7 +372,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 fontWeight: FontWeight.w500),
                             decoration: InputDecoration(
                               hintText: _selectedRole == 3
-                                  ? 'e.g. MKT-BALA or mobile'
+                                  ? 'Mobile / email (or referral code, first time)'
                                   : 'Enter email or mobile',
                               hintStyle: const TextStyle(color: Color(0xFF94A6A1)),
                             ),
@@ -382,7 +385,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Password Input
                   Text(
-                    _selectedRole == 3 ? 'Password (Optional for Partner)' : 'Password',
+                    _selectedRole == 3 ? 'Password (leave empty to sign in once with your code)' : 'Password',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -467,7 +470,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     )
                   else ...[
                     QSButton(
-                      label: _selectedRole == 3 ? 'Login with Referral Code' : 'Login',
+                      label: _selectedRole == 3 ? 'Login' : 'Login',
                       onTap: _onLogin,
                     ),
                     if (_selectedRole == 3) ...[
