@@ -10,6 +10,14 @@ const nextConfig = {
       { source: "/admission/", destination: "/admission/index.html" },
     ];
   },
+  // Play Store / Meta listings use /privacy-policy; the page lives at /privacy
+  async redirects() {
+    return [
+      { source: "/privacy-policy", destination: "/privacy", permanent: true },
+      { source: "/privacy-policy/", destination: "/privacy", permanent: true },
+      { source: "/privacypolicy", destination: "/privacy", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

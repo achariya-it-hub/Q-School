@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPolicyPage() {
-  const lastUpdated = "November 11, 2026";
+  const lastUpdated = "November 27, 2026";
 
   return (
     <div className="min-h-screen bg-[#F4FAF8] text-brand-ink flex flex-col justify-between">
@@ -96,7 +96,31 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-extrabold text-brand-deep mb-3">7. Contact Us</h2>
+            <h2 className="text-xl font-extrabold text-brand-deep mb-3">7. Q-School Mobile App</h2>
+            <p className="mb-2">
+              The Q-School app (Android, package <strong>com.qschool</strong>) is used by students, teachers, administrators and referral partners. In the app we process:
+            </p>
+            <ul className="list-disc pl-6 space-y-1.5">
+              <li><strong>Account details:</strong> name, email address, mobile number and password (partner passwords are stored as one-way hashes). If you choose &quot;Sign in with Google&quot; we receive your Google name, email address and profile photo for sign-in only.</li>
+              <li><strong>Learning data:</strong> enrolled programmes, attendance, progress and class/webinar registrations.</li>
+              <li><strong>Partner data:</strong> partner profile, referral code, student admissions you submit (student and parent name, phone, school, grade) and, if you add them, bank / UPI details used only to pay your commission.</li>
+              <li><strong>Technical data:</strong> basic request logs (such as IP address and time) kept for security and abuse prevention.</li>
+            </ul>
+            <p className="mt-2">
+              The app does not show third-party advertising, does not sell personal data, and does not track your location. Data is sent over HTTPS to our servers and is accessible only to authorised Q-School staff. You can ask us to delete your account and data at any time from our{" "}
+              <Link href="/data-deletion" className="font-bold text-brand-teal hover:underline">
+                User Data Deletion page
+              </Link>{" "}
+              or by emailing{" "}
+              <a href="mailto:info@theqschool.com" className="font-bold text-brand-teal hover:underline">
+                info@theqschool.com
+              </a>
+              . Fee and invoice records may be retained as required by Indian tax and accounting law.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-extrabold text-brand-deep mb-3">8. Contact Us</h2>
             <div className="rounded-2xl border border-[#CFE3DD] bg-[#F4FAF8] p-5 text-sm text-[#2b3d38] space-y-1.5">
               <p className="font-extrabold text-brand-deep text-base">
                 Q-School - A Unit of Divine Grace Foundation
