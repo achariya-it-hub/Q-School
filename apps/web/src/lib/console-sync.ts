@@ -61,6 +61,11 @@ export function keepSavedPayments(incoming: FeeAccount[], saved: FeeAccount[]): 
   const byId = new Map(saved.filter((a) => a && typeof a.id === "string").map((a) => [a.id, a]));
   return incoming.map((a) => {
     const s = a && byId.get(a.id);
-    return s && Array.isArray(s.installments) && Array.isArray(a.installments) && accountPaidAmount(s) > accountPaidAmount(a) ? s : a;
+    if (!(s && Array.isArray(s.installments) && Array.isArray(a.installments))) return a;
+    // A corrected payment (higher revision) always beats an older copy, even though it holds less money.
+    const sr = s.rev ?? 0;
+    const ir = a.rev ?? 0;
+    if (sr !== ir) return sr > ir ? s : a;
+    return accountPaidAmount(s) > accountPaidAmount(a) ? s : a;
   });
 }

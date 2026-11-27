@@ -173,7 +173,7 @@ export async function syncConsoleData(): Promise<void> {
             if (!ex) {
               byId.set(id, x);
               upload = true;
-            } else if (k === "accounts" && paidScore(x) > paidScore(ex)) {
+            } else if (k === "accounts" && paidScore(x) > paidScore(ex) && (x.rev ?? 0) >= (ex.rev ?? 0)) {
               byId.set(id, x);
               upload = true;
             }
@@ -270,6 +270,25 @@ export async function recordPayment(accountId: string, instNo: number, method: P
   if (!r.ok || !j.account) throw new Error(j.error || "Could not save the payment. Check the connection and try again.");
   const saved = j.account as FeeAccount;
   // Already saved on the server: update this browser's copy without uploading it again.
+  applyingRemote = true;
+  try {
+    set((s) => ({ ...s, accounts: s.accounts.some((a) => a.id === saved.id) ? s.accounts.map((a) => (a.id === saved.id ? saved : a)) : [saved, ...s.accounts] }));
+  } finally {
+    applyingRemote = false;
+  }
+  return saved;
+}
+
+/** Correct a payment recorded with too high an amount (server applies it; every device sees it). */
+export async function correctPayment(accountId: string, instNo: number, amount: number, reason: string, balanceDue?: string): Promise<FeeAccount> {
+  const r = await fetch("/api/admin/fee-plans/correct", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accountId, instNo, amount, reason, balanceDue }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.account) throw new Error(j.error || "Could not save the correction. Check the connection and try again.");
+  const saved = j.account as FeeAccount;
   applyingRemote = true;
   try {
     set((s) => ({ ...s, accounts: s.accounts.some((a) => a.id === saved.id) ? s.accounts.map((a) => (a.id === saved.id ? saved : a)) : [saved, ...s.accounts] }));

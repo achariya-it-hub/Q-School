@@ -6,7 +6,7 @@ import { AdminShell } from "@/components/admin/shell";
 import { Btn, Card, DataGrid, Field, Figure, Modal, PageHeader, SearchInput, Segmented, StatusBadge, Td, Th, Toast, inputCls, useToast } from "@/components/admin/ui";
 import { HBars, ViewToggle } from "@/components/admin/charts";
 import { CollectModal, PaymentPrintPromptModal, TXN_TONE, useFinance, type GeneratedFeeDocs } from "@/components/admin/finance";
-import { downloadCsv } from "@/components/admin/store";
+import { downloadCsv, correctPayment } from "@/components/admin/store";
 
 type F = "All" | "Success" | "Partly Paid" | "Failed" | "Refunded";
 
@@ -19,6 +19,37 @@ export default function PaymentsPage() {
   const [pickOpen, setPickOpen] = useState(false);
   const [collectAcc, setCollectAcc] = useState<FeeAccount | null>(null);
   const [toast, show] = useToast();
+  const [corr, setCorr] = useState<PaymentTxn | null>(null);
+  const [corrAmt, setCorrAmt] = useState("");
+  const [corrWhy, setCorrWhy] = useState("");
+  const [corrDue, setCorrDue] = useState("");
+  const [corrBusy, setCorrBusy] = useState(false);
+  const [corrErr, setCorrErr] = useState("");
+  const openCorrect = (p: PaymentTxn) => {
+    setCorr(p);
+    setCorrAmt("");
+    setCorrWhy("");
+    setCorrDue("");
+    setCorrErr("");
+  };
+  const submitCorrect = async () => {
+    if (!corr) return;
+    const amt = Number(corrAmt);
+    if (!(amt > 0) || !(amt < corr.amount)) return setCorrErr(`Enter the amount actually received (lower than ${inr(corr.amount)}).`);
+    if (corrWhy.trim().length < 3) return setCorrErr("Enter a short reason.");
+    setCorrBusy(true);
+    setCorrErr("");
+    try {
+      await correctPayment(corr.accountId, corr.instNo, amt, corrWhy.trim(), corrDue || undefined);
+      setCorr(null);
+      show(`Payment corrected to ${inr(amt)} — balance ${inr(corr.amount - amt)} is due again`);
+      f.reloadStudents?.();
+    } catch (e) {
+      setCorrErr((e as Error).message);
+    } finally {
+      setCorrBusy(false);
+    }
+  };
   const unpaidAccounts = useMemo(
     () => f.accounts.filter((a) => accountTotals(a).outstanding > 0),
     [f.accounts],
@@ -144,6 +175,7 @@ export default function PaymentsPage() {
                 <Th right>Amount</Th>
                 <Th>Status</Th>
                 <Th>Receipt</Th>
+                <Th>{""}</Th>
               </tr>
             </thead>
             <tbody>
@@ -176,11 +208,23 @@ export default function PaymentsPage() {
                       <span className="text-[#41564f]">—</span>
                     )}
                   </Td>
+                  <Td>
+                    {(p.status === "Success" || p.status === "Partly Paid") && !p.accountId.startsWith("STU-") ? (
+                      <button
+                        type="button"
+                        onClick={() => openCorrect(p)}
+                        className="rounded-lg border border-[#E2ECE9] px-2 py-1 text-[11.5px] font-semibold text-brand-teal hover:bg-[#E3F4F0]"
+                        title="The amount recorded is wrong: fix it"
+                      >
+                        Correct
+                      </button>
+                    ) : null}
+                  </Td>
                 </tr>
               ))}
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-10 text-center text-[13px] text-[#7B8E89]">
+                  <td colSpan={8} className="py-10 text-center text-[13px] text-[#7B8E89]">
                     {f.payments.length === 0 ? "No payment transactions recorded yet." : "No payments match your search."}
                   </td>
                 </tr>
@@ -194,6 +238,39 @@ export default function PaymentsPage() {
           <p className="mt-4 text-[12px] text-[#6b807b]">Successful payments, all time, excluding refunds.</p>
         </Card>
       </div>
+      <Modal open={!!corr} title="Correct a recorded payment" onClose={() => setCorr(null)}>
+        {corr && (
+          <div className="space-y-3 text-[13px]">
+            <div className="rounded-xl bg-[#F3F8F6] p-3">
+              <p className="font-semibold text-brand-ink">{corr.student}</p>
+              <p className="text-[#5C716C]">
+                {corr.id} · {corr.receiptNo} · recorded {inr(corr.amount)}
+              </p>
+            </div>
+            <Field label="Amount actually received (₹)">
+              <input className={inputCls} type="number" min={1} max={corr.amount - 1} value={corrAmt} onChange={(e) => setCorrAmt(e.target.value)} placeholder="e.g. 25000" />
+            </Field>
+            <Field label="Date the balance is due (optional)">
+              <input className={inputCls} type="date" value={corrDue} onChange={(e) => setCorrDue(e.target.value)} />
+            </Field>
+            <Field label="Reason">
+              <input className={inputCls} value={corrWhy} onChange={(e) => setCorrWhy(e.target.value)} placeholder="e.g. part payment, only ₹25,000 collected" />
+            </Field>
+            {Number(corrAmt) > 0 && Number(corrAmt) < corr.amount && (
+              <p className="text-[12.5px] text-[#41564f]">
+                Receipt and invoice become {inr(Number(corrAmt))} (part payment) and {inr(corr.amount - Number(corrAmt))} goes back to balance due.
+              </p>
+            )}
+            {corrErr && <p className="text-[12.5px] font-semibold text-red-600">{corrErr}</p>}
+            <div className="flex justify-end gap-2 pt-1">
+              <Btn variant="ghost" onClick={() => setCorr(null)}>
+                Cancel
+              </Btn>
+              <Btn onClick={submitCorrect}>{corrBusy ? "Saving…" : "Save correction"}</Btn>
+            </div>
+          </div>
+        )}
+      </Modal>
       <Modal open={pickOpen} title="Select student to collect fee" onClose={() => setPickOpen(false)}>
         <div className="space-y-3 text-[13px]">
           <Field label="Student / Fee Account">

@@ -37,6 +37,8 @@ export interface FeeAccount {
   batch: string;
   centre: string;
   installments: Installment[];
+  /** Bumped when a recorded payment is corrected, so a stale browser copy can never put the old amount back. */
+  rev?: number;
 }
 
 export interface FeeScheduleItem {
@@ -173,6 +175,41 @@ export function applyInstallmentPayment(
     }
   }
   return { ...a, installments: updated.map((inst, idx) => ({ ...inst, no: idx + 1 })) };
+}
+
+/**
+ * Fix a payment that was recorded with too much money (e.g. ₹50,000 entered, only ₹25,000 received):
+ * the installment keeps the amount actually received and the difference goes back to a new unpaid installment.
+ * Pure; returns null when it can't be applied (not paid, refunded, or the amount isn't lower).
+ */
+export function correctInstallmentPayment(
+  a: FeeAccount,
+  instNo: number,
+  actualAmount: number,
+  balanceDue?: string,
+): FeeAccount | null {
+  const target = a.installments.find((i) => i.no === instNo);
+  const actual = Math.round(actualAmount * 100) / 100;
+  if (!target || !target.paidOn || target.refunded) return null;
+  if (!(actual > 0) || !(actual < target.amount)) return null;
+  const remainder = Math.round((target.amount - actual) * 100) / 100;
+  const due =
+    balanceDue && /^\d{4}-\d{2}-\d{2}$/.test(balanceDue)
+      ? balanceDue
+      : (() => {
+          const d = new Date(target.due + "T00:00:00Z");
+          if (Number.isNaN(d.getTime())) return istToday();
+          d.setUTCMonth(d.getUTCMonth() + 1);
+          return d.toISOString().slice(0, 10);
+        })();
+  const out: Installment[] = [];
+  for (const inst of a.installments) {
+    if (inst.no === instNo) {
+      out.push({ ...inst, amount: actual });
+      out.push({ no: 0, due, amount: remainder });
+    } else out.push(inst);
+  }
+  return { ...a, rev: (a.rev ?? 0) + 1, installments: out.map((inst, idx) => ({ ...inst, no: idx + 1 })) };
 }
 
 /** Amount actually received on a fee plan (refunds excluded). */
